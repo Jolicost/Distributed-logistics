@@ -1,0 +1,30 @@
+Actores:
+	- Usuario
+	- Tienda
+	- Vendedor
+	- Centro logistico
+	- Transportistas
+Objetivos:
+	- Buscar productos
+		- Poner restricciones a la busqueda
+	- Comprar productos
+		- Elegir opciones entrega
+		- Pagar la compra
+		- Presentar factura
+		- Presentar informacion de entrega del paquete (cuando disponible)
+		- Enviar peticion de compra a un centro logistico
+	- Enviar lotes de paquetes
+		- Acceder al registro de peticiones de compra a cierta hora del dia
+		- Contactar con un conjunto de empresas de transporte
+		- Al recibir un conjunto de ofertas de precios de envio, decidir transportista para cada lote segun un criterio
+	- Devolver producto
+		- Elegir razon de la devolucion
+		- Decidir si se acepta o no la devolucion
+		- Devolver dinero si se acepta
+		- Aceptar/rechazar empresa de devolucion
+	- Valorar producto
+		- Escribir opinion del usuario sobre un producto
+		- Realizar cambios en recomendaciones y informacion del vendedor
+	- Recomendar producto
+		- Ver el historial de busquedas y compras
+		- Hacer una recomendacion
