@@ -463,8 +463,8 @@ finish</field>
 																										<field name="includedMessages"><list>
 																										    <object type="MessageDistributionPair" id="41">
 																											<base type="Entity">
-																											    <field name="name">protocolMessagePair-187</field>
-																											    <field name="uniqueId">187</field>
+																											    <field name="name">protocolMessagePair-241</field>
+																											    <field name="uniqueId">241</field>
 																											</base>
 
 																											<field name="type">
@@ -479,8 +479,6 @@ finish</field>
 																												</base>
 
 																												<field name="distribution"><list>
-																												    <object ref="41"/>
-
 																												    <object type="MessageDistributionPair" id="43">
 																													<base type="Entity">
 																													    <field name="name">agentMessagePair-188</field>
@@ -575,6 +573,8 @@ finish</field>
 																													    </object>
 																													</field>
 																												    </object>
+
+																												    <object ref="41"/>
 																												    </list>
 																												</field>
 																												<field name="purpose"></field>
@@ -584,17 +584,17 @@ finish</field>
 																											    </object>
 																											</field>
 																											<field name="toEntities"><list>
-																											    <object ref="39"/>
-																											    </list>
-																											</field>
-																											<field name="fromEntities"><list>
 																											    <object ref="45"/>
 																											    </list>
 																											</field>
+																											<field name="fromEntities"><list>
+																											    <object ref="39"/>
+																											    </list>
+																											</field>
 																											<field name="childDistributionPairs"><list>
-																											    <object ref="43"/>
-
 																											    <object ref="44"/>
+
+																											    <object ref="43"/>
 																											    </list>
 																											</field>
 																											<field name="owner">
@@ -623,15 +623,15 @@ finish</field>
 																										    </list>
 																										</field>
 																										<field name="agents"><list>
-																										    <object ref="45"/>
-
 																										    <object ref="39"/>
+
+																										    <object ref="45"/>
 																										    </list>
 																										</field>
 																										<field name="notes"></field>
 																										<field name="aumlText">start Protocolo transmitir orden
-agent A Agente empaquetador
-agent B Agente receptor
+agent A Agente receptor
+agent B Agente empaquetador
 message A B Datos orden
 finish</field>
 																										<field name="aumlInteractions"><list>
@@ -640,11 +640,11 @@ finish</field>
 																											    <object ref="42"/>
 																											</field>
 																											<field name="origins"><list>
-																											    <object ref="45"/>
+																											    <object ref="39"/>
 																											    </list>
 																											</field>
 																											<field name="targets"><list>
-																											    <object ref="39"/>
+																											    <object ref="45"/>
 																											    </list>
 																											</field>
 																										    </object>
@@ -6429,8 +6429,6 @@ finish</field>
 		</list>
 	    </field>
 	    <field name="messageDistributionPairs"><list>
-		<object ref="41"/>
-
 		<object ref="43"/>
 
 		<object ref="44"/>
@@ -6452,6 +6450,8 @@ finish</field>
 		<object ref="37"/>
 
 		<object ref="38"/>
+
+		<object ref="41"/>
 		</list>
 	    </field>
 	    <field name="scenarios"><list>
@@ -7122,6 +7122,10 @@ finish</field>
 
 		<object type="Entity" id="832">
 		    <field name="name">Protocolo pagar tienda externa inmediato</field>
+		</object>
+
+		<object type="Entity" id="833">
+		    <field name="name">protocolMessagePair-187</field>
 		</object>
 		</list>
 	    </field>
