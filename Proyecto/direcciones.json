@@ -1,0 +1,14 @@
+{
+    "agente_admisor": {
+        "port": 8000, 
+        "dir": "localhost"
+    }, 
+    "agente_receptor": {
+        "port": 8000, 
+        "dir": "localhost"
+    }, 
+    "agente_usuario": {
+        "port": 8000, 
+        "dir": "localhost"
+    }
+}
