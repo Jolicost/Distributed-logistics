@@ -1,6 +1,8 @@
 import json
 import sys
 
+gestor_direcciones = 'direcciones.json'
+
 def get_data():
 	data = {}
 	data['agente_usuario'] = {
@@ -28,6 +30,17 @@ def read_json(file):
 		data = json.load(f)
 	return data
 
+def getDirAgenteUsuario():
+	data = read_json(gestor_direcciones)
+	return data['agente_usuario']
+
+def getDirAgenteReceptor():
+	data = read_json(gestor_direcciones)
+	return data['agente_receptor']
+
+def getDirAgenteAdmisor():
+	data = read_json(gestor_direcciones)
+	return data['agente_admisor']
 
 if __name__ == "__main__":
 	if (len(sys.argv) < 2):
