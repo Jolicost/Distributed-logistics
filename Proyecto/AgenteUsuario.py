@@ -1,10 +1,7 @@
 import sys
 from Util.GestorDirecciones import *
-
-def hello_world():
-	print getDirAgenteUsuario()
-	print getDirAgenteAdmisor()
-	print getDirAgenteReceptor()
+from AgenteUsuario import serverUsuario
 
 
-hello_world()
+if __name__ == '__main__':
+	serverUsuario.start_server()
