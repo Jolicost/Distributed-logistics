@@ -4,36 +4,32 @@ from multiprocessing import Process
 from flask import Flask, request, render_template
 from time import sleep
 
+#Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 
 
 @app.route("/")
 def main_page():
     """
-    El hola mundo de los servicios web
-    :return:
+    Pagina principal. No hay acciones extras.
     """
     return render_template('main.html')
 
 
-@app.route("/buscar")
+@app.route("/vender")
 def pag():
     """
-    Entrada que sirve una pagina de web que cuenta hasta 10
-    :return:
+    Mostrar pagina para poner un producto a la venda
     """
-    return render_template('buscarProductos.html')
+    return render_template('vender.html')
 
 
-@app.route("/buscarProductos", methods=['GET','POST'])
-def buscarProductos():
-    resultado = ["peras","manzanas","zanahorias"]
-
-    return render_template(
-        'resultadoBusqueda.html',
-        criterio=request.args['criterio'],
-        values=resultado
-    )
+@app.route("/poner_venda", methods=['GET'])
+def poner_venda():
+    '''
+    enviar datos a la tienda
+    '''
+    return render_template('render_text.html',text=str(request.args['nombre']))
 
 
 if __name__ == "__main__":
