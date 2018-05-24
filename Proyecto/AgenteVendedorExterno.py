@@ -4,7 +4,7 @@ from multiprocessing import Process
 from flask import Flask, request, render_template
 from time import sleep
 
-app = Flask(__name__)
+app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 
 
 @app.route("/")
