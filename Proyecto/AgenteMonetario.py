@@ -39,6 +39,10 @@ DirectoryAgent = Agent('DirectoryAgent',
                        'http://%s:9000/Register' % hostname,
                        'http://%s:9000/Stop' % hostname)
 
+ServicioPago = Agent('ServicioPago',
+                        agn.ServicioPago,
+                        'http://%s:%9020/comm' % (hostname, port),
+                       'http://%s:%9020/Stop' % (hostname, port))
 
 # Global triplestore graph
 dsgraph = Graph()
@@ -93,13 +97,24 @@ def comunicacion():
 
             gr = build_message(Graph(),
                 perf=ACL['inform-done'],
-                sender=InfoAgent.uri,
+                sender=AgenteMonetario.uri,
                 msgcnt=mss_cnt,
                 receiver=msgdic['sender'], 
                 mss_cnt=mss_cnt)
 
+            #hacemos accion dependiendo del tipo
+            ont = Namespace('/Ontologias/ontologies.owl')
+            if (accion == ont.Pedirpagousuario):
+                ab1 = Process(target=pedir_pago_usuario, args=(cola1,))
+            elif (accion == ont.Pagarvendederexterno):
+                ab1 = Process(target=pagar_vendedor_externo, args=(cola1,))
+            else:
+                gr = build_message(Graph(),
+                ACL['not-understood'],
+                sender=AgenteMonetario.uri,
+                msgcnt=mss_cnt)
+
             #iniciar proceso de pago
-            ab1 = Process(target=pedir_pago, args=(cola1,))
             ab1.start()
 
             
@@ -108,6 +123,51 @@ def comunicacion():
 
         return gr.serialize(format='xml')
 
+def pedir_pago_usuario(cola):
+    global mss_cnt
+    logger.info("Hacemos una petición de pago al servicio de pago")
+    gmess = Graph()
+
+    #ontologias
+    ont = Namespace('/Ontologias/ontologies.owl')
+
+    gmess.bind(ont)
+    reg_obj = agn[AgenteMonetario.name]
+    gmess.add((reg_obj, RDF.type, ont.Pedirpagousuario))
+
+    msg = build_message(gmess, perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        receiver=ServicioPago.uri,
+        msgcnt=mss_cnt)
+    gr = send_message(msg, addr)
+    mss_cnt
+    logger.info("Recibimos respuesta a la petición")
+    return gr
+
+    pass
+
+def pagar_vendedor_externo(cola):       
+    global mss_cnt
+    logger.info("Hacemos una petición de pago al servicio de pago")
+    gmess = Graph()
+
+    #ontologias
+    ont = Namespace('/Ontologias/ontologies.owl')
+
+    gmess.bind(ont)
+    reg_obj = agn[AgenteMonetario.name]
+    gmess.add((reg_obj, RDF.type, ont.Pagarvendederexterno))
+
+    msg = build_message(gmess, perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        receiver=ServicioPago.uri,
+        msgcnt=mss_cnt)
+    gr = send_message(msg, addr)
+    mss_cnt
+    logger.info("Recibimos respuesta a la petición")
+    return gr
+
+    pass
 
 @app.route("/Stop")
 def stop():
@@ -126,11 +186,6 @@ def tidyup():
     """
     global cola1
     cola1.put(0)
-    pass
-
-def pedir_pago(cola):
-
-
     pass
 
 def agentbehavior1(cola):
