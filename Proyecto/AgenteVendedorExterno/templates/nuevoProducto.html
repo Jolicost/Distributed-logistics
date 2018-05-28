@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Poner un producto a la venda</title>
+    <title>Añadir un producto al repositorio local</title>
 </head>
 <body>
-	<h1>Que producto quieres poner a la venda?</h1>
+	<h1>Que producto quieres añadir?</h1>
 	<form action="/poner_venda" method="GET">
+		<p>Identificador del producto: </p>
+		<input type="text" name="id"/>
 		<p>Nombre del producto: </p>
-		<br>
 		<input type="text" name="nombre"/>
+		<br>
 		<button type="submit">Enviar</button>
 	</form>
 </body>

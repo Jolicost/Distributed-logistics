@@ -23,6 +23,8 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
+					<th>Poner a la venta</th>
+					<th>Borrar producto</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -31,6 +33,16 @@ th, td {
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
 					{% endfor %}
+						<td>
+							{% if elem['id'] in venta %}
+							<a href="/poner_venda?id={{ elem['id'] }}"><button>Poner a la venta</button></a>
+							{% else %}
+							Ya esta a la venta
+							{% endif %}
+						</td>
+						<td>
+							<a href="/borrar?id={{ elem['id'] }}"><button>Borrar</button></a>
+						</td>	
 				</tr>
 				{% endfor %}
 			</tbody>

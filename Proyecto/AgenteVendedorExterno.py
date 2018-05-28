@@ -41,8 +41,9 @@ def verProductos():
 	Pagina de productos. Contiene una tabla y poco mas.
 	Los productos no tienen estados asociados ya que suponemos que siempre hay stock
 	"""
-	l = [{"preu":4,"marca":"nike"},{"preu":5,"marca":"adidas"}]
-	return render_template('listaProductos.html',list=l)
+	l = [{"id":5,"preu":4,"marca":"nike"},{"id":6,"preu":5,"marca":"adidas"}]
+	v = [5]
+	return render_template('listaProductos.html',list=l,venta=v)
 
 @app.route("/verPedidos")
 def verPedidos():
@@ -63,12 +64,17 @@ def enviarPedido():
 	Se accede a esta accion normalmente a traves de la vista de pedidos 
 	"""
 
-@app.route("/vender")
-def pag():
+@app.route("/anadir")
+def nuevoProducto():
 	"""
 	Mostrar pagina para poner un producto a la venda
 	"""
-	return render_template('vender.html')
+	return render_template('nuevoProducto.html')
+
+@app.route("/borrar")
+def borrarProducto():
+	''' borra el producto de la base de datos local '''
+	return render_template('render_text.html',text=str(request.args['id']))
 
 
 @app.route("/poner_venda", methods=['GET'])
@@ -76,7 +82,7 @@ def poner_venda():
 	'''
 	enviar datos a la tienda
 	'''
-	return render_template('render_text.html',text=str(request.args['nombre']))
+	return render_template('render_text.html',text=str(request.args['id']))
 
 def start_server():
 	init_agent()
