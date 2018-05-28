@@ -1,14 +1,18 @@
 {
     "agente_admisor": {
-        "port": 8000, 
-        "dir": "localhost"
+        "host": "localhost", 
+        "port": 8000
     }, 
     "agente_receptor": {
-        "port": 8000, 
-        "dir": "localhost"
+        "host": "localhost", 
+        "port": 8000
+    }, 
+    "agente_vendedorExterno": {
+        "host": "localhost", 
+        "port": 8000
     }, 
     "agente_usuario": {
-        "port": 8000, 
-        "dir": "localhost"
+        "host": "localhost", 
+        "port": 8000
     }
 }

@@ -6,16 +6,21 @@ gestor_direcciones = 'direcciones.json'
 def get_data():
 	data = {}
 	data['agente_usuario'] = {
-		'dir':'localhost',
+		'host':'localhost',
 		'port':8000
 	}
 	data['agente_receptor'] = {
-		'dir':'localhost',
+		'host':'localhost',
 		'port':8000
 	}
 	data['agente_admisor'] = {
-		'dir':'localhost',
+		'host':'localhost',
 		'port':8000
+	}
+	data['agente_vendedorExterno'] = {
+		'host':'localhost',
+		'port':8000
+
 	}
 	return data
 
@@ -41,11 +46,16 @@ def getDirAgenteReceptor():
 def getDirAgenteAdmisor():
 	data = read_json(gestor_direcciones)
 	return data['agente_admisor']
+def getDirAgenteVendedorExterno():
+	data = read_json(gestor_direcciones)
+	return data['agente_vendedorExterno']
 
 if __name__ == "__main__":
+	output_file = None
 	if (len(sys.argv) < 2):
-		raise Exception("you need to specify the output file")
-	output_file = sys.argv[1]
+		output_file = gestor_direcciones
+	else:
+		output_file = sys.argv[1]
 	data = get_data()
 	write_json(output_file,data)
 	print "Successfully wrote the json config file into" , output_file
