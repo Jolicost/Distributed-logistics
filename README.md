@@ -7,4 +7,8 @@
 
 [Drive](https://drive.google.com/drive/folders/1TFYXwsIp8p5CXpwjwodbQk8JtoQIjTUy?usp=sharing)
 
+[Ontologias](https://webprotege.stanford.edu/#projects/0d367979-a068-4736-8a01-63b36ab78094/edit/Classes)
+
+[Tutorial Web Semantica](https://semantizandolaweb.wordpress.com/)
+
 Instalar requerimientos: pip install -r requirements.txt
