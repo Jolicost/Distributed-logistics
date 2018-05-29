@@ -8,6 +8,8 @@ from flask import Flask, request, render_template,redirect
 from time import sleep
 #Funciones para recuperar las direcciones de los agentes
 from Util import GestorDirecciones
+from Util.ACLMessages import build_message, get_message_properties, send_message
+from Util.OntoNamespaces import ACL, DSO
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
@@ -16,23 +18,24 @@ from rdflib.namespace import FOAF, RDF
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 agn = None 
 AgenteVendedorExterno = None 
+AgenteAdmisor = None
 host = None
 port = None
-AgenteVendedorExterno = None
 g = None
 graphFile = 'AgenteVendedorExterno/db.turtle'
-#Espacio de nombres para los productos
+#Espacio de nombres para los productos y los agentes
+agn = Namespace("http://www.agentes.org#")
 productos = Namespace("http://www.tienda.org/productos#")
 
 def init_agent():
 	dir = GestorDirecciones.getDirAgenteVendedorExterno()
-	global host,port,agn,g,AgenteVendedorExterno
+	global host,port,agn,g,AgenteVendedorExterno,AgenteAdmisor
 	host = dir['host']
 	port = dir['port']
 	agn = Namespace("http://www.agentes.org#")
 	g = cargarGrafo()
 	AgenteVendedorExterno = Agent('AgenteVendedorExterno',agn.AgenteVendedorExterno,dir,port)
-
+	AgenteAdmisor = Agent('AgenteAdmisor',agn.AgenteAdmisor,'cambiarestaurl/comm',None)
 
 @app.route("/")
 def main_page():
@@ -102,8 +105,6 @@ def borrarProducto():
 	''' borra el producto de la base de datos local '''
 	id = request.args['id']
 	g.remove((productos[id],None,None))
-	for a,b,c in g:
-		print (resource)
 	guardarGrafo()
 	return redirect("/verProductos")
 
@@ -121,7 +122,37 @@ def ponerVenda():
 	'''
 	enviar datos a la tienda
 	'''
-	return "has puesto el producto en venta"
+
+	#Id del producto a poner a la venta
+	id = request.args['id']
+
+	producto = g.triples((productos[id],None,None))
+	gcom = Graph()
+	for triple in producto:
+		gcom.add(triple)
+
+
+	reg_obj = agn[AgenteVendedorExterno.name + "-nuevoProducto"]
+	gmess = Graph()
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(gcom,
+		perf=ACL.request,
+		sender=AgenteVendedorExterno.uri,
+		receiver=AgenteAdmisor.uri,
+		content=reg_obj)
+	gr = send_message(msg,AgenteAdmisor.address)
+	return redirect("/")
+
+@app.route("/stop")
+def stop():
+	"""
+	Entrypoint que para el agente
+
+	:return:
+	"""
+	tidyup()
+	shutdown_server()
+	return "Parando Servidor"
 
 def crearProducto(attrs):
 	nombre = attrs['nombre']
@@ -143,6 +174,11 @@ def cargarGrafo():
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")	
+
+
+def tidyup():
+	#Instrucciones de parada
+	guardarGrafo()
 
 def start_server():
 	init_agent()
