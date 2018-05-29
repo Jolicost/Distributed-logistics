@@ -1,9 +1,10 @@
 from __future__ import print_function
 from multiprocessing import Process
+import os.path
 #Clase agente
 from Util.Agente import Agent
 #Renders del flask
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template,redirect
 from time import sleep
 #Funciones para recuperar las direcciones de los agentes
 from Util import GestorDirecciones
@@ -18,12 +19,18 @@ AgenteVendedorExterno = None
 host = None
 port = None
 AgenteVendedorExterno = None
+g = None
+graphFile = 'AgenteVendedorExterno/db.turtle'
+#Espacio de nombres para los productos
+productos = Namespace("http://www.tienda.org/productos#")
 
 def init_agent():
 	dir = GestorDirecciones.getDirAgenteVendedorExterno()
+	global host,port,agn,g,AgenteVendedorExterno
 	host = dir['host']
 	port = dir['port']
 	agn = Namespace("http://www.agentes.org#")
+	g = cargarGrafo()
 	AgenteVendedorExterno = Agent('AgenteVendedorExterno',agn.AgenteVendedorExterno,dir,port)
 
 
@@ -41,9 +48,28 @@ def verProductos():
 	Pagina de productos. Contiene una tabla y poco mas.
 	Los productos no tienen estados asociados ya que suponemos que siempre hay stock
 	"""
-	l = [{"id":5,"preu":4,"marca":"nike"},{"id":6,"preu":5,"marca":"adidas"}]
-	v = [5]
-	return render_template('listaProductos.html',list=l,venta=v)
+	l = []
+	res = g.query('''
+
+	SELECT DISTINCT ?q
+	WHERE {
+		?q ?p ?o
+	}
+	'''
+	)
+
+	for prod in res:
+		dic = {}
+		s = prod['q']
+
+		dic['resource'] = s
+		dic['nom'] = g.value(subject = s,predicate = productos.nombre)
+		dic['preu'] = g.value(subject = s,predicate = productos.precio)
+		dic['id'] = g.value(subject = s,predicate = productos.id)
+		dic['enVenta'] = g.value(subject = s,predicate = productos.enVenta)
+		l = l + [dic]
+
+	return render_template('listaProductos.html',list=l)
 
 @app.route("/verPedidos")
 def verPedidos():
@@ -74,15 +100,49 @@ def nuevoProducto():
 @app.route("/borrar")
 def borrarProducto():
 	''' borra el producto de la base de datos local '''
-	return render_template('render_text.html',text=str(request.args['id']))
+	id = request.args['id']
+	g.remove((productos[id],None,None))
+	for a,b,c in g:
+		print (resource)
+	guardarGrafo()
+	return redirect("/verProductos")
 
 
-@app.route("/poner_venda", methods=['GET'])
-def poner_venda():
+@app.route("/crearProducto", methods=['GET'])
+def crearProducto():
 	'''
 	enviar datos a la tienda
 	'''
-	return render_template('render_text.html',text=str(request.args['id']))
+	crearProducto(request.args)
+	return redirect("/verProductos")
+
+@app.route("/poner_venta", methods=['GET'])
+def ponerVenda():
+	'''
+	enviar datos a la tienda
+	'''
+	return "has puesto el producto en venta"
+
+def crearProducto(attrs):
+	nombre = attrs['nombre']
+	id = attrs['id']
+	precio = attrs['precio']
+	#productos[id] crea un recurso con el url del namespace "productos" seguido del identificador
+	g.add((productos[id],productos.nombre,Literal(nombre)))
+	g.add((productos[id],productos.precio,Literal(precio)))
+	g.add((productos[id],productos.id,Literal(id)))
+	g.add((productos[id],productos.enVenta,Literal(False)))
+
+	guardarGrafo()
+
+def cargarGrafo():
+	g = Graph()
+	if os.path.isfile(graphFile):
+		g.parse(graphFile,format="turtle")
+	return g
+
+def guardarGrafo():
+	g.serialize(graphFile,format="turtle")	
 
 def start_server():
 	init_agent()

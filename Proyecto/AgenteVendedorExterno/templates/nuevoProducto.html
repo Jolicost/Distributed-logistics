@@ -5,11 +5,13 @@
 </head>
 <body>
 	<h1>Que producto quieres añadir?</h1>
-	<form action="/poner_venda" method="GET">
+	<form action="/crearProducto" method="GET">
 		<p>Identificador del producto: </p>
 		<input type="text" name="id"/>
 		<p>Nombre del producto: </p>
 		<input type="text" name="nombre"/>
+		<p>Precio del producto: </p>
+		<input type="number" name="precio"/>
 		<br>
 		<button type="submit">Enviar</button>
 	</form>
