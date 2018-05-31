@@ -15,25 +15,26 @@ import logging
 from datetime import datetime, timedelta
 
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
-app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
+app = Flask(__name__,template_folder="ServicioPago/templates")
 agn = None 
 AgenteMonetario = None 
 ServicioPago = None
 host = None
 port = None
 g = None
+graphFile = 'ServicioPago/db.turtle'
 #Espacio de nombres para los productos y los agentes
 agn = Namespace("http://www.agentes.org#")
 
 # Datos del Agente
 
 def init_agent():
-    dir = GestorDirecciones.getDirAgenteMonetario()
+    dir = GestorDirecciones.getDirServicioPago()
     global host,port,agn,g,AgenteMonetario,ServicioPago
     host = dir['host']
     port = dir['port']
     agn = Namespace("http://www.agentes.org#")
-    #g = cargarGrafo()
+    g = cargarGrafo()
     AgenteMonetario = Agent('AgenteMonetario',agn.AgenteMonetario,'localhost:9010/comm','localhost:9010/stop')
     ServicioPago = Agent('ServicioPago',agn.ServicioPago,'localhost:9020/comm','localhost:9010/stop')
 
@@ -82,7 +83,7 @@ def comunicacion():
 
             gr = build_message(Graph(),
                 perf=ACL['inform-done'],
-                sender=AgenteMonetario.uri,
+                sender=ServicioPago.uri,
                 msgcnt=mss_cnt,
                 receiver=msgdic['sender'], 
                 mss_cnt=mss_cnt)
@@ -90,13 +91,17 @@ def comunicacion():
             #hacemos accion dependiendo del tipo
             ont = Namespace('Ontologias/ontologies.owl')
             if (accion == ont.Pedirpagousuario):
-                ab1 = Process(target=pedir_pago_usuario, args=(cola1))
+                destino = "destinoPrueba"
+                importe = 20
+                ab1 = Process(target=pedir_pago_usuario, args=(cola1, destino, importe))
             elif (accion == ont.Pagarvendederexterno):
-                ab1 = Process(target=pagar_vendedor_externo, args=(cola1))
+                destino = "destinoPrueba"
+                importe = 20
+                ab1 = Process(target=pagar_vendedor_externo, args=(cola1, destino, importe))
             else:
                 gr = build_message(Graph(),
                 ACL['not-understood'],
-                sender=AgenteMonetario.uri,
+                sender=ServicioPago.uri,
                 msgcnt=mss_cnt)
 
             #iniciar proceso de pago
@@ -108,57 +113,30 @@ def comunicacion():
 
         return gr.serialize(format='xml')
 
-def pedir_pago_usuario(cola):
+def pedir_pago_usuario(cola, destino, importe):
     global mss_cnt
-    logger.info("Hacemos una petición de pago al servicio de pago")
-    gmess = Graph()
-
-    #ontologias
-    ont = Namespace('Ontologias/ontologies.owl')
-
-    reg_obj = agn[AgenteMonetario.name + "-Pedirpagousuario"]
-    destino = "destinoPrueba"
-    importe = 20
-    gmess.add((ont.Persona, ont.Id, Literal(destinoPrueba)))
-    gmess.add((ont.Pago, ont.Importe, Literal(importe)))
-
-    msg = build_message(gmess, perf=ACL.request,
-        sender=AgenteMonetario.uri,
-        receiver=ServicioPago.uri,
-        msgcnt=mss_cnt,
-        content=reg_obj)
-    gr = send_message(msg, addr)
-    mss_cnt
-    logger.info("Recibimos respuesta a la petición")
-    return gr
+    
+    g.add((ont.Persona[destino], ont.Importe, Literal(importe)))
+    guardarGrafo()
 
     pass
 
-def pagar_vendedor_externo(cola):       
+def pagar_vendedor_externo(cola, destino, importe):       
     global mss_cnt
-    logger.info("Hacemos una petición de pago al servicio de pago")
-    gmess = Graph()
-
-    #ontologias
-    ont = Namespace('Ontologias/ontologies.owl')
-
-    reg_obj = agn[AgenteMonetario.name + "-Pedirpagousuario"]
-    destino = "destinoPrueba"
-    importe = 20
-    gmess.add((ont.Persona, ont.Id, Literal(destinoPrueba)))
-    gmess.add((ont.Pago, ont.Importe, Literal(importe)))
-
-    msg = build_message(gmess, perf=ACL.request,
-        sender=AgenteMonetario.uri,
-        receiver=ServicioPago.uri,
-        msgcnt=mss_cnt,
-        content=reg_obj)
-    gr = send_message(msg, addr)
-    mss_cnt
-    logger.info("Recibimos respuesta a la petición")
-    return gr
+    
+    g.add((ont.Persona[destino], ont.Importe, Literal(importe)))
+    guardarGrafo()
 
     pass
+
+def cargarGrafo():
+    g = Graph()
+    if os.path.isfile(graphFile):
+        g.parse(graphFile,format="turtle")
+    return g
+
+def guardarGrafo():
+    g.serialize(graphFile,format="turtle")  
 
 @app.route("/Stop")
 def stop():
@@ -186,3 +164,4 @@ def start_server():
 
 if __name__ == "__main__":
     start_server()
+
