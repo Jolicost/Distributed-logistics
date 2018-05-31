@@ -14,5 +14,13 @@
     "agente_usuario": {
         "host": "localhost", 
         "port": 8000
+    },
+    "agente_monetario": {
+        "host": "localhost", 
+        "port": 8000
+    },
+    "servicio_pago": {
+        "host": "localhost", 
+        "port": 8000
     }
 }

@@ -14,43 +14,28 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-# Configuration stuff
-#hostname = socket.gethostname()
-hostname = 'localhost'
-port = 9010
-
-logger = config_logger(level=1, file="agentemonetario")
-
+#Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
+app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
+agn = None 
+AgenteMonetario = None 
+ServicioPago = None
+host = None
+port = None
+g = None
+#Espacio de nombres para los productos y los agentes
 agn = Namespace("http://www.agentes.org#")
-
-# Contador de mensajes
-mss_cnt = 0
 
 # Datos del Agente
 
-AgenteMonetario = Agent('AgenteMonetario',
-                       agn.AgenteMonetario,
-                       'http://%s:%d/comm' % (hostname, port),
-                       'http://%s:%d/Stop' % (hostname, port))
-
-# Directory agent address
-DirectoryAgent = Agent('DirectoryAgent',
-                       agn.Directory,
-                       'http://%s:9000/Register' % hostname,
-                       'http://%s:9000/Stop' % hostname)
-
-ServicioPago = Agent('ServicioPago',
-                        agn.ServicioPago,
-                        'http://%s:%9020/comm' % (hostname, port),
-                       'http://%s:%9020/Stop' % (hostname, port))
-
-# Global triplestore graph
-dsgraph = Graph()
-
-cola1 = Queue()
-
-# Flask stuff
-app = Flask(__name__)
+def init_agent():
+    dir = GestorDirecciones.getDirAgenteMonetario()
+    global host,port,agn,g,AgenteMonetario,ServicioPago
+    host = dir['host']
+    port = dir['port']
+    agn = Namespace("http://www.agentes.org#")
+    g = cargarGrafo()
+    AgenteMonetario = Agent('AgenteMonetario',agn.AgenteMonetario,'localhost:9010/comm','localhost:9010/stop')
+    ServicioPago = Agent('ServicioPago',agn.ServicioPago,'localhost:9020/comm','localhost:9010/stop')
 
 
 @app.route("/comm")
@@ -197,14 +182,10 @@ def agentbehavior1(cola):
     pass
 
 
-if __name__ == '__main__':
-    # Ponemos en marcha los behaviors
-    #ab1 = Process(target=agentbehavior1, args=(cola1,))
-    #ab1.start()
+def start_server():
+    init_agent()
+    app.run()
 
-    # Ponemos en marcha el servidor
-    app.run(host=hostname, port=port)
 
-    # Esperamos a que acaben los behaviors
-    #ab1.join()
-    print('The End')
+if __name__ == "__main__":
+    start_server()

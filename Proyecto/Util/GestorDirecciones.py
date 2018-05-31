@@ -49,6 +49,12 @@ def getDirAgenteAdmisor():
 def getDirAgenteVendedorExterno():
 	data = read_json(gestor_direcciones)
 	return data['agente_vendedorExterno']
+def getDirAgenteMonetario():
+	data = read_json(gestor_direcciones)
+	return data['agente_monetario']
+def getDirServicioPago():
+	data = read_json(gestor_direcciones)
+	return data['servicio_pago']
 
 if __name__ == "__main__":
 	output_file = None
