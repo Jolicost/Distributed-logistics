@@ -24,33 +24,29 @@ from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
+
+from Datos.Namespaces import getNamespace,getAgentNamespace
+from Util.GestorDirecciones import formatDir
+
 __author__ = 'javier'
 
 
 # Configuration stuff
-hostname = socket.gethostname()
-port = 9010
+host = 'localhost'
+port = 8001
 
-productos = Namespace("http://www.tienda.org/productos#")
+vendedor_host = 'localhost'
+vendedor_port = 8000
 
-agn = Namespace("http://www.agentes.org#")
+agn = Namespace(getAgentNamespace())
+#Objetos agente
+AgenteAdmisor = Agent('AgenteAdmisor',agn.admisor,formatDir(host,port) + '/comm',None)
+AgenteVendedorExterno = Agent('AgenteVendedorExterno',agn.vendedor,formatDir(vendedor_host,vendedor_port) + '/comm',None)
+
+productos = getNamespace('Productos')
 
 # Contador de mensajes
 mss_cnt = 0
-
-# Datos del Agente
-
-AgentePersonal = Agent('AgenteSimple',
-					   agn.AgenteSimple,
-					   'http://%s:%d/comm' % (hostname, port),
-					   'http://%s:%d/Stop' % (hostname, port))
-
-# Directory agent address
-DirectoryAgent = Agent('DirectoryAgent',
-					   agn.Directory,
-					   'http://%s:9000/Register' % hostname,
-					   'http://%s:9000/Stop' % hostname)
-
 
 # Global triplestore graph
 dsgraph = Graph()
@@ -79,7 +75,7 @@ def comunicacion():
 	mess = request.args['content']
 	print(mess)
 	#hay que responder que si no lanza excepcion
-	gr = build_message(Graph(),ACL.confirm,sender=AgentePersonal.uri)
+	gr = build_message(Graph(),ACL.confirm,sender=AgenteAdmisor.uri)
 	return gr.serialize(format='xml')
 
 
@@ -118,7 +114,7 @@ if __name__ == '__main__':
 	ab1.start()
 
 	# Ponemos en marcha el servidor
-	app.run(host=hostname, port=port)
+	app.run(host=host, port=port)
 
 	# Esperamos a que acaben los behaviors
 	ab1.join()

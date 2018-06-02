@@ -3,6 +3,9 @@ import sys
 
 gestor_direcciones = 'direcciones.json'
 
+def formatDir(host,port):
+	return 'http://%s:%d' % (host, port)
+
 def get_data():
 	data = {}
 	data['agente_usuario'] = {
