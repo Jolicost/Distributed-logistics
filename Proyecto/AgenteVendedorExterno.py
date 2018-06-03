@@ -14,7 +14,7 @@ from Util.OntoNamespaces import ACL, DSO
 #Diccionario con los espacios de nombres de la tienda
 from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
-from rdflib import Graph, Namespace, Literal
+from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
 
@@ -37,7 +37,10 @@ def cargarGrafo():
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 #Espacios de nombres utilizados
-agn = Namespace(getAgentNamespace())
+agn = getAgentNamespace()
+
+vendedor = getNamespace('AgenteVendedorExterno')
+
 #Objetos agente
 AgenteAdmisor = Agent('AgenteAdmisor',getNamespace('AgenteAdmisor'),formatDir(admisor_host,admisor_port) + '/comm',None)
 AgenteVendedorExterno = Agent('AgenteVendedorExterno',getNamespace('AgenteVendedorExterno'),formatDir(host,port) + '/comm',None)
@@ -142,13 +145,17 @@ def ponerVenda():
 
 	producto = g.triples((productos[id],None,None))
 	gcom = Graph()
+
+	prod = BNode()
+	gcom.add((prod,agn.productos,productos[id]))
+
 	for triple in producto:
 		gcom.add(triple)
 
 
-	#reg_obj = agn[AgenteVendedorExterno.name + '-nuevoProducto']
 	reg_obj = createAction(AgenteVendedorExterno,'nuevoProducto')
-	gmess = Graph()
+	gcom.add((reg_obj, RDF.type, agn.VendedorNuevoProducto))
+	#reg_obj = agn[AgenteVendedorExterno.name + '-nuevoProducto']
 	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
 	msg = build_message(gcom,
 		perf=ACL.request,
@@ -170,15 +177,30 @@ def stop():
 	shutdown_server()
 	return "Parando Servidor"
 
+def checkGraph():
+	#Añadir siempre la información del vendedor al grafo
+	g.add((vendedor,RDF.type,agn.vendedor))
+	blank = BNode()
+	g.add((blank,RDF.type,RDF.bag))
+	g.add((vendedor,vendedor.Productos,blank))
+
 def crearProducto(attrs):
+
+	checkGraph()
 	nombre = attrs['nombre']
 	id = attrs['id']
 	precio = attrs['precio']
+
+	list = g.values(subject = vendedor,predicate = vendedor.Productos)
+	node = list.next()
+
 	#productos[id] crea un recurso con el url del namespace "productos" seguido del identificador
 	g.add((productos[id],productos.nombre,Literal(nombre)))
 	g.add((productos[id],productos.precio,Literal(precio)))
 	g.add((productos[id],productos.id,Literal(id)))
 	g.add((productos[id],productos.enVenta,Literal(False)))
+
+	g.add((node,))
 
 	guardarGrafo()
 

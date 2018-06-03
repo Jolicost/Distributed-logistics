@@ -36,7 +36,7 @@ ns_bases = {
 }
 
 def getAgentNamespace():
-	return agente_prefix
+	return Namespace(agente_prefix)
 
 def createAction(Agent,actionName):
 	return agn[Agent.name + '-' + actionName]

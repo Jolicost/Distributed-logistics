@@ -20,13 +20,14 @@ import socket
 
 from rdflib import Namespace, Graph
 from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import build_message, get_message_properties, send_message
+from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm, create_notUnderstood
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 
 from Datos.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
+from rdflib.namespace import RDF
 
 __author__ = 'javier'
 
@@ -38,10 +39,10 @@ port = 8001
 vendedor_host = 'localhost'
 vendedor_port = 8000
 
-agn = Namespace(getAgentNamespace())
+agn = getAgentNamespace()
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',agn.admisor,formatDir(host,port) + '/comm',None)
-AgenteVendedorExterno = Agent('AgenteVendedorExterno',agn.vendedor,formatDir(vendedor_host,vendedor_port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',getNamespace('AgenteAdmisor'),formatDir(host,port) + '/comm',None)
+AgenteVendedorExterno = Agent('AgenteVendedorExterno',getNamespace('AgenteVendedorExterno'),formatDir(vendedor_host,vendedor_port) + '/comm',None)
 
 productos = getNamespace('Productos')
 
@@ -56,27 +57,50 @@ cola1 = Queue()
 # Flask stuff
 app = Flask(__name__)
 
+actions = {}
+
 @app.route("/")
 def hola():
 	return "soy el agente admisor, hola!"
 
 @app.route("/altaProducto")
 def altaProducto():
-	pass
+	return 'ruta no definida'
 
 
+def nuevoProducto(graph):
+	for (a,b,c) in graph:
+		print((a,b,c))
+	return create_confirm(AgenteAdmisor,AgenteVendedorExterno)
 
 
 @app.route("/comm")
 def comunicacion():
-	"""
-	Entrypoint de comunicacion
-	"""
-	mess = request.args['content']
-	print(mess)
-	#hay que responder que si no lanza excepcion
-	gr = build_message(Graph(),ACL.confirm,sender=AgenteAdmisor.uri)
+
+	# Extraemos el mensaje y creamos un grafo con él
+	message = request.args['content']
+	gm = Graph()
+	gm.parse(data=message)
+
+	msgdic = get_message_properties(gm)
+
+	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
+	if not msgdic or msgdic['performative'] != ACL.request:
+		# Si no es, respondemos que no hemos entendido el mensaje
+		gr = create_notUnderstood(AgenteAdmisor,AgenteVendedorExterno)
+	else:
+		content = msgdic['content']
+		# Averiguamos el tipo de la accion
+		accion = gm.value(subject=content, predicate=RDF.type)
+
+		#Llamada dinamica a la accion correspondiente
+		if accion in actions:
+			gr = actions[accion](gm)
+		else:
+			gr = create_notUnderstood(AgenteAdmisor,AgenteVendedorExterno)
+
 	return gr.serialize(format='xml')
+
 
 
 @app.route("/Stop")
@@ -108,10 +132,18 @@ def agentbehavior1(cola):
 	pass
 
 
+def registerActions():
+	global actions
+	actions[agn.VendedorNuevoProducto] = nuevoProducto
+
+
+
 if __name__ == '__main__':
 	# Ponemos en marcha los behaviors
 	ab1 = Process(target=agentbehavior1, args=(cola1,))
 	ab1.start()
+
+	registerActions()
 
 	# Ponemos en marcha el servidor
 	app.run(host=host, port=port)
