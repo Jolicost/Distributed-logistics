@@ -69,19 +69,8 @@ def verProductos():
 	Los productos no tienen estados asociados ya que suponemos que siempre hay stock
 	"""
 	l = []
-	res = g.query('''
-
-	SELECT DISTINCT ?q
-	WHERE {
-		?q ?p ?o
-	}
-	'''
-	)
-
-	for prod in res:
+	for s in g.subjects(predicate=RDF.type,object=productos.type):
 		dic = {}
-		s = prod['q']
-
 		dic['resource'] = s
 		dic['nom'] = g.value(subject = s,predicate = productos.nombre)
 		dic['preu'] = g.value(subject = s,predicate = productos.precio)
@@ -177,34 +166,21 @@ def stop():
 	shutdown_server()
 	return "Parando Servidor"
 
-def checkGraph():
-	#Añadir siempre la información del vendedor al grafo
-	g.add((vendedor,RDF.type,agn.vendedor))
-	blank = BNode()
-	g.add((blank,RDF.type,RDF.bag))
-	g.add((vendedor,vendedor.Productos,blank))
-
 def crearProducto(attrs):
 
-	checkGraph()
 	nombre = attrs['nombre']
 	id = attrs['id']
 	precio = attrs['precio']
-
-	list = g.values(subject = vendedor,predicate = vendedor.Productos)
-	node = list.next()
 
 	#productos[id] crea un recurso con el url del namespace "productos" seguido del identificador
 	g.add((productos[id],productos.nombre,Literal(nombre)))
 	g.add((productos[id],productos.precio,Literal(precio)))
 	g.add((productos[id],productos.id,Literal(id)))
 	g.add((productos[id],productos.enVenta,Literal(False)))
+	g.add((productos[id],RDF.type,productos.type))
 
-	g.add((node,))
 
 	guardarGrafo()
-
-
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")	

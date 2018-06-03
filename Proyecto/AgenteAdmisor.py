@@ -69,8 +69,9 @@ def altaProducto():
 
 
 def nuevoProducto(graph):
-	for (a,b,c) in graph:
-		print((a,b,c))
+	p = graph.subjects(predicate=RDF.type,object=productos.type)
+	for producto in p:
+		print(producto)
 	return create_confirm(AgenteAdmisor,AgenteVendedorExterno)
 
 
