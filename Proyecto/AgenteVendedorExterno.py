@@ -17,6 +17,7 @@ from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
+nombre = 'vendedorA'
 
 
 host = 'localhost'
@@ -40,10 +41,11 @@ app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 agn = getAgentNamespace()
 
 vendedor = getNamespace('AgenteVendedorExterno')
+admisor = getNamespace('AgenteAdmisor')
 
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',getNamespace('AgenteAdmisor'),formatDir(admisor_host,admisor_port) + '/comm',None)
-AgenteVendedorExterno = Agent('AgenteVendedorExterno',getNamespace('AgenteVendedorExterno'),formatDir(host,port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(admisor_host,admisor_port) + '/comm',None)
+AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(host,port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'AgenteVendedorExterno/db.turtle'
 g = cargarGrafo()
@@ -151,8 +153,10 @@ def ponerVenda():
 		sender=AgenteVendedorExterno.uri,
 		receiver=AgenteAdmisor.uri,
 		content=reg_obj)
-	print(AgenteAdmisor.address)
 	gr = send_message(msg,AgenteAdmisor.address)
+
+
+	g.set((productos[id],productos.enVenta,Literal(True)))
 	return redirect("/")
 
 @app.route("/stop")
@@ -173,11 +177,12 @@ def crearProducto(attrs):
 	precio = attrs['precio']
 
 	#productos[id] crea un recurso con el url del namespace "productos" seguido del identificador
-	g.add((productos[id],productos.nombre,Literal(nombre)))
-	g.add((productos[id],productos.precio,Literal(precio)))
-	g.add((productos[id],productos.id,Literal(id)))
+	g.add((productos[id],productos.Nombre,Literal(nombre)))
+	g.add((productos[id],productos.Importe,Literal(precio)))
+	g.add((productos[id],productos.Id,Literal(id)))
 	g.add((productos[id],productos.enVenta,Literal(False)))
 	g.add((productos[id],RDF.type,productos.type))
+	g.add((productos[id],productos.Esvendidopor,vendedor[nombre]))
 
 
 	guardarGrafo()

@@ -41,7 +41,9 @@ th, td {
 							{% endif %}
 						</td>
 						<td>
+							{% if not elem['enVenta'] %}
 							<a href="/borrar?id={{ elem['id'] }}"><button>Borrar</button></a>
+							{% endif %}
 						</td>	
 				</tr>
 				{% endfor %}

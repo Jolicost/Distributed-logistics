@@ -40,9 +40,10 @@ vendedor_host = 'localhost'
 vendedor_port = 8000
 
 agn = getAgentNamespace()
+
+admisor = getNamespace('AgenteAdmisor')
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',getNamespace('AgenteAdmisor'),formatDir(host,port) + '/comm',None)
-AgenteVendedorExterno = Agent('AgenteVendedorExterno',getNamespace('AgenteVendedorExterno'),formatDir(vendedor_host,vendedor_port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(host,port) + '/comm',None)
 
 productos = getNamespace('Productos')
 
@@ -72,7 +73,7 @@ def nuevoProducto(graph):
 	p = graph.subjects(predicate=RDF.type,object=productos.type)
 	for producto in p:
 		print(producto)
-	return create_confirm(AgenteAdmisor,AgenteVendedorExterno)
+	return create_confirm(AgenteAdmisor,None)
 
 
 @app.route("/comm")
@@ -88,7 +89,7 @@ def comunicacion():
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic or msgdic['performative'] != ACL.request:
 		# Si no es, respondemos que no hemos entendido el mensaje
-		gr = create_notUnderstood(AgenteAdmisor,AgenteVendedorExterno)
+		gr = create_notUnderstood(AgenteAdmisor,None)
 	else:
 		content = msgdic['content']
 		# Averiguamos el tipo de la accion
@@ -98,7 +99,7 @@ def comunicacion():
 		if accion in actions:
 			gr = actions[accion](gm)
 		else:
-			gr = create_notUnderstood(AgenteAdmisor,AgenteVendedorExterno)
+			gr = create_notUnderstood(AgenteAdmisor,None)
 
 	return gr.serialize(format='xml')
 

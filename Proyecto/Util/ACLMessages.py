@@ -88,6 +88,9 @@ def get_message_properties(msg):
 	return msgdic
 
 def create_confirm(agentSender,agentReciever):
+	if agentReciever is None:
+		return build_message(Graph(),ACL.confirm,sender=agentSender.uri)
+
 	return build_message(
 		Graph(),
 		ACL.confirm,
@@ -95,7 +98,10 @@ def create_confirm(agentSender,agentReciever):
 		receiver=agentReciever.uri
 		)
 
-def create_notUnderstood(agentSender,agentReciver):
+def create_notUnderstood(agentSender,agentReciever):
+	if agentReciever is None:
+		return build_message(Graph(),ACL['not-unerstood'],sender=agentSender.uri)
+		
 	return build_message(
 		Graph(),
 		ACL['not-understood'],
