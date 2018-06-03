@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Fri Dec 27 15:58:13 2013
@@ -17,6 +18,7 @@ Asume que el agente de registro esta en el puerto 9000
 from __future__ import print_function
 from multiprocessing import Process, Queue
 import socket
+import os.path
 
 from rdflib import Namespace, Graph
 from flask import Flask, request, render_template,redirect
@@ -38,15 +40,18 @@ host = 'localhost'
 port = 8001
 
 
+
+
 agn = getAgentNamespace()
 
 admisor = getNamespace('AgenteAdmisor')
 #Objetos agente
 AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(host,port) + '/comm',None)
 
-productos = getNamespace('Productos')
+productos_ns = getNamespace('Productos')
 
-g = Graph()
+productos_db = 'Datos/productos.turtle'
+productos = Graph()
 
 cola1 = Queue()
 
@@ -56,6 +61,17 @@ app = Flask(__name__)
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
 actions = {}
+
+#Carga los grafoos rdf de los distintos ficheros
+def cargarGrafos():
+	global productos
+	productos = Graph()
+	if os.path.isfile(productos_db):
+		productos.parse(productos_db,format="turtle")
+	
+
+def guardarGrafo(g,file):
+	g.serialize(file,format="turtle")	
 
 @app.route("/")
 def hola():
@@ -67,9 +83,11 @@ def altaProducto():
 
 
 def nuevoProducto(graph):
-	p = graph.subjects(predicate=RDF.type,object=productos.type)
-	for producto in p:
-		print(producto)
+	global productos
+	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
+	for pe in p:
+		productos += graph.triples((pe,None,None))
+	guardarGrafo(productos,productos_db)
 	return create_confirm(AgenteAdmisor,None)
 
 
@@ -145,6 +163,7 @@ if __name__ == '__main__':
 
 	registerActions()
 
+	cargarGrafos()
 	# Ponemos en marcha el servidor
 	app.run(host=host, port=port)
 
