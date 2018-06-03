@@ -32,12 +32,11 @@ from rdflib.namespace import RDF
 __author__ = 'javier'
 
 
-# Configuration stuff
+# Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 
+# Para contactar con los vendedores externos
 host = 'localhost'
 port = 8001
 
-vendedor_host = 'localhost'
-vendedor_port = 8000
 
 agn = getAgentNamespace()
 
@@ -47,17 +46,15 @@ AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(host,port) + 
 
 productos = getNamespace('Productos')
 
-# Contador de mensajes
-mss_cnt = 0
-
-# Global triplestore graph
-dsgraph = Graph()
+g = Graph()
 
 cola1 = Queue()
 
 # Flask stuff
 app = Flask(__name__)
 
+#Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
+# cuando llega un mensaje
 actions = {}
 
 @app.route("/")
@@ -86,6 +83,7 @@ def comunicacion():
 
 	msgdic = get_message_properties(gm)
 
+	print(message)
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic or msgdic['performative'] != ACL.request:
 		# Si no es, respondemos que no hemos entendido el mensaje

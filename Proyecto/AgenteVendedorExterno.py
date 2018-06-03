@@ -17,16 +17,21 @@ from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
+#Nombre del vendedor externo. Servira para generar una URI de recurso 
+#Aun asi es probable que solo utilitzemos 1 vendedor
 nombre = 'vendedorA'
 
 
+#Direcciones hardcodeadas (propia)
 host = 'localhost'
 port = 8000
 
+#Direccion del agente admisor (hardcodeada)
 admisor_host = 'localhost'
 admisor_port = 8001
 
 
+#Carga el grafo rdf del fichero graphFile
 def cargarGrafo():
 	g = Graph()
 	if os.path.isfile(graphFile):
@@ -38,19 +43,23 @@ def cargarGrafo():
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 #Espacios de nombres utilizados
+#Espacio de los agentes en general
 agn = getAgentNamespace()
 
+#Espacio de nombres del vendedor y del admisor (aqui se guardan acciones y demas historias)
 vendedor = getNamespace('AgenteVendedorExterno')
 admisor = getNamespace('AgenteAdmisor')
 
-#Objetos agente
+#Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
 AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(admisor_host,admisor_port) + '/comm',None)
 AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(host,port) + '/comm',None)
 #Cargar el grafo de datos
-graphFile = 'AgenteVendedorExterno/db.turtle'
-g = cargarGrafo()
-#Espacio de nombres para el modelo
+graphFile = 'AgenteVendedorExterno/' + nombre + '.turtle'
+#Espacio de nombres para el modelo de productos
 productos = getNamespace('Productos')
+
+#cargamos el grafo
+g = cargarGrafo()
 
 
 def init_agent():
@@ -59,7 +68,7 @@ def init_agent():
 @app.route("/")
 def main_page():
 	"""
-	Pagina principal. No hay acciones extras.
+	Pagina principal. Contiene un menu muy simple
 	"""
 	return render_template('main.html')
 
@@ -71,19 +80,28 @@ def verProductos():
 	Los productos no tienen estados asociados ya que suponemos que siempre hay stock
 	"""
 	l = []
+	for (a,b,c) in g:
+		print (a,b,c)
+	#Todos los productos tienen el predicado "type" a productos.type.
+	#De esta forma los obtenemos con mas facilidad y sin consulta sparql
+	#La funcoin subjects retorna los sujetos con tal predicado y objeto
 	for s in g.subjects(predicate=RDF.type,object=productos.type):
+		print(s)
+		# Anadimos los atributos que queremos renderizar a la vista
 		dic = {}
 		dic['resource'] = s
-		dic['nom'] = g.value(subject = s,predicate = productos.nombre)
-		dic['preu'] = g.value(subject = s,predicate = productos.precio)
-		dic['id'] = g.value(subject = s,predicate = productos.id)
+		dic['nom'] = g.value(subject = s,predicate = productos.Nombre)
+		dic['preu'] = g.value(subject = s,predicate = productos.Importe)
+		dic['id'] = g.value(subject = s,predicate = productos.Id)
 		dic['enVenta'] = g.value(subject = s,predicate = productos.enVenta)
 		l = l + [dic]
 
+	#Renderizamos la vista
 	return render_template('listaProductos.html',list=l)
 
 @app.route("/verPedidos")
 def verPedidos():
+	#TODO
 	"""
 	Pagina de pedidos. Se pueden ver que pedidos han sido realizados.
 	Tambien se puede ver en que estado se encuentran los pedidos y de quien es la responsabilidad
@@ -110,7 +128,9 @@ def nuevoProducto():
 
 @app.route("/borrar")
 def borrarProducto():
-	''' borra el producto de la base de datos local '''
+	''' 
+	Borra el producto de la base de datos local
+	'''
 	id = request.args['id']
 	g.remove((productos[id],None,None))
 	guardarGrafo()
@@ -120,7 +140,7 @@ def borrarProducto():
 @app.route("/crearProducto", methods=['GET'])
 def crearProducto():
 	'''
-	enviar datos a la tienda
+	Crea un producto SOLO en local. No envia nada a la tienda.
 	'''
 	crearProducto(request.args)
 	return redirect("/verProductos")
@@ -128,34 +148,37 @@ def crearProducto():
 @app.route("/poner_venta", methods=['GET'])
 def ponerVenda():
 	'''
-	enviar datos a la tienda
+	Pone un producto en local en venta. Se comunica con la tienda
 	'''
 
-	#Id del producto a poner a la venta
+	#Pillamos la id del recurso 
 	id = request.args['id']
 
+	#Hacemos una subseleccion del grafo con solo el producto a enviar
 	producto = g.triples((productos[id],None,None))
 	gcom = Graph()
-
-	prod = BNode()
-	gcom.add((prod,agn.productos,productos[id]))
 
 	for triple in producto:
 		gcom.add(triple)
 
 
-	reg_obj = createAction(AgenteVendedorExterno,'nuevoProducto')
-	gcom.add((reg_obj, RDF.type, agn.VendedorNuevoProducto))
-	#reg_obj = agn[AgenteVendedorExterno.name + '-nuevoProducto']
+
+	#Esta variable sirve para poca cosa, se podria utilizar cualquier nombre en teoria
+	obj = createAction(AgenteVendedorExterno,'nuevoProducto')
+	#La variable mas importante es el tipo de accion. Esto se enlaza en esta linea. 
+	# Utilizaremos el espacio de nombres agn para referenciar acciones 
+	# porque es global a todos los agentes de la tienda
+	# Lo que el admisor interpretara sera el agn.VendedorNuevoProducto
+	gcom.add((obj, RDF.type, agn.VendedorNuevoProducto))
 	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
 	msg = build_message(gcom,
 		perf=ACL.request,
 		sender=AgenteVendedorExterno.uri,
 		receiver=AgenteAdmisor.uri,
-		content=reg_obj)
+		content=obj)
 	gr = send_message(msg,AgenteAdmisor.address)
 
-
+	#Si todo ha ido correctamente podemos marcar el producto como en venta
 	g.set((productos[id],productos.enVenta,Literal(True)))
 	return redirect("/")
 
@@ -172,10 +195,14 @@ def stop():
 
 def crearProducto(attrs):
 
+	#Agarramos los atributos del request http
 	nombre = attrs['nombre']
 	id = attrs['id']
 	precio = attrs['precio']
 
+	#Insertamos todos las relaciones del producto. Notese que tambien tenemos que incorporar 
+	#el RDF.type para que sea mas facil consultar sobre los productos mas adelante.
+	#Tambien metemos nuestra propia URI de vendedor como Esvendidopor, asi agilizamos el proceso de relacion
 	#productos[id] crea un recurso con el url del namespace "productos" seguido del identificador
 	g.add((productos[id],productos.Nombre,Literal(nombre)))
 	g.add((productos[id],productos.Importe,Literal(precio)))
