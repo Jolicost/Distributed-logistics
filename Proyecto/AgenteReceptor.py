@@ -41,32 +41,12 @@ port = 8003
 
 #Hardcoding de los empaquetadores
 empaquetador = getNamespace('AgenteEmpaquetador')
-direcciones_empaquetadores = [
-	{
-		"id":empaquetador['igualada'],
-		"host":'localhost',
-		"port":8004,
-	},
-	{
-		"id":empaquetador['manresa'],
-		"host":"localhost",
-		"port":8005,
-
-	}
-]
-
 
 agn = getAgentNamespace()
 
 receptor = getNamespace('AgenteReceptor')
 #Objetos agente
 AgenteReceptor = Agent('AgenteAdmisor',receptor['generic'],formatDir(host,port) + '/comm',None)
-
-#Crear las direcciones de los empaquetadores hardcodeadas
-AgentesEmpaquetadores = []
-for dir in direcciones_empaquetadores:
-	AgentesEmpaquetadores += [Agent('AgenteEmpaquetador',dir["id"],formatDir(dir['host'],dir['port']) + '/comm',None)]
-
 
 productos_ns = getNamespace('Productos')
 
@@ -161,6 +141,13 @@ def registerActions():
 	global actions
 	#actions[agn.VendedorNuevoProducto] = nuevoProducto
 
+'''Acciones'''
+def informarResponsabilidad(graph)
+
+
+'''Percepciones'''
+def peticionDeCompra(graph):
+
 
 
 if __name__ == '__main__':
@@ -172,7 +159,7 @@ if __name__ == '__main__':
 
 	cargarGrafos()
 	# Ponemos en marcha el servidor
-	app.run(host=host, port=port)
+	app.run(host=host, port=port,debug=True)
 
 	# Esperamos a que acaben los behaviors
 	ab1.join()

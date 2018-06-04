@@ -4,10 +4,10 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-ns1:ab a ns1:type ;
-    ns1:Esvendidopor <http://www.agentes.org/Vendedor#dfs> ;
-    ns1:Id "ab" ;
-    ns1:Importe "34" ;
-    ns1:Nombre "dfs" ;
+ns1:sdf a ns1:type ;
+    ns1:Esvendidopor <http://www.agentes.org/Vendedor#324> ;
+    ns1:Id "sdf" ;
+    ns1:Importe "3" ;
+    ns1:Nombre "324" ;
     ns1:enVenta false .
 

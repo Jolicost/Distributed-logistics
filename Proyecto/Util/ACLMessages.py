@@ -11,7 +11,9 @@ from rdflib import Graph
 import requests
 from rdflib.namespace import RDF
 
-from Util.OntoNamespaces import ACL
+from Util.OntoNamespaces import ACL,DSO
+from rdflib.namespace import FOAF, RDF
+
 
 
 def build_message(gmess, perf, sender=None, receiver=None,  content=None, msgcnt= 0):
@@ -108,3 +110,4 @@ def create_notUnderstood(agentSender,agentReciever):
 		sender=agentSender.uri,
 		reciever=agentReciever.uri
 		)
+

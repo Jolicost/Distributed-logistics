@@ -10,9 +10,9 @@ from time import sleep
 from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
-
+from Util.Directorio import *
 #Diccionario con los espacios de nombres de la tienda
-from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
+from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
@@ -29,6 +29,9 @@ port = 8000
 #Direccion del agente admisor (hardcodeada)
 admisor_host = 'localhost'
 admisor_port = 8001
+
+directorio_host = 'localhost'
+directorio_port = 9000
 
 
 #Carga el grafo rdf del fichero graphFile
@@ -53,6 +56,7 @@ admisor = getNamespace('AgenteAdmisor')
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
 AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(admisor_host,admisor_port) + '/comm',None)
 AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(host,port) + '/comm',None)
+DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'AgenteVendedorExterno/' + nombre + '.turtle'
 #Espacio de nombres para el modelo de productos
@@ -63,6 +67,7 @@ g = cargarGrafo()
 
 
 def init_agent():
+	register_message(AgenteVendedorExterno,DirectorioAgentes,vendedor.type)
 	pass
 
 @app.route("/")
@@ -80,13 +85,10 @@ def verProductos():
 	Los productos no tienen estados asociados ya que suponemos que siempre hay stock
 	"""
 	l = []
-	for (a,b,c) in g:
-		print (a,b,c)
 	#Todos los productos tienen el predicado "type" a productos.type.
 	#De esta forma los obtenemos con mas facilidad y sin consulta sparql
 	#La funcoin subjects retorna los sujetos con tal predicado y objeto
 	for s in g.subjects(predicate=RDF.type,object=productos.type):
-		print(s)
 		# Anadimos los atributos que queremos renderizar a la vista
 		dic = {}
 		dic['resource'] = s
@@ -150,7 +152,6 @@ def ponerVenda():
 	'''
 	Pone un producto en local en venta. Se comunica con la tienda
 	'''
-
 	#Pillamos la id del recurso 
 	id = request.args['id']
 
@@ -176,7 +177,9 @@ def ponerVenda():
 		sender=AgenteVendedorExterno.uri,
 		receiver=AgenteAdmisor.uri,
 		content=obj)
-	gr = send_message(msg,AgenteAdmisor.address)
+
+	send_message_any(msg,AgenteVendedorExterno,DirectorioAgentes,admisor.type)
+	#gr = send_message(msg,AgenteAdmisor.address)
 
 	#Si todo ha ido correctamente podemos marcar el producto como en venta
 	g.set((productos[id],productos.enVenta,Literal(True)))
@@ -218,13 +221,14 @@ def guardarGrafo():
 	g.serialize(graphFile,format="turtle")	
 
 
+
 def tidyup():
 	#Instrucciones de parada
 	guardarGrafo()
 
 def start_server():
 	init_agent()
-	app.run(host=host,port=port)
+	app.run(host=host,port=port,debug=True)
 
 
 if __name__ == "__main__":

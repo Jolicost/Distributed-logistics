@@ -26,8 +26,9 @@ from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
+from Util.Directorio import register_message
 
-from Datos.Namespaces import getNamespace,getAgentNamespace
+from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 
@@ -40,6 +41,8 @@ host = 'localhost'
 port = 8001
 
 
+directorio_host = 'localhost'
+directorio_port = 9000
 
 
 agn = getAgentNamespace()
@@ -47,6 +50,7 @@ agn = getAgentNamespace()
 admisor = getNamespace('AgenteAdmisor')
 #Objetos agente
 AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(host,port) + '/comm',None)
+DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 productos_ns = getNamespace('Productos')
 
@@ -87,8 +91,9 @@ def nuevoProducto(graph):
 	global productos
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
-		productos += graph.triples((pe,None,None))
-	productos = productos + graph
+		for a,b,c in graph.triples((pe,None,None)):
+			print(a,b,c)
+			productos.add((a,b,c))
 	guardarGrafo(productos,productos_db)
 	return create_confirm(AgenteAdmisor,None)
 
@@ -151,6 +156,8 @@ def agentbehavior1(cola):
 	"""
 	pass
 
+def init_agent():
+	register_message(AgenteAdmisor,DirectorioAgentes,admisor.type)
 
 def registerActions():
 	global actions
@@ -166,6 +173,7 @@ if __name__ == '__main__':
 	registerActions()
 
 	cargarGrafos()
+	init_agent()
 	# Ponemos en marcha el servidor
 	app.run(host=host, port=port)
 

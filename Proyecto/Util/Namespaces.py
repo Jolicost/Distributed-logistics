@@ -21,6 +21,7 @@ ns_agentes = {
 }
 '''
 ns_agentes = {
+	'AgenteDirectorio':agente_prefix + 'Directorio',
 	'AgenteVendedorExterno':agente_prefix + 'Vendedor',
 	'AgenteUsuario':agente_prefix + 'Usuario',
 	'AgenteTransportista':agente_prefix + 'Transportista',
@@ -31,7 +32,7 @@ ns_agentes = {
 	'AgenteMonetario':agente_prefix + 'Monetario',
 	'AgenteReceptor':agente_prefix + 'Receptor',
 	'AgenteBuscador':agente_prefix + 'Buscador',
-	'AgenteEmpaquetador':agente_prefix + 'Empaquetador',
+	'AgenteEmpaquetador':agente_prefix + 'Empaquetador',	
 	'AgenteOpinador':agente_prefix + 'Opinador'
 }
 
@@ -52,11 +53,11 @@ ns_bases = {
 	'Centros':tienda_prefix + 'Centros', #Centros logisticos
 }
 
-def getAgentNamespace():
-	return Namespace(agente_prefix)
-
 def createAction(Agent,actionName):
 	return agn[Agent.name + '-' + actionName]
+
+def getAgentNamespace():
+	return Namespace(agente_prefix)
 
 def getNamespace(name):
 	if (name in ns_agentes):
