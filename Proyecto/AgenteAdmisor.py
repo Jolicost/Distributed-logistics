@@ -87,6 +87,7 @@ def nuevoProducto(graph):
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
 		productos += graph.triples((pe,None,None))
+	productos = productos + graph
 	guardarGrafo(productos,productos_db)
 	return create_confirm(AgenteAdmisor,None)
 
