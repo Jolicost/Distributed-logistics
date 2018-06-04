@@ -83,6 +83,7 @@ def altaProducto():
 
 
 def nuevoProducto(graph):
+	#TODO hay que generar una lista de centros logisticos que tienen este producto (lo generamos aleatoreamente?)
 	global productos
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
