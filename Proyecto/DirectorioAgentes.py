@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-filename: SimpleDirectoryAgent
+filename: DirectorioAgentes
 
 Antes de ejecutar hay que añadir la raiz del proyecto a la variable PYTHONPATH
 
@@ -13,8 +13,6 @@ El registro no es persistente y se mantiene mientras el agente funciona
 Las acciones que se pueden usar estan definidas en la ontología
 directory-service-ontology.owl
 
-
-@author: javier
 """
 
 from __future__ import print_function
@@ -34,7 +32,6 @@ from Util.Logging import config_logger
 from Util.Namespaces import createAction
 from Util.Namespaces import getNamespace,getAgentNamespace
 
-__author__ = 'javier'
 
 # Definimos los parametros de la linea de comandos
 parser = argparse.ArgumentParser()
@@ -69,13 +66,17 @@ dsgraph.bind('rdfs', RDFS)
 dsgraph.bind('foaf', FOAF)
 dsgraph.bind('dso', DSO)
 
+#Pillamos el espacio de nombres de la referencia universal para nuestro agente
 agn = getNamespace('AgenteDirectorio')
 
 
+#Inicializamos el objeto agente con el nombre, la uri y las direcciones simples (que no utilizaremos)
 DirectoryAgent = Agent('DirectoryAgent',
 					   agn['Generic'],
-					   'http://%s:%d/Register' % (hostname, port),
+					   'http://%s:%d/comm' % (hostname, port),
 					   'http://%s:%d/Stop' % (hostname, port))
+
+#Cambiamos la ruta del flask 
 app = Flask(__name__,template_folder="DirectorioAgentes/templates")
 mss_cnt = 0
 
@@ -92,7 +93,6 @@ def register():
 	Asumimos una version simplificada del protocolo FIPA-request
 	en la que no enviamos el mesaje Agree cuando vamos a responder
 
-	:return:
 	"""
 
 	def process_register():
@@ -136,12 +136,15 @@ def register():
 
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 		rsearch = dsgraph.triples((None, DSO.AgentType, agn_type))
+		# Es mas simple evitar el hecho de que no hayan agentes en rsearch con la
+		# captura de excepciones. el rsearch.next()[0] lanzara StopIteration si no hay elementos
 		try:
 			agn_uri = rsearch.next()[0]
 			agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
 			gr = Graph()
 			gr.bind('dso', DSO)
 			rsp_obj = createAction(DirectoryAgent,'search-response')
+			#Anadimos las direcciones y el uri del agente que se buscaba
 			gr.add((rsp_obj, DSO.Address, agn_add))
 			gr.add((rsp_obj, DSO.Uri, agn_uri))
 			return build_message(gr,
@@ -163,7 +166,7 @@ def register():
 		# Podriamos resolver esto tambien con un query-ref y enviar un objeto de
 		# registro con variables y constantes
 
-		# Solo consideramos cuando Search indica el tipo de agente
+		# Solo consideramos cuando Search indica el tipo de agente y la uri del agente
 		# Buscamos una coincidencia exacta
 		# Retornamos el primero de la lista de posibilidades
 
@@ -202,24 +205,27 @@ def register():
 		# Podriamos resolver esto tambien con un query-ref y enviar un objeto de
 		# registro con variables y constantes
 
-		# Solo consideramos cuando Search indica el tipo de agente
-		# Buscamos una coincidencia exacta
-		# Retornamos el primero de la lista de posibilidades
+		# Esta funcion busca todos los agentes de cierto tipo
+		# Retornamos todos los agentes que estaban registrados en nuestro grafo
 
 		logger.info('Peticion de busqueda global')
 
+		# Parseamos la peticion del tipo y buscamos en el grafo
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 		res_agents = dsgraph.subjects(predicate=DSO.AgentType, object=agn_type)
 
 		gr = Graph()
 		gr.bind('dso',DSO)
 
+		# Aunque no haya agentes vamos a generar una respuesta afirmativa
 		for agente in res_agents:
 
+			# Generamos los direccion y el uri del agente para meterlos luego en el grafo
 			uri = agente
 			address = dsgraph.objects(subject=agente,predicate=DSO.Address).next()
 
 			gr.add((uri,DSO.Address,address))
+			# Para buscar todos los agentes utilizaremos el predicado DSO.Type desde el otro agente (Directorio.py)
 			gr.add((uri,DSO.Type,DSO.Agent))
 
 		return build_message(
@@ -269,6 +275,7 @@ def register():
 			# Accion de busqueda especifica
 			elif accion == DSO.SearchSpecific:
 				gr = process_specificSearch()
+			# Accion de busqueda global
 			elif accion == DSO.SearchGlobal:
 				gr = process_globalSearch()
 			# No habia ninguna accion en el mensaje

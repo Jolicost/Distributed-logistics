@@ -26,10 +26,7 @@ nombre = 'vendedorA'
 host = 'localhost'
 port = 8000
 
-#Direccion del agente admisor (hardcodeada)
-admisor_host = 'localhost'
-admisor_port = 8001
-
+#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'
 directorio_port = 9000
 
@@ -54,7 +51,6 @@ vendedor = getNamespace('AgenteVendedorExterno')
 admisor = getNamespace('AgenteAdmisor')
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(admisor_host,admisor_port) + '/comm',None)
 AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
@@ -175,11 +171,10 @@ def ponerVenda():
 	msg = build_message(gcom,
 		perf=ACL.request,
 		sender=AgenteVendedorExterno.uri,
-		receiver=AgenteAdmisor.uri,
 		content=obj)
 
-	send_message_all(msg,AgenteVendedorExterno,DirectorioAgentes,admisor.type)
-	#gr = send_message(msg,AgenteAdmisor.address)
+	# Enviamos el mensaje a cualquier agente admisor
+	send_message_any(msg,AgenteVendedorExterno,DirectorioAgentes,admisor.type)
 
 	#Si todo ha ido correctamente podemos marcar el producto como en venta
 	g.set((productos[id],productos.enVenta,Literal(True)))

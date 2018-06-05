@@ -113,7 +113,8 @@ def create_notUnderstood(agentSender,agentReciever):
 
 
 '''
-parsea un mensaje y retorna un diccionario con las propiedades de este 
+parsea un mensaje y retorna un diccionario con las propiedades de este.
+Esta funcion no es necesaria si se supone que todos los mensajes seran correctos
 '''
 def parse_message(graph,performative=None,actions=None):
 	# Extraemos el mensaje y creamos un grafo con él
@@ -129,10 +130,11 @@ def parse_message(graph,performative=None,actions=None):
 	# Averiguamos el tipo de la accion
 	accion = graph.value(subject=content, predicate=RDF.type)
 
-	# Accion de registro
+	# Si la accion no es la especificada en la cabecera significa que el mensaje es erroneo
 	if actions != None and not accion in actions:
 		return False
 
+	#Diccionario de retorno. 
 	ret = {
 		'msgdic':msgdic,
 		'accion':accion
