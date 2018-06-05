@@ -178,7 +178,7 @@ def ponerVenda():
 		receiver=AgenteAdmisor.uri,
 		content=obj)
 
-	send_message_any(msg,AgenteVendedorExterno,DirectorioAgentes,admisor.type)
+	send_message_all(msg,AgenteVendedorExterno,DirectorioAgentes,admisor.type)
 	#gr = send_message(msg,AgenteAdmisor.address)
 
 	#Si todo ha ido correctamente podemos marcar el producto como en venta

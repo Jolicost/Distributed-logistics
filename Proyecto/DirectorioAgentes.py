@@ -76,7 +76,7 @@ DirectoryAgent = Agent('DirectoryAgent',
 					   agn['Generic'],
 					   'http://%s:%d/Register' % (hostname, port),
 					   'http://%s:%d/Stop' % (hostname, port))
-app = Flask(__name__)
+app = Flask(__name__,template_folder="DirectorioAgentes/templates")
 mss_cnt = 0
 
 cola1 = Queue()  # Cola de comunicacion entre procesos
@@ -136,13 +136,12 @@ def register():
 
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 		rsearch = dsgraph.triples((None, DSO.AgentType, agn_type))
-		if rsearch is not None:
+		try:
 			agn_uri = rsearch.next()[0]
 			agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
 			gr = Graph()
 			gr.bind('dso', DSO)
 			rsp_obj = createAction(DirectoryAgent,'search-response')
-			print(rsp_obj)
 			gr.add((rsp_obj, DSO.Address, agn_add))
 			gr.add((rsp_obj, DSO.Uri, agn_uri))
 			return build_message(gr,
@@ -151,12 +150,84 @@ def register():
 								 msgcnt=mss_cnt,
 								 receiver=agn_uri,
 								 content=rsp_obj)
-		else:
+		except StopIteration:
 			# Si no encontramos nada retornamos un inform sin contenido
 			return build_message(Graph(),
-				ACL.inform,
+				ACL.failure,
 				sender=DirectoryAgent.uri,
 				msgcnt=mss_cnt)
+	def process_specificSearch():
+		# Asumimos que hay una accion de busqueda que puede tener
+		# diferentes parametros en funcion de si se busca un tipo de agente
+		# o un agente concreto por URI o nombre
+		# Podriamos resolver esto tambien con un query-ref y enviar un objeto de
+		# registro con variables y constantes
+
+		# Solo consideramos cuando Search indica el tipo de agente
+		# Buscamos una coincidencia exacta
+		# Retornamos el primero de la lista de posibilidades
+
+		logger.info('Peticion de busqueda especifica')
+
+		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
+		agn_uri = gm.value(subject=content,predicate=DSO.AgentUri)
+
+		rsearch = dsgraph.triples((agn_uri, DSO.AgentType, agn_type))
+
+		try:
+			agn_uri = rsearch.next()[0]
+			agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
+			gr = Graph()
+			gr.bind('dso', DSO)
+			rsp_obj = createAction(DirectoryAgent,'search-response')
+			gr.add((rsp_obj, DSO.Address, agn_add))
+			gr.add((rsp_obj, DSO.Uri, agn_uri))
+			return build_message(gr,
+								 ACL.inform,
+								 sender=DirectoryAgent.uri,
+								 msgcnt=mss_cnt,
+								 receiver=agn_uri,
+								 content=rsp_obj)
+		except StopIteration:
+			# Si no encontramos nada retornamos un inform sin contenido
+			return build_message(Graph(),
+				ACL.failure,
+				sender=DirectoryAgent.uri,
+				msgcnt=mss_cnt)
+
+	def process_globalSearch():
+		# Asumimos que hay una accion de busqueda que puede tener
+		# diferentes parametros en funcion de si se busca un tipo de agente
+		# o un agente concreto por URI o nombre
+		# Podriamos resolver esto tambien con un query-ref y enviar un objeto de
+		# registro con variables y constantes
+
+		# Solo consideramos cuando Search indica el tipo de agente
+		# Buscamos una coincidencia exacta
+		# Retornamos el primero de la lista de posibilidades
+
+		logger.info('Peticion de busqueda global')
+
+		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
+		res_agents = dsgraph.subjects(predicate=DSO.AgentType, object=agn_type)
+
+		gr = Graph()
+		gr.bind('dso',DSO)
+
+		for agente in res_agents:
+
+			uri = agente
+			address = dsgraph.objects(subject=agente,predicate=DSO.Address).next()
+
+			gr.add((uri,DSO.Address,address))
+			gr.add((uri,DSO.Type,DSO.Agent))
+
+		return build_message(
+			gr,
+			ACL.inform,
+			sender=DirectoryAgent.uri,
+			msgcnt=mss_cnt,
+		)
 
 	global dsgraph
 	global mss_cnt
@@ -195,6 +266,11 @@ def register():
 			# Accion de busqueda
 			elif accion == DSO.Search:
 				gr = process_search()
+			# Accion de busqueda especifica
+			elif accion == DSO.SearchSpecific:
+				gr = process_specificSearch()
+			elif accion == DSO.SearchGlobal:
+				gr = process_globalSearch()
 			# No habia ninguna accion en el mensaje
 			else:
 				gr = build_message(Graph(),

@@ -102,7 +102,7 @@ def create_confirm(agentSender,agentReciever):
 
 def create_notUnderstood(agentSender,agentReciever):
 	if agentReciever is None:
-		return build_message(Graph(),ACL['not-unerstood'],sender=agentSender.uri)
+		return build_message(Graph(),ACL['not-understood'],sender=agentSender.uri)
 		
 	return build_message(
 		Graph(),
@@ -111,3 +111,30 @@ def create_notUnderstood(agentSender,agentReciever):
 		reciever=agentReciever.uri
 		)
 
+
+'''
+parsea un mensaje y retorna un diccionario con las propiedades de este 
+'''
+def parse_message(graph,performative=None,actions=None):
+	# Extraemos el mensaje y creamos un grafo con él
+	msgdic = get_message_properties(graph)
+
+	if not msgdic: 
+		return False
+	if performative != None and msgdic['performative'] != performative: 
+		return False
+
+	# Extraemos la accion del mensaje
+	content = msgdic['content']
+	# Averiguamos el tipo de la accion
+	accion = graph.value(subject=content, predicate=RDF.type)
+
+	# Accion de registro
+	if actions != None and not accion in actions:
+		return False
+
+	ret = {
+		'msgdic':msgdic,
+		'accion':accion
+	}
+	return ret

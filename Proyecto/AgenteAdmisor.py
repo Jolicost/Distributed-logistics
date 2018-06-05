@@ -22,11 +22,11 @@ import os.path
 
 from rdflib import Namespace, Graph
 from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm, create_notUnderstood
+from Util.ACLMessages import *
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
-from Util.Directorio import register_message
+from Util.Directorio import *
 
 from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
@@ -92,7 +92,6 @@ def nuevoProducto(graph):
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
 		for a,b,c in graph.triples((pe,None,None)):
-			print(a,b,c)
 			productos.add((a,b,c))
 	guardarGrafo(productos,productos_db)
 	return create_confirm(AgenteAdmisor,None)
@@ -107,8 +106,6 @@ def comunicacion():
 	gm.parse(data=message)
 
 	msgdic = get_message_properties(gm)
-
-	print(message)
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic or msgdic['performative'] != ACL.request:
 		# Si no es, respondemos que no hemos entendido el mensaje
