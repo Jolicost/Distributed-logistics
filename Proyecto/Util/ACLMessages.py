@@ -11,7 +11,7 @@ from rdflib import Graph
 import requests
 from rdflib.namespace import RDF
 
-from OntoNamespaces import ACL,DSO
+from Util.OntoNamespaces import ACL,DSO
 from rdflib.namespace import FOAF, RDF
 
 
