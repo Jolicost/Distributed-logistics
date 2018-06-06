@@ -1,164 +1,113 @@
 from __future__ import print_function
-from Agente import Agente
-from FlaskServer import shutdown_server
-from multiprocessing import Process, Queue
-import socket
+from multiprocessing import Process
+import os.path
+#Clase agente
+from Util.Agente import Agent
+#Renders del flask
+from flask import Flask, request, render_template,redirect
+from time import sleep
+#Funciones para recuperar las direcciones de los agentes
+from Util.GestorDirecciones import formatDir
+from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
+from Util.OntoNamespaces import ACL, DSO
+from Util.Directorio import *
 
-from rdflib import Namespace, Graph, Literal
-from flask import Flask, request
-from ACLMessages import build_message, send_message, get_message_properties
-from OntoNamespaces import ACL, DSO
-from rdflib.namespace import FOAF
-from Logging import config_logger
-import json
-import logging
-from datetime import datetime, timedelta
+#Diccionario con los espacios de nombres de la tienda
+from Util.Namespaces import getNamespace,getAgentNamespace,createAction
+#Utilidades de RDF
+from rdflib import Graph, Namespace, Literal,BNode
+from rdflib.namespace import FOAF, RDF
 
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
-agn = None 
-AgenteMonetario = None 
-ServicioPago = None
-host = None
-port = None
-g = None
+host = 'localhost'
+port = 8002
+pago_host = 'localhost'
+pago_port = 8003
 #Espacio de nombres para los productos y los agentes
-agn = Namespace("http://www.agentes.org#")
+agn = getAgentNamespace()
+monetario = getNamespace('AgenteMonetario')
+pago = getNamespace('AgenteServicioPago')
+AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(host,port) + '/comm',None)
+ServicioPago = Agent('AgenteServicioPago',pago['generic'],formatDir(pago_host,pago_port) + '/comm',None)
 
-# Datos del Agente
+actions = {}
+
+#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
+directorio_host = 'localhost'
+directorio_port = 9000
+DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 def init_agent():
-    dir = GestorDirecciones.getDirAgenteMonetario()
-    global host,port,agn,g,AgenteMonetario,ServicioPago
-    host = dir['host']
-    port = dir['port']
-    agn = Namespace("http://www.agentes.org#")
-    #g = cargarGrafo()
-    AgenteMonetario = Agent('AgenteMonetario',agn.AgenteMonetario,'localhost:9010/comm','localhost:9010/stop')
-    ServicioPago = Agent('ServicioPago',agn.ServicioPago,'localhost:9020/comm','localhost:9010/stop')
-
+    register_message(AgenteMonetario,DirectorioAgentes,monetario.type)
 
 @app.route("/comm")
 def comunicacion():
-    """
-    Entrypoint de comunicacion
-    """
-    global dsgraph
-    global mss_cnt
-
-    print ('Peticion de informacion recibida\n')
-
-    # Extraemos el mensaje y creamos un grafo con el
+    global actions
+    global ServicioPago
+    global AgenteMonetario
+    # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
-    print ("Mensaje extraído\n")
-    # VERBOSE
-    print ("\n\n")
     gm = Graph()
     gm.parse(data=message)
-    print ('Grafo creado con el mensaje')
 
     msgdic = get_message_properties(gm)
 
-    # Comprobamos que sea un mensaje FIPA ACL
-    if msgdic is None:
+    print(message)
+    # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
+    if not msgdic or msgdic['performative'] != ACL.request:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteMonetario.uri, msgcnt=mss_cnt)
-        print ('El mensaje no era un FIPA ACL')
+        gr = create_notUnderstood(AgenteMonetario,None)
     else:
-        # Obtenemos la performativa
-        perf = msgdic['performative']
+        content = msgdic['content']
+        # Averiguamos el tipo de la accion
+        accion = gm.value(subject=content, predicate=RDF.type)
 
-        if perf != ACL.request:
-            # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteMonetario.uri, msgcnt=mss_cnt)
+        #Llamada dinamica a la accion correspondiente
+        if accion in actions:
+            gr = actions[accion](gm)
         else:
-            # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
-            # de registro
+            gr = create_notUnderstood(AgenteMonetario,None)
 
-            # Averiguamos el tipo de la accion
-            if 'content' in msgdic:
-                content = msgdic['content']
-                accion = gm.value(subject=content, predicate=RDF.type)
+    return gr.serialize(format='xml')
 
-            gr = build_message(Graph(),
-                perf=ACL['inform-done'],
-                sender=AgenteMonetario.uri,
-                msgcnt=mss_cnt,
-                receiver=msgdic['sender'], 
-                mss_cnt=mss_cnt)
+def pedirPago(graph):
 
-            #hacemos accion dependiendo del tipo
-            ont = Namespace('Ontologias/ontologies.owl')
-            if (accion == ont.Pedirpagousuario):
-                ab1 = Process(target=pedir_pago_usuario, args=(cola1))
-            elif (accion == ont.Pagarvendederexterno):
-                ab1 = Process(target=pagar_vendedor_externo, args=(cola1))
-            else:
-                gr = build_message(Graph(),
-                ACL['not-understood'],
-                sender=AgenteMonetario.uri,
-                msgcnt=mss_cnt)
+    obj = createAction(ServicioPago,'pedirPago')
 
-            #iniciar proceso de pago
-            ab1.start()
+    gcom = graph
+    gcom.remove((None, RDF.type, None))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirPago))
 
-            
-        mss_cnt += 1
-        print ("Respuesta enviada")
-
-        return gr.serialize(format='xml')
-
-def pedir_pago_usuario(cola):
-    global mss_cnt
-    logger.info("Hacemos una petición de pago al servicio de pago")
-    gmess = Graph()
-
-    #ontologias
-    ont = Namespace('Ontologias/ontologies.owl')
-
-    reg_obj = agn[AgenteMonetario.name + "-Pedirpagousuario"]
-    destino = "destinoPrueba"
-    importe = 20
-    gmess.add((ont.Persona, ont.Id, Literal(destinoPrueba)))
-    gmess.add((ont.Pago, ont.Importe, Literal(importe)))
-
-    msg = build_message(gmess, perf=ACL.request,
+    msg = build_message(gcom,
+        perf=ACL.request,
         sender=AgenteMonetario.uri,
-        receiver=ServicioPago.uri,
-        msgcnt=mss_cnt,
-        content=reg_obj)
-    gr = send_message(msg, addr)
-    mss_cnt
-    logger.info("Recibimos respuesta a la petición")
-    return gr
+        content=obj)
 
-    pass
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
 
-def pagar_vendedor_externo(cola):       
-    global mss_cnt
-    logger.info("Hacemos una petición de pago al servicio de pago")
-    gmess = Graph()
+    return create_confirm(AgenteMonetario,None)
 
+@app.route("/test")
+def test():
+    obj = createAction(ServicioPago,'pedirPago')
+
+    gcom = Graph()
     #ontologias
-    ont = Namespace('Ontologias/ontologies.owl')
+    ont = Namespace('Ontologias/root-ontology.owl')
+    pago = ont.Pago
+    gcom.add((pago,ont.Persona,Literal('megadri')))
+    gcom.add((pago,ont.Importe,Literal(20)))
 
-    reg_obj = agn[AgenteMonetario.name + "-Pedirpagousuario"]
-    destino = "destinoPrueba"
-    importe = 20
-    gmess.add((ont.Persona, ont.Id, Literal(destinoPrueba)))
-    gmess.add((ont.Pago, ont.Importe, Literal(importe)))
-
-    msg = build_message(gmess, perf=ACL.request,
+    msg = build_message(gcom,
+        perf=ACL.request,
         sender=AgenteMonetario.uri,
-        receiver=ServicioPago.uri,
-        msgcnt=mss_cnt,
-        content=reg_obj)
-    gr = send_message(msg, addr)
-    mss_cnt
-    logger.info("Recibimos respuesta a la petición")
-    return gr
+        content=obj)
 
-    pass
+    # Enviamos el mensaje a cualquier agente admisor
+    print("Agente monetario envia mensaje a servicio pago")
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
 
 @app.route("/Stop")
 def stop():
@@ -179,10 +128,11 @@ def tidyup():
     cola1.put(0)
     pass
 
-def start_server():
-    init_agent()
-    app.run()
-
+def registerActions():
+    createAction(AgenteMonetario, 'pedirPago')
 
 if __name__ == "__main__":
-    start_server()
+    registerActions()
+    init_agent()
+    # Ponemos en marcha el servidor
+    app.run(host=host, port=port, debug=True)

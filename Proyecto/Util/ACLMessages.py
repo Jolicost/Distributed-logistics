@@ -56,7 +56,7 @@ def send_message(gmess, address):
 	r = requests.get(address, params={'content': msg})
 
 	#####
-	print r.status_code
+	print (r.status_code)
 	#print r.text + '\n\n'
 	# Procesa la respuesta y la retorna como resultado como grafo
 	gr = Graph()

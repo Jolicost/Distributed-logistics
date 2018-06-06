@@ -20,11 +20,11 @@ from flask import Flask, request
 from rdflib import Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
-from OntoNamespaces import ACL, DSO
-from ACLMessages import *
-from Agente import Agent
-from Logging import config_logger
-from Namespaces import createAction
+from Util.OntoNamespaces import ACL, DSO
+from Util.ACLMessages import *
+from Util.Agente import Agent
+from Util.Logging import config_logger
+from Util.Namespaces import createAction
 
 def register_message(agentSender,directoryAgent,agentType):
 	"""

@@ -22,19 +22,20 @@ import os.path
 
 from rdflib import Namespace, Graph
 from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm, create_notUnderstood
+from Util.ACLMessages import *
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
+from Util.Directorio import *
 
-from Datos.Namespaces import getNamespace,getAgentNamespace
+from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8017
+port = 8018
 
 
 directorio_host = 'localhost'
@@ -43,15 +44,20 @@ directorio_port = 9000
 
 agn = getAgentNamespace()
 
-devolvedor = getNamespace('AgenteDevolvedor')
+opinador = getNamespace('AgenteOpinador')
 #Objetos agente
-AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(host,port) + '/comm',None)
+AgenteOpinador = Agent('AgenteOpinador',opinador['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-devoluciones_ns = getNamespace('Devoluciones')
+opiniones_ns = getNamespace('Opiniones')
 
-devoluciones_db = 'Datos/devoluciones.turtle'
-devoluciones = Graph()
+opiniones_db = 'Datos/opiniones.turtle'
+opiniones = Graph()
+
+productos_ns = getNamespace('Productos')
+
+productos_db = 'Datos/productos.turtle'
+productos = Graph()
 
 cola1 = Queue()
 
@@ -64,10 +70,12 @@ actions = {}
 
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
-    global devoluciones
-    devoluciones = Graph()
-    if os.path.isfile(devoluciones_db):
-        devoluciones.parse(devoluciones_db,format="turtle")
+    global opiniones
+    opiniones = Graph()
+    if os.path.isfile(opiniones_db):
+        opiniones.parse(opiniones_db,format="turtle")
+    elif os.path.isfile(productos_db):
+        productos.parse(productos_db,format="turtle")
     
 
 def guardarGrafo(g,file):
@@ -75,21 +83,43 @@ def guardarGrafo(g,file):
 
 @app.route("/")
 def hola():
-    return "soy el agente devolvedor, hola!"
+    return "soy el agente opinador, hola!"
 
-@app.route("/altaDevolucion")
-def altaDevolucion():
+@app.route("/altaOpinion")
+def altaOpinion():
     return 'ruta no definida'
 
+def aleatorios(cantidad, min, max):
+    numeros = []
+    while len(numeros) < cantidad:
+        numero = random.randint(min,max)
 
-def nuevaDevolucion(graph):
-    global devoluciones
-    p = graph.subjects(predicate=RDF.type,object=devoluciones_ns.type)
+        if not numero in numeros:
+            numeros.append(numero)
+    return numeros
+
+def generarRecomendacion():
+    global productos
+    p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
+
+    # generar 5 ids aleatorios
+    numeros = aleatorios(5, 0, len(p))
+
+
+    res = Graph()
+    return res
+
+
+
+def nuevaOpinion(graph):
+    global opiniones
+    p = graph.subjects(predicate=RDF.type,object=opiniones_ns.type)
     for pe in p:
         for a,b,c in graph.triples((pe,None,None)):
-            devoluciones.add((a,b,c))
-    guardarGrafo(devoluciones,devoluciones_db)
-    return create_confirm(AgenteDevolvedor,None)
+            opiniones.add((a,b,c))
+
+    guardarGrafo(opiniones,opiniones_db)
+    return create_confirm(AgenteOpinador,None)
 
 
 @app.route("/comm")
@@ -104,7 +134,7 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
     if not msgdic or msgdic['performative'] != ACL.request:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = create_notUnderstood(AgenteDevolvedor,None)
+        gr = create_notUnderstood(AgenteOpinador,None)
     else:
         content = msgdic['content']
         # Averiguamos el tipo de la accion
@@ -114,7 +144,7 @@ def comunicacion():
         if accion in actions:
             gr = actions[accion](gm)
         else:
-            gr = create_notUnderstood(AgenteDevolvedor,None)
+            gr = create_notUnderstood(AgenteOpinador,None)
 
     return gr.serialize(format='xml')
 
@@ -149,11 +179,11 @@ def agentbehavior1(cola):
     pass
 
 def init_agent():
-    register_message(AgenteDevolvedor,DirectorioAgentes,devolvedor.type)
+    register_message(AgenteOpinador,DirectorioAgentes,opinador.type)
 
 def registerActions():
     global actions
-    #actions[agn.VendedorNuevoProducto] = nuevaDevolucion
+    #actions[agn.VendedorNuevoProducto] = nuevaOpinion
 
 
 
