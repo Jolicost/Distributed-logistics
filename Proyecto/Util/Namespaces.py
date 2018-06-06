@@ -51,6 +51,7 @@ ns_bases = {
 	'Ofertas':tienda_prefix + 'Ofertas', #de transporte
 	'Peticiones':tienda_prefix + 'Peticiones', #de busqueda
 	'Centros':tienda_prefix + 'Centros', #Centros logisticos
+	'Direcciones':tienda_prefix + 'Direcciones' #Direcciones de entrega o de centros
 }
 
 def createAction(Agent,actionName):

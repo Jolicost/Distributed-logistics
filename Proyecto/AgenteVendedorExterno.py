@@ -57,6 +57,11 @@ DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio
 graphFile = 'AgenteVendedorExterno/' + nombre + '.turtle'
 #Espacio de nombres para el modelo de productos
 productos = getNamespace('Productos')
+pedidos = getNamespace('Pedidos')
+
+#Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
+# cuando llega un mensaje
+actions = {}
 
 #cargamos el grafo
 g = cargarGrafo()
@@ -66,12 +71,54 @@ def init_agent():
 	register_message(AgenteVendedorExterno,DirectorioAgentes,vendedor.type)
 	pass
 
+
+def registrarResponsabilidadEnvio(graph):
+	pass
+	'''
+	comunicacion iniciada por el agente receptor
+	Indica si el envio corre a cabo de nosotros mismos o de la tienda. 
+	Si es a cabo de nosotros nos informaran de los datos de la entrega,
+	aunque no haremos mucho con ellos
+	'''
+	g += graph
+	guardarGrafo()
+
+	return create_confirm(AgenteAdmisor,None)
+
 @app.route("/")
 def main_page():
 	"""
 	Pagina principal. Contiene un menu muy simple
 	"""
 	return render_template('main.html')
+
+
+
+@app.route("/comm")
+def comunicacion():
+
+	# Extraemos el mensaje y creamos un grafo con él
+	message = request.args['content']
+	gm = Graph()
+	gm.parse(data=message)
+
+	msgdic = get_message_properties(gm)
+	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
+	if not msgdic or msgdic['performative'] != ACL.inform:
+		# Si no es, respondemos que no hemos entendido el mensaje
+		gr = create_notUnderstood(AgenteAdmisor,None)
+	else:
+		content = msgdic['content']
+		# Averiguamos el tipo de la accion
+		accion = gm.value(subject=content, predicate=RDF.type)
+
+		#Llamada dinamica a la accion correspondiente
+		if accion in actions:
+			gr = actions[accion](gm)
+		else:
+			gr = create_notUnderstood(AgenteAdmisor,None)
+
+	return gr.serialize(format='xml')
 
 
 @app.route("/verProductos")
@@ -214,6 +261,10 @@ def crearProducto(attrs):
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")	
+
+def registerActions():
+	global actions
+	actions[agn.ReceptorInformarResponsabilidad] = registrarResponsabilidadEnvio
 
 
 

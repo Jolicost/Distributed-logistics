@@ -27,9 +27,10 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 
-from Datos.Namespaces import getNamespace,getAgentNamespace
+from Util.Namespaces import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
+from rdflib import Graph, Namespace, Literal,BNode
 
 __author__ = 'javier'
 
@@ -39,6 +40,10 @@ __author__ = 'javier'
 host = 'localhost'
 port = 8003
 
+#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
+directorio_host = 'localhost'
+directorio_port = 9000
+
 #Hardcoding de los empaquetadores
 empaquetador = getNamespace('AgenteEmpaquetador')
 
@@ -47,16 +52,23 @@ agn = getAgentNamespace()
 receptor = getNamespace('AgenteReceptor')
 #Objetos agente
 AgenteReceptor = Agent('AgenteAdmisor',receptor['generic'],formatDir(host,port) + '/comm',None)
+DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 productos_ns = getNamespace('Productos')
+pedidos_ns = getNamespace('Pedidos')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
+pedidos_db = 'Datos/pedidos.turtle'
+pedidos = Graph()
+
+direcciones_ns = getNamespace('Direcciones')
+
 cola1 = Queue()
 
 # Flask stuff
-app = Flask(__name__)
+app = Flask(__name__,template_folder="AgenteReceptor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -66,17 +78,14 @@ actions = {}
 def cargarGrafos():
 	global productos
 	productos = Graph()
+	pedidos = Graph()
 	if os.path.isfile(productos_db):
 		productos.parse(productos_db,format="turtle")
-	
+	if os.path.isfile(pedidos_db):
+		pedidos.parse(pedidos_db,format="turtle")
 
 def guardarGrafo(g,file):
 	g.serialize(file,format="turtle")	
-
-@app.route("/")
-def hola():
-	return "soy el agente receptor, hola!"
-
 
 @app.route("/comm")
 def comunicacion():
@@ -105,6 +114,60 @@ def comunicacion():
 			gr = create_notUnderstood(AgenteAdmisor,None)
 
 	return gr.serialize(format='xml')
+
+
+@app.route("/")
+def main():
+	"""
+	Pagina principal. Contiene un menu muy simple
+	"""
+	return render_template('main.html')
+
+@app.route("/anadir")
+def anadirPedido():
+	''' Muestra la pagina de anadir un nuevo pedido '''
+	return render_template('nuevoPedido.html')
+
+
+@app.route("/crearPedido")
+def crearPedido():
+	'''
+	Crear un pedido mediante los atributos que se mandan en el http request
+	'''
+	attrs = request.args
+	id = attrs['id']
+	user_id = attrs['user_id']
+	fecha = attrs['date']
+	prioridad = attrs['priority']
+	direccion = attrs['direction']
+	cp = attrs['cp']
+	direccion_id = direccion + cp
+
+	#Nodo padre y su tipo
+	pedidos.add((pedidos_ns[id],RDF.type,pedidos_ns.type))
+
+	#Anadimos el nodo de la direccion con su tipo y todo
+	pedidos.add((direcciones_ns[direccion_id],RDF.type,direcciones_ns.type))
+	pedidos.add((direcciones_ns[direccion_id],direcciones_ns.Direccion,Literal(direccion)))
+	pedidos.add((direcciones_ns[direccion_id],direcciones_ns.Codigopostal,Literal(cp)))
+	#Enlazamos la direccion con el pedido
+	pedidos.add((pedidos_ns[id],pedidos_ns.Tienedirecciondeentrega,direcciones_ns[direccion_id]))
+
+	pedidos.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
+	pedidos.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
+	pedidos.add((pedidos_ns[id],pedidos_ns.Hechopor,Literal(user_id)))
+
+	guardarGrafo(pedidos,pedidos_db)
+
+	return redirect("/")
+
+def decidirResponsabilidadEnvio(pedido):
+	pass
+def informarResponsabilidadEnvio(pedido):
+	''' 
+	Envia un mensaje al vendedor del producto si este era ofrecido por ellos. 
+	'''
+	pass
 
 
 
@@ -141,13 +204,9 @@ def registerActions():
 	global actions
 	#actions[agn.VendedorNuevoProducto] = nuevoProducto
 
-'''Acciones'''
-def informarResponsabilidad(graph)
-
-
 '''Percepciones'''
 def peticionDeCompra(graph):
-
+	pass
 
 
 if __name__ == '__main__':
