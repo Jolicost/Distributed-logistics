@@ -80,13 +80,32 @@ def pedirPago(graph):
 
     msg = build_message(gcom,
         perf=ACL.request,
-        sender=ServicioPago.uri,
+        sender=AgenteMonetario.uri,
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
     send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
 
     return create_confirm(AgenteMonetario,None)
+
+@app.route("/test")
+def test():
+    obj = createAction(ServicioPago,'pedirPago')
+
+    gcom = graph
+    #ontologias
+    ont = Namespace('Ontologias/root-ontology.owl')
+    pago = ont.Pago
+    gcom.add((pago,ont.Persona,Literal('megadri')))
+    gcom.add((pago,ont.Importe,Literal(20)))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
 
 @app.route("/Stop")
 def stop():
