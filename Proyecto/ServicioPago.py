@@ -10,9 +10,10 @@ from time import sleep
 from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
+from Util.Directorio import *
 
 #Diccionario con los espacios de nombres de la tienda
-from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
+from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
@@ -54,6 +55,7 @@ actions = {}
 
 @app.route("/comm")
 def comunicacion():
+    print("ServicioPago recibe el mensaje")
     global actions
     global ServicioPago
     # Extraemos el mensaje y creamos un grafo con él
@@ -89,7 +91,7 @@ def pedirPago(graph):
     ont = Namespace('Ontologias/root-ontology.owl')
     pago = ont.Pago
     persona = importe = None
-    for p, o in g[pago]
+    for p, o in g[pago]:
         if p == ont.Persona:
             persona = o
         elif p == ont.Importe:
@@ -131,4 +133,4 @@ if __name__ == "__main__":
     cargarGrafo()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)

@@ -10,9 +10,10 @@ from time import sleep
 from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
+from Util.Directorio import *
 
 #Diccionario con los espacios de nombres de la tienda
-from Datos.Namespaces import getNamespace,getAgentNamespace,createAction
+from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
@@ -92,7 +93,7 @@ def pedirPago(graph):
 def test():
     obj = createAction(ServicioPago,'pedirPago')
 
-    gcom = graph
+    gcom = Graph()
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
     pago = ont.Pago
@@ -105,6 +106,7 @@ def test():
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
+    print("Agente monetario envia mensaje a servicio pago")
     send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
 
 @app.route("/Stop")
@@ -133,4 +135,4 @@ if __name__ == "__main__":
     registerActions()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)

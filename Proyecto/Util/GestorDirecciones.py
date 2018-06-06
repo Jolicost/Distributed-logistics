@@ -67,7 +67,7 @@ if __name__ == "__main__":
 		output_file = sys.argv[1]
 	data = get_data()
 	write_json(output_file,data)
-	print "Successfully wrote the json config file into" , output_file
-	print "The json structure is the following: "
+	print ("Successfully wrote the json config file into") , output_file
+	print ("The json structure is the following: ")
 	json = read_json(output_file)
-	print json
+	print (json)
