@@ -22,12 +22,13 @@ import os.path
 
 from rdflib import Namespace, Graph
 from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm, create_notUnderstood
+from Util.ACLMessages import *
 from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
-
+from Util.Directorio import *
 from Util.Namespaces import *
+from Util.GraphUtil import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 from rdflib import Graph, Namespace, Literal,BNode
@@ -77,6 +78,8 @@ app = Flask(__name__,template_folder="AgenteReceptor/templates")
 # cuando llega un mensaje
 actions = {}
 
+def initAgent():
+	register_message(AgenteReceptor,DirectorioAgentes,receptor.type)
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
 	global productos
@@ -139,13 +142,6 @@ def anadirPedido():
 	return render_template('nuevoPedido.html')
 
 
-def expandirGrafoRec(grafo,nodo):
-	g = Graph()
-	for (s,p,o) in grafo.triples((nodo,None,None)):
-		g.add((s,p,o))
-		g+= expandirGrafoRec(grafo,o)
-	return g
-
 
 def pedidoToDict(graph,pedido):
 	ret = {}
@@ -153,6 +149,7 @@ def pedidoToDict(graph,pedido):
 	ret['user_id'] = graph.value(pedido,pedidos_ns.Hechopor)
 	ret['date'] = graph.value(pedido,pedidos_ns.Fecharealizacion)
 	ret['prioridad'] = graph.value(pedido,pedidos_ns.Prioridad)
+	ret['responsable'] = graph.value(pedido,pedidos_ns.VendedorResponsable) or False
 
 	loc = graph.value(pedido,pedidos_ns.Tienedirecciondeentrega)
 	ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
@@ -215,6 +212,19 @@ def notificarPedido():
 	id = request.args['id']
 	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
 
+	vendedor = pedido.value(subject=pedidos_ns[id],predicate=pedidos_ns.VendedorResponsable)
+	if vendedor is None:
+		raise Exception("El pedido no tiene ningun vendedor externo responsable")
+
+	obj = createAction(AgenteReceptor,'informarResponsabilidad')
+	#Anadimos la accion del mensaje
+	pedido.add((obj,RDF.type,agn.ReceptorInformarResponsabilidad))
+	msg = build_message(pedido,
+		perf=ACL.inform,
+		sender=AgenteReceptor.uri,
+		content=obj)
+
+	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,vendedor)
 	return redirect("/verPedidos")
 
 
@@ -271,9 +281,11 @@ if __name__ == '__main__':
 	ab1 = Process(target=agentbehavior1, args=(cola1,))
 	ab1.start()
 
+	initAgent()
 	registerActions()
 
 	cargarGrafos()
+
 	# Ponemos en marcha el servidor
 	app.run(host=host, port=port,debug=True)
 

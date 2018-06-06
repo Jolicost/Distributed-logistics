@@ -67,5 +67,12 @@ def getNamespace(name):
 		return Namespace(ns_bases[name] + '#')
 	raise Exception('Namespace no encontrado')
 
+
+directorio_ns = getNamespace('AgenteDirectorio')
+vendedor_ns = getNamespace('AgenteVendedorExterno')
+agenteUsuario_ns = getNamespace('AgenteUsuario')
+
+pedido_ns = getNamespace('Pedidos')
+
 if __name__ == "__main__":
 	pass

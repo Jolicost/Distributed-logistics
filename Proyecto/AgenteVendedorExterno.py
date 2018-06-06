@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from multiprocessing import Process
 import os.path
@@ -11,15 +12,19 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+from Util.GraphUtil import *
+
+import Util.Namespaces
 #Diccionario con los espacios de nombres de la tienda
 from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
+
 #Nombre del vendedor externo. Servira para generar una URI de recurso 
 #Aun asi es probable que solo utilitzemos 1 vendedor
-nombre = 'vendedorA'
+nombre = 'juan'
 
 
 #Direcciones hardcodeadas (propia)
@@ -32,7 +37,7 @@ directorio_port = 9000
 
 
 #Carga el grafo rdf del fichero graphFile
-def cargarGrafo():
+def cargarGrafo(graph):
 	g = Graph()
 	if os.path.isfile(graphFile):
 		g.parse(graphFile,format="turtle")
@@ -64,26 +69,27 @@ pedidos = getNamespace('Pedidos')
 actions = {}
 
 #cargamos el grafo
-g = cargarGrafo()
-
+g = cargarGrafo(graphFile)
 
 def init_agent():
 	register_message(AgenteVendedorExterno,DirectorioAgentes,vendedor.type)
-	pass
 
 
 def registrarResponsabilidadEnvio(graph):
-	pass
+	global g
 	'''
 	comunicacion iniciada por el agente receptor
 	Indica si el envio corre a cabo de nosotros mismos o de la tienda. 
 	Si es a cabo de nosotros nos informaran de los datos de la entrega,
 	aunque no haremos mucho con ellos
 	'''
-	g += graph
+
+	pedido = graph.subjects(predicate=RDF.type,object=getNamespace('Pedidos').type).next()
+	subgraph = expandirGrafoRec(graph,pedido)
+	g += subgraph
 	guardarGrafo()
 
-	return create_confirm(AgenteAdmisor,None)
+	return create_confirm(AgenteVendedorExterno,None)
 
 @app.route("/")
 def main_page():
@@ -106,7 +112,7 @@ def comunicacion():
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic or msgdic['performative'] != ACL.inform:
 		# Si no es, respondemos que no hemos entendido el mensaje
-		gr = create_notUnderstood(AgenteAdmisor,None)
+		gr = create_notUnderstood(AgenteVendedorExterno,None)
 	else:
 		content = msgdic['content']
 		# Averiguamos el tipo de la accion
@@ -116,7 +122,7 @@ def comunicacion():
 		if accion in actions:
 			gr = actions[accion](gm)
 		else:
-			gr = create_notUnderstood(AgenteAdmisor,None)
+			gr = create_notUnderstood(AgenteVendedorExterno,None)
 
 	return gr.serialize(format='xml')
 
@@ -274,6 +280,7 @@ def tidyup():
 
 def start_server():
 	init_agent()
+	registerActions()
 	app.run(host=host,port=port,debug=True)
 
 
