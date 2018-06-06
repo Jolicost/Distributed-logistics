@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Lista de pedidos</title>
+    <title>Lista de pedidos de prueba</title>
 </head>
 <style>
 table, th, td {
@@ -14,7 +14,7 @@ th, td {
 }
 </style>
 <body>
-	<h1>Lista de pedidos de la tienda externa</h1>
+	<h1>Lista de pedidos de prueba</h1>
 	{% if list %}
 		{% set header = list[0] %}
 		<table>
@@ -23,7 +23,7 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
-					<th>Enviar pedido</th>
+					<th>Mandar notificacion</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -33,8 +33,8 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 					<td>
-						{% if elem['id'] in enviar %}
-							<a href="/enviarPedido?id={{ elem['id'] }}"><button>Enviar</button></a>
+						{% if True%}
+							<a href="/notificarPedido?id={{ elem['id'] }}"><button>Notificar</button></a>
 						{%else%}
 							-
 						{%endif%}

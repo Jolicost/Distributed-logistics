@@ -56,12 +56,15 @@ DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio
 
 productos_ns = getNamespace('Productos')
 pedidos_ns = getNamespace('Pedidos')
+vendedores_ns = getNamespace('AgenteVendedorExterno')
+usuarios_ns = getNamespace('AgenteUsuario')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 pedidos_db = 'Datos/pedidos.turtle'
 pedidos = Graph()
+
 
 direcciones_ns = getNamespace('Direcciones')
 
@@ -77,6 +80,7 @@ actions = {}
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
 	global productos
+	global pedidos
 	productos = Graph()
 	pedidos = Graph()
 	if os.path.isfile(productos_db):
@@ -123,11 +127,50 @@ def main():
 	"""
 	return render_template('main.html')
 
+@app.route("/info")
+def info():
+	list = [productos,pedidos]
+	list = [g.serialize(format="turtle") for g in list]
+	return render_template("info.html",list=list)
+
 @app.route("/anadir")
 def anadirPedido():
 	''' Muestra la pagina de anadir un nuevo pedido '''
 	return render_template('nuevoPedido.html')
 
+
+def expandirGrafoRec(grafo,nodo):
+	g = Graph()
+	for (s,p,o) in grafo.triples((nodo,None,None)):
+		g.add((s,p,o))
+		g+= expandirGrafoRec(grafo,o)
+	return g
+
+
+def pedidoToDict(graph,pedido):
+	ret = {}
+	ret['id'] = graph.value(pedido,pedidos_ns.id)
+	ret['user_id'] = graph.value(pedido,pedidos_ns.Hechopor)
+	ret['date'] = graph.value(pedido,pedidos_ns.Fecharealizacion)
+	ret['prioridad'] = graph.value(pedido,pedidos_ns.Prioridad)
+
+	loc = graph.value(pedido,pedidos_ns.Tienedirecciondeentrega)
+	ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
+	ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
+	return ret
+
+@app.route("/verPedidos")
+def verPedidos():
+	list = []
+
+	#obtenemos todos los pedidos de la tienda
+	pds = pedidos.subjects(predicate=RDF.type,object=pedidos_ns.type)
+
+	for p in pds:
+		dict = pedidoToDict(pedidos,p)
+		list+= [dict]
+
+	return render_template('listaPedidos.html',list=list)
 
 @app.route("/crearPedido")
 def crearPedido():
@@ -138,13 +181,15 @@ def crearPedido():
 	id = attrs['id']
 	user_id = attrs['user_id']
 	fecha = attrs['date']
-	prioridad = attrs['priority']
-	direccion = attrs['direction']
+	prioridad = attrs['prioridad']
+	direccion = attrs['direccion']
 	cp = attrs['cp']
+	vendedor = attrs['responsable']
 	direccion_id = direccion + cp
 
 	#Nodo padre y su tipo
 	pedidos.add((pedidos_ns[id],RDF.type,pedidos_ns.type))
+	pedidos.add((pedidos_ns[id],pedidos_ns.id,Literal(id)))
 
 	#Anadimos el nodo de la direccion con su tipo y todo
 	pedidos.add((direcciones_ns[direccion_id],RDF.type,direcciones_ns.type))
@@ -155,11 +200,23 @@ def crearPedido():
 
 	pedidos.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
 	pedidos.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
-	pedidos.add((pedidos_ns[id],pedidos_ns.Hechopor,Literal(user_id)))
+	pedidos.add((pedidos_ns[id],pedidos_ns.Hechopor,usuarios_ns[user_id]))
+	if vendedor: pedidos.add((pedidos_ns[id],pedidos_ns.VendedorResponsable,vendedores_ns[vendedor]))
 
 	guardarGrafo(pedidos,pedidos_db)
 
 	return redirect("/")
+
+@app.route("/notificarPedido")
+def notificarPedido():
+	'''
+	notifica a la tienda externa que el pedido sera llevado a cabo por ellos
+	'''
+	id = request.args['id']
+	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
+
+	return redirect("/verPedidos")
+
 
 def decidirResponsabilidadEnvio(pedido):
 	pass

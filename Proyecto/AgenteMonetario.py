@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from multiprocessing import Process
 import os.path
@@ -96,7 +97,6 @@ def test():
     gcom = Graph()
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
-    pago = ont.Pago
     gcom.add((pago,ont.Persona,Literal('megadri')))
     gcom.add((pago,ont.Importe,Literal(20)))
 
