@@ -29,6 +29,7 @@ from Util.Agente import Agent
 from Util.Directorio import *
 from Util.Namespaces import *
 from Util.GraphUtil import *
+from Util.ModelParser import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 from rdflib import Graph, Namespace, Literal,BNode
@@ -143,19 +144,6 @@ def anadirPedido():
 
 
 
-def pedidoToDict(graph,pedido):
-	ret = {}
-	ret['id'] = graph.value(pedido,pedidos_ns.id)
-	ret['user_id'] = graph.value(pedido,pedidos_ns.Hechopor)
-	ret['date'] = graph.value(pedido,pedidos_ns.Fecharealizacion)
-	ret['prioridad'] = graph.value(pedido,pedidos_ns.Prioridad)
-	ret['responsable'] = graph.value(pedido,pedidos_ns.VendedorResponsable) or False
-
-	loc = graph.value(pedido,pedidos_ns.Tienedirecciondeentrega)
-	ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
-	ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
-	return ret
-
 @app.route("/verPedidos")
 def verPedidos():
 	list = []
@@ -164,7 +152,7 @@ def verPedidos():
 	pds = pedidos.subjects(predicate=RDF.type,object=pedidos_ns.type)
 
 	for p in pds:
-		dict = pedidoToDict(pedidos,p)
+		dict = pedido_a_dict(pedidos,p)
 		list+= [dict]
 
 	return render_template('listaPedidos.html',list=list)
@@ -174,35 +162,31 @@ def crearPedido():
 	'''
 	Crear un pedido mediante los atributos que se mandan en el http request
 	'''
-	attrs = request.args
-	id = attrs['id']
-	user_id = attrs['user_id']
-	fecha = attrs['date']
-	prioridad = attrs['prioridad']
-	direccion = attrs['direccion']
-	cp = attrs['cp']
-	vendedor = attrs['responsable']
-	direccion_id = direccion + cp
-
-	#Nodo padre y su tipo
-	pedidos.add((pedidos_ns[id],RDF.type,pedidos_ns.type))
-	pedidos.add((pedidos_ns[id],pedidos_ns.id,Literal(id)))
-
-	#Anadimos el nodo de la direccion con su tipo y todo
-	pedidos.add((direcciones_ns[direccion_id],RDF.type,direcciones_ns.type))
-	pedidos.add((direcciones_ns[direccion_id],direcciones_ns.Direccion,Literal(direccion)))
-	pedidos.add((direcciones_ns[direccion_id],direcciones_ns.Codigopostal,Literal(cp)))
-	#Enlazamos la direccion con el pedido
-	pedidos.add((pedidos_ns[id],pedidos_ns.Tienedirecciondeentrega,direcciones_ns[direccion_id]))
-
-	pedidos.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
-	pedidos.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
-	pedidos.add((pedidos_ns[id],pedidos_ns.Hechopor,usuarios_ns[user_id]))
-	if vendedor: pedidos.add((pedidos_ns[id],pedidos_ns.VendedorResponsable,vendedores_ns[vendedor]))
-
+	dict = request.args
+	g = dict_a_pedido(dict)
+	global pedidos
+	pedidos+=g
 	guardarGrafo(pedidos,pedidos_db)
 
 	return redirect("/")
+
+@app.route("/pedidos/<id>/anadirProductoPedido")
+def anadirProductoPedido(id):
+	'''
+	crea la vista para anadir un producto a un pedido en concreto
+	'''
+	return render_template('nuevoProductoPedido.html',id=id)
+
+@app.route("/pedidos/<id>/crearProductoPedido")
+def crearProductoPedido(id):
+	pedido = pedidos_ns[id]
+
+	producto_id = request.args['id']
+	estado = request.args['estado']
+
+	#Modificar la coleccion de productos del pedido
+	
+
 
 @app.route("/notificarPedido")
 def notificarPedido():

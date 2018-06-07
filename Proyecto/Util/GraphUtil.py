@@ -13,3 +13,14 @@ def expandirGrafoRec(grafo,nodo):
 	return g
 
 	
+''' recorre el grafo a partir del nodo y transforma toda su estructura de manera recursiva en un diccionario '''
+def grafoADict(grafo,nodo):
+	ret = {}
+	i = 0
+	for (s,p,o) in grafo.triples((nodo,None,None)):
+		ret[str(p)] = grafoADict(grafo,o)
+		i+=1
+	if i == 0: 
+		return str(nodo)
+	else:
+		return ret
