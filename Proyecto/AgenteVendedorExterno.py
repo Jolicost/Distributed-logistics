@@ -13,6 +13,8 @@ from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
 from Util.GraphUtil import *
+from Util.ModelParser import *
+import inspect
 
 import Util.Namespaces
 #Diccionario con los espacios de nombres de la tienda
@@ -159,9 +161,14 @@ def verPedidos():
 	Responsabilidad: Nuestra o de la tienda
 	Estado: En curso, Enviado
 	"""
-	l = [{"id":4,"usuario":"joan","estado":"enviado"},{"id":5,"usuario":"manel","estado":"en proceso"}]
-	e = [4]
-	return render_template('listaPedidos.html',list=l,enviar=e)
+	pedidos = g.subjects(predicate=RDF.type,object=getNamespace('Pedidos').type)
+	l = []
+	for pedido in pedidos:
+		dict = pedido_a_dict(g,pedido)
+		l += [dict]
+
+	print(l)
+	return render_template('listaPedidos.html',list=l)
 
 @app.route("/enviarPedido")
 def enviarPedido():

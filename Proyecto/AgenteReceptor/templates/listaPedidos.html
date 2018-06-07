@@ -24,6 +24,7 @@ th, td {
 					<th>{{ key }}</th>
 				{% endfor %}
 					<th>Mandar notificacion</th>
+					<th>Anadir producto a pedido</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -38,6 +39,9 @@ th, td {
 						{%else%}
 							-
 						{%endif%}
+					</td>
+					<td>
+						<a href="/pedidos/{{elem['id']}}/anadirProductoPedido"><button>Nuevo Producto</button></a>
 					</td>
 				</tr>
 				{% endfor %}
