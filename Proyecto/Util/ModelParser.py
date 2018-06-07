@@ -10,6 +10,7 @@ def pedido_a_dict(graph,pedido):
 	''' devuelve un diccionario con todos los atributos de producto '''
 	pedidos_ns = getNamespace('Pedidos')
 	direcciones_ns = getNamespace('Direcciones')
+	productos_ns = getNamespace('Productos')
 	ret = {}
 	ret['id'] = graph.value(pedido,pedidos_ns.id)
 	ret['user_id'] = graph.value(pedido,pedidos_ns.Hechopor)
@@ -22,11 +23,14 @@ def pedido_a_dict(graph,pedido):
 	ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
 
 	prods = []
-	#Recorremos los productos del grafo
-	for o in graph.objects(subject=pedido,predicate=pedidos_ns.Contiene):
+	container = graph.value(subject=pedido,predicate=pedidos_ns.Contiene)
+	c = Collection(graph,container)
+	for item in c:
 		dict = {}
-		dict['id'] = graph.value(subject=o,predicate=productos_ns.Id)
-		dict['estado'] = graph.value(subject=o,predicate=productos_ns.EstadoProducto)
+		dict['id'] = graph.value(subject=item,predicate=productos_ns.Id)
+		dict['estado'] = graph.value(subject=item,predicate=productos_ns.EstadoProducto)
+		prods += [dict]
+
 	ret['productos'] = prods
 	return ret
 

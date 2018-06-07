@@ -193,7 +193,7 @@ def crearProductoPedido(id):
 	g = Graph()
 	prod_parent = productos_ns[producto_id]
 	g.add((prod_parent,RDF.type,productos_ns.type))
-	g.add((prod_parent,productos_ns.Id,producto_id))
+	g.add((prod_parent,productos_ns.Id,Literal(producto_id)))
 	g.add((prod_parent,productos_ns.EstadoProducto,Literal(estado)))
 
 	pedidos += g
@@ -211,7 +211,7 @@ def verProductosPedido(id):
 	# Busca toda la informacion que cuelga de pedidos
 	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
 
-	
+
 
 
 @app.route("/notificarPedido")
