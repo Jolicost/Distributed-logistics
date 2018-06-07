@@ -36,7 +36,7 @@ from random import randint
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8020
+port = 8023
 
 
 directorio_host = 'localhost'
@@ -101,7 +101,6 @@ def aleatorios(cantidad, min, max):
             numeros.append(numero)
     return numeros
 
-@app.route("/prueba")
 def generarRecomendacion():
     global productos
     p = list(productos.subjects(predicate=RDF.type,object=productos_ns.type))
@@ -128,20 +127,18 @@ def generarRecomendacion():
         tipus = productos.triples((li, RDF.type, None))  
         for tip in tipus:
             res.add(tip)
-
     obj = createAction(AgenteOpinador,'rebreRecomanacions')
 
     res.add((obj, RDF.type, agn.RecomendarProductos))
-
+    
     msg = build_message(res,
         perf=ACL.request,
         sender=AgenteOpinador.uri,
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
-    return res
-
+    send_message_all(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
+    return "hola"
 
 
 def nuevaOpinion(graph):
@@ -216,7 +213,7 @@ def init_agent():
 
 def registerActions():
     global actions
-    #actions[agn.VendedorNuevoProducto] = nuevaOpinion
+    actions[agn.DarOpinion] = nuevaOpinion
 
 
 

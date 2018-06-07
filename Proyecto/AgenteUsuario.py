@@ -26,13 +26,17 @@ port = 8021
 directorio_host = 'localhost'
 directorio_port = 9000
 
+name = "Alex"
 
 agn = getAgentNamespace()
 
 usuario = getNamespace('AgenteUsuario')
+opinador = getNamespace('AgenteOpinador')
 #Objetos agente
 AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
+
+opiniones_ns = getNamespace('Opiniones')
 
 recomendaciones_db = 'Datos/recomendaciones.turtle'
 
@@ -95,6 +99,37 @@ def verRecomendaciones():
     #Renderizamos la vista
     return render_template('recomendaciones.html',list=l)
 
+@app.route("/crearOpinion", methods=['GET'])
+def darOpinion():
+    crearOpinion(request.args)
+    return redirect("/")
+
+def crearOpinion(attrs):
+    puntuacion = attrs['puntuacion']
+    descripcion = attrs['descripcion']
+    g = Graph()
+    g.add((opiniones_ns[1],opiniones_ns.puntuacion,Literal(puntuacion)))
+    g.add((opiniones_ns[1],opiniones_ns.descripcion,Literal(descripcion)))
+    obj = createAction(AgenteUsuario,'darOpinion')
+
+    g.add((obj, RDF.type, agn.DarOpinion))
+    
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_all(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
+
+
+@app.route("/opinar")
+def nuevaOpinion():
+    """
+    Mostrar pagina para poner un producto a la venda
+    """
+    return render_template('darOpinion.html')
+
 @app.route("/buscar")
 def pag():
     """
@@ -142,15 +177,18 @@ def rebreRecomanacions(graph):
     guardarGrafo(graph, recomendaciones_db)
     return create_confirm(AgenteUsuario,None)
 
-
-
-if __name__ == "__main__":
-    app.run()
-
-
 def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
 
+def init_agent():
+    register_message(AgenteUsuario,DirectorioAgentes,usuario.type)
+
 def start_server():
-    app.run()
+    init_agent()
+    registerActions()
+    app.run(host=host,port=port,debug=True)
+
+
+if __name__ == "__main__":
+    start_server()

@@ -23,7 +23,6 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
-					<th>Comprar</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -31,7 +30,10 @@ th, td {
 				<tr>
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
-					{% endfor %}	
+					{% endfor %}
+						<td>
+							<a href="/comprar?id={{ elem['id'] }}"><button>Comprar</button></a>
+						</td>
 				</tr>
 				{% endfor %}
 			</tbody>
