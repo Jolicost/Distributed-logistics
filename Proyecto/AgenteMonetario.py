@@ -72,7 +72,25 @@ def comunicacion():
 
     return gr.serialize(format='xml')
 
-def pedirPago(graph):
+def pedirPagoPedido(graph):
+
+    obj = createAction(ServicioPago,'pedirPago')
+    
+    gcom = graph
+    gcom.remove((None, RDF.type, None))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirPago))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier servicio de pago
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+
+    return create_confirm(AgenteMonetario,None)
+
+def pedirPagoTiendaExterna(graph):
 
     obj = createAction(ServicioPago,'pedirPago')
 
@@ -90,15 +108,42 @@ def pedirPago(graph):
 
     return create_confirm(AgenteMonetario,None)
 
-@app.route("/test")
-def test():
+def pedirDevolucion(graph):
+
     obj = createAction(ServicioPago,'pedirPago')
+    #ontologias
+    ont = Namespace('Ontologias/root-ontology.owl')
+    gcom = graph
+    gcom.remove((None, RDF.type, None))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirPago))
+    gcom.serialize('test2.turtle',format='turtle')
+
+    for s,p,o in gcom.triples((ont.Pago, ont.Importe, None)):
+        n = int(o)
+        n *= -1
+        gcom.set((ont.Pago, ont.Importe, Literal(n)))
+    gcom.serialize('test3.turtle',format='turtle')
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+
+    return create_confirm(AgenteMonetario,None)
+
+@app.route("/test1")
+def test1():
+    obj = createAction(AgenteMonetario,'pedirPagoPedido')
+
 
     gcom = Graph()
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
-    gcom.add((pago,ont.Persona,Literal('megadri')))
-    gcom.add((pago,ont.Importe,Literal(20)))
+    gcom.add((ont.Pago,ont.Persona,Literal('adri')))
+    gcom.add((ont.Pago,ont.Importe,Literal(20)))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirPagoPedido))
 
     msg = build_message(gcom,
         perf=ACL.request,
@@ -107,7 +152,52 @@ def test():
 
     # Enviamos el mensaje a cualquier agente admisor
     print("Agente monetario envia mensaje a servicio pago")
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    return 'Exit'
+
+@app.route("/test2")
+def test2():
+    obj = createAction(AgenteMonetario,'pedirPagoTiendaExterna')
+
+
+    gcom = Graph()
+    #ontologias
+    ont = Namespace('Ontologias/root-ontology.owl')
+    gcom.add((ont.Pago,ont.Persona,Literal('alex')))
+    gcom.add((ont.Pago,ont.Importe,Literal(30)))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirPagoTiendaExterna))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    print("Agente monetario envia mensaje a servicio pago")
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    return 'Exit'
+
+@app.route("/test3")
+def test3():
+    obj = createAction(AgenteMonetario,'pedirDevolucion')
+
+
+    gcom = Graph()
+    #ontologias
+    ont = Namespace('Ontologias/root-ontology.owl')
+    gcom.add((ont.Pago,ont.Persona,Literal('raul')))
+    gcom.add((ont.Pago,ont.Importe,Literal(60)))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirDevolucion))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    print("Agente monetario envia mensaje a servicio pago")
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    return 'Exit'
 
 @app.route("/Stop")
 def stop():
@@ -129,7 +219,10 @@ def tidyup():
     pass
 
 def registerActions():
-    createAction(AgenteMonetario, 'pedirPago')
+    global actions
+    actions[agn.MonetarioPedirPagoPedido] = pedirPagoPedido
+    actions[agn.MonetarioPedirPagoTiendaExterna] = pedirPagoTiendaExterna
+    actions[agn.MonetarioPedirDevolucion] = pedirDevolucion
 
 if __name__ == "__main__":
     registerActions()
