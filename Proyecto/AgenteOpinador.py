@@ -31,11 +31,12 @@ from Util.Directorio import *
 from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
+from random import randint
 
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8018
+port = 8020
 
 
 directorio_host = 'localhost'
@@ -45,6 +46,7 @@ directorio_port = 9000
 agn = getAgentNamespace()
 
 opinador = getNamespace('AgenteOpinador')
+usuario = getNamespace('AgenteUsuario')
 #Objetos agente
 AgenteOpinador = Agent('AgenteOpinador',opinador['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
@@ -71,6 +73,7 @@ actions = {}
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
     global opiniones
+    global productos
     opiniones = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
@@ -92,21 +95,51 @@ def altaOpinion():
 def aleatorios(cantidad, min, max):
     numeros = []
     while len(numeros) < cantidad:
-        numero = random.randint(min,max)
+        numero = randint(min,max)
 
         if not numero in numeros:
             numeros.append(numero)
     return numeros
 
+@app.route("/prueba")
 def generarRecomendacion():
     global productos
-    p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
+    p = list(productos.subjects(predicate=RDF.type,object=productos_ns.type))
 
-    # generar 5 ids aleatorios
-    numeros = aleatorios(5, 0, len(p))
-
-
+    # generar 5 ids aleatorios de 0 a el maximo.
+    #numeros = []
+    numeros = aleatorios(1, 0, len(p)-1)
+    listRes = []
     res = Graph()
+
+    for numero in numeros:
+        listRes += [p[numero]]
+        #productos.objects(subject=p[numero],predicate=productos.precio);
+    for li in listRes:
+        ids = productos.triples((li, productos_ns.Id, None))
+        for id in ids:
+            res.add(id)
+        names = productos.triples((li, productos_ns.Nombre, None))  
+        for name in names:     
+            res.add(name)
+        importes = productos.triples((li, productos_ns.Importe, None))
+        for importe in importes:
+            res.add(importe)
+        tipus = productos.triples((li, RDF.type, None))  
+        for tip in tipus:
+            res.add(tip)
+
+    obj = createAction(AgenteOpinador,'rebreRecomanacions')
+
+    res.add((obj, RDF.type, agn.RecomendarProductos))
+
+    msg = build_message(res,
+        perf=ACL.request,
+        sender=AgenteOpinador.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
     return res
 
 
