@@ -180,3 +180,26 @@ def send_message_all(msg,agentSender,directoryAgent,type):
 			}
 		]
 	return responses
+
+def send_message_set(msg,agentSender,directoryAgent,type,uris):
+	''' 
+	msg: grafo 
+	agentSender / directoryAgent: objetos agente que representan el enviador y el receptor
+	type: tipo de agente a buscar 
+	devuelve: grafo del mensaje de retorno del agente (despues de contactar con el)
+	'''
+	res = directory_search_global(agentSender,directoryAgent,type)
+	agentes = res.subjects(predicate=DSO.Type,object=DSO.Agent)
+	responses = []
+	#Enviamos un mensaje para cada agente que este dentro de la subseleccion
+	#(TODO se puede enfocar de forma concurrente) y esperamos las respuestas
+	for agente in agentes:
+		if agente in uris:
+			address = res.objects(subject=agente,predicate=DSO.Address).next()
+			responses += [
+				{
+				"uri":agente,
+				"msg":send_message(msg,address)
+				}
+			]
+	return responses

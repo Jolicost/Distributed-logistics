@@ -198,9 +198,10 @@ def crearProductoPedido(id):
 
 	pedidos += g
 
-	node = productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or BNode()
+	node = productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns.lista
 	pedidos.add((pedido,pedidos_ns.Contiene,node))
-	c = Collection(pedidos,node,[prod_parent])
+	c = Collection(pedidos,node)
+	c.append(prod_parent)
 	#Modificar la coleccion de productos del pedido
 	guardarGrafoPedidos()
 	return redirect("/verPedidos")
@@ -212,34 +213,70 @@ def verProductosPedido(id):
 	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
 
 
-
-
-@app.route("/notificarPedido")
-def notificarPedido():
+@app.route("/simularPedido")
+def simularPedido():
 	'''
+	simula un pedido que ha llegado a la tienda. Utiliza el propio pedido
 	notifica a la tienda externa que el pedido sera llevado a cabo por ellos
 	'''
 	id = request.args['id']
+
+	responsabilidad = decidirResponsabilidadEnvio(pedidos_ns[id])
+
 	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
 
-	vendedor = pedido.value(subject=pedidos_ns[id],predicate=pedidos_ns.VendedorResponsable)
-	if vendedor is None:
-		raise Exception("El pedido no tiene ningun vendedor externo responsable")
+	responsable = responsabilidad['responsabilidad']
 
 	obj = createAction(AgenteReceptor,'informarResponsabilidad')
 	#Anadimos la accion del mensaje
 	pedido.add((obj,RDF.type,agn.ReceptorInformarResponsabilidad))
+	#Indicamos si el receptor es el responsable o no del pedido
+	pedido.add((obj,pedidos_ns.responsable,Literal(responsable)))
 	msg = build_message(pedido,
 		perf=ACL.inform,
 		sender=AgenteReceptor.uri,
 		content=obj)
 
-	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,vendedor)
+	print(responsabilidad)
+	send_message_set(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,responsabilidad['vendedores'])
 	return redirect("/verPedidos")
 
+def productoPerteneceTiendaExterna(producto):
+	vendedor = productos.value(subject=producto,predicate=productos_ns.Esvendidopor)
+	if (vendedor): return vendedor
+	else: return False
 
 def decidirResponsabilidadEnvio(pedido):
-	pass
+	'''
+	Devuelve True si el envio es responsabilidad del vendedor externo
+	Devuelve False si el envio es responsabilidad de la tienda
+	'''
+	container = pedidos.value(subject=pedido,predicate=pedidos_ns.Contiene)
+	c = Collection(pedidos,container)
+	vendedores = []
+	pertenecen = 0
+	i = 0
+	for item in c:
+		#Iteramos los productos del pedido
+		prod_id = pedidos.value(subject=item,predicate=productos_ns.Id)
+		vendedor = productoPerteneceTiendaExterna(productos_ns[prod_id])
+		if (vendedor):
+			vendedores += [vendedor]
+			pertenecen += 1
+		i+=1
+
+	#Eliminamos los duplicados
+	vendedores = list(set(vendedores))
+	#Solo hay que asignar la responsabilidad al vendedor externo si este es el propietario 
+	#De todos los productos del envio
+	envioExterno = len(vendedores) == 1
+	ret = {
+		'responsabilidad':envioExterno,
+		'vendedores':vendedores
+	}
+	return ret
+	#Si todos pertenecen entonces i == pertenecen
+
 def informarResponsabilidadEnvio(pedido):
 	''' 
 	Envia un mensaje al vendedor del producto si este era ofrecido por ellos. 

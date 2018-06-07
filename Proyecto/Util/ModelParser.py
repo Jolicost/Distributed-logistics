@@ -24,7 +24,9 @@ def pedido_a_dict(graph,pedido):
 
 	prods = []
 	container = graph.value(subject=pedido,predicate=pedidos_ns.Contiene)
+
 	c = Collection(graph,container)
+
 	for item in c:
 		dict = {}
 		dict['id'] = graph.value(subject=item,predicate=productos_ns.Id)
@@ -51,6 +53,7 @@ def dict_a_pedido(dict):
 	cp = dict['cp']
 	vendedor = dict['responsable']
 	direccion_id = direccion + cp
+
 
 	#Nodo padre y su tipo
 	ret.add((pedidos_ns[id],RDF.type,pedidos_ns.type))
