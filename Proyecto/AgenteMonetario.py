@@ -116,13 +116,13 @@ def pedirDevolucion(graph):
     gcom = graph
     gcom.remove((None, RDF.type, None))
     gcom.add((obj,RDF.type,agn.MonetarioPedirPago))
-    gcom.serialize('test2.turtle',format='turtle')
+    #gcom.serialize('test2.turtle',format='turtle')
 
     for s,p,o in gcom.triples((ont.Pago, ont.Importe, None)):
         n = int(o)
         n *= -1
         gcom.set((ont.Pago, ont.Importe, Literal(n)))
-    gcom.serialize('test3.turtle',format='turtle')
+    #gcom.serialize('test3.turtle',format='turtle')
 
     msg = build_message(gcom,
         perf=ACL.request,
@@ -185,7 +185,7 @@ def test3():
     gcom = Graph()
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
-    gcom.add((ont.Pago,ont.Persona,Literal('raul')))
+    gcom.add((ont.Pago,ont.Persona,Literal('alex')))
     gcom.add((ont.Pago,ont.Importe,Literal(60)))
     gcom.add((obj,RDF.type,agn.MonetarioPedirDevolucion))
 
