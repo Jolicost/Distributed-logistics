@@ -2,6 +2,7 @@
 from Namespaces import *
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
+from rdflib.collection import Collection
 
 
 
@@ -19,6 +20,14 @@ def pedido_a_dict(graph,pedido):
 	loc = graph.value(pedido,pedidos_ns.Tienedirecciondeentrega)
 	ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
 	ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
+
+	prods = []
+	#Recorremos los productos del grafo
+	for o in graph.objects(subject=pedido,predicate=pedidos_ns.Contiene):
+		dict = {}
+		dict['id'] = graph.value(subject=o,predicate=productos_ns.Id)
+		dict['estado'] = graph.value(subject=o,predicate=productos_ns.EstadoProducto)
+	ret['productos'] = prods
 	return ret
 
 def dict_a_pedido(dict):

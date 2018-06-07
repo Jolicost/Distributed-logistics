@@ -5,7 +5,7 @@
 </head>
 <body>
 	<h1>Que producto quieres anadir al pedido con id: {{id}}?</h1>
-	<form action="/crearPedido" method="GET">
+	<form action="/pedidos/{{id}}/crearProductoPedido" method="GET">
 		<p>Identificador del producto: </p>
 		<input type="text" name="id"/>
 		<p>Estado del producto: </p>

@@ -33,6 +33,7 @@ from Util.ModelParser import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 from rdflib import Graph, Namespace, Literal,BNode
+from rdflib.collection import Collection
 
 __author__ = 'javier'
 
@@ -94,6 +95,9 @@ def cargarGrafos():
 
 def guardarGrafo(g,file):
 	g.serialize(file,format="turtle")	
+
+def guardarGrafoPedidos():
+	pedidos.serialize(pedidos_db,format="turtle")
 
 @app.route("/comm")
 def comunicacion():
@@ -179,12 +183,34 @@ def anadirProductoPedido(id):
 
 @app.route("/pedidos/<id>/crearProductoPedido")
 def crearProductoPedido(id):
+	''' anade un producto a un pedido en especifico '''
+	global pedidos
 	pedido = pedidos_ns[id]
 
 	producto_id = request.args['id']
 	estado = request.args['estado']
 
+	g = Graph()
+	prod_parent = productos_ns[producto_id]
+	g.add((prod_parent,RDF.type,productos_ns.type))
+	g.add((prod_parent,productos_ns.Id,producto_id))
+	g.add((prod_parent,productos_ns.EstadoProducto,Literal(estado)))
+
+	pedidos += g
+
+	node = productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or BNode()
+	pedidos.add((pedido,pedidos_ns.Contiene,node))
+	c = Collection(pedidos,node,[prod_parent])
 	#Modificar la coleccion de productos del pedido
+	guardarGrafoPedidos()
+	return redirect("/verPedidos")
+
+@app.route("/pedidos/<id>/verProductos")
+def verProductosPedido(id):
+
+	# Busca toda la informacion que cuelga de pedidos
+	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
+
 	
 
 
