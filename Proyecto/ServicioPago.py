@@ -12,6 +12,7 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+from random import randint
 
 #Diccionario con los espacios de nombres de la tienda
 from Util.Namespaces import getNamespace,getAgentNamespace,createAction
@@ -48,7 +49,7 @@ def cargarGrafo():
     global pagos
     pagos = Graph()
     if os.path.isfile(pagos_db):
-        productos.parse(pagos_db,format="turtle")
+        pagos.parse(pagos_db,format="turtle")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -63,7 +64,7 @@ def comunicacion():
     message = request.args['content']
     gm = Graph()
     gm.parse(data=message)
-
+    gm.serialize('test.turtle',format='turtle')
     msgdic = get_message_properties(gm)
 
     print(message)
@@ -85,20 +86,23 @@ def comunicacion():
     return gr.serialize(format='xml')
 
 def pedirPago(graph):
+
     global pagos
     global pagos_db
-
+    #no llega
+    graph.serialize('test.turtle',format='turtle')
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
-    pago = ont.Pago
     persona = importe = None
-    for p, o in g[pago]:
+    for p, o in graph[ont.Pago]:
         if p == ont.Persona:
             persona = o
         elif p == ont.Importe:
             importe = o
 
-    pagos.add((persona, ont.Pago, importe))
+    random = str(randint(0,50))
+    pagos.add((ont[persona+importe+random], ont.Persona, persona))
+    pagos.add((ont[persona+importe+random], ont.Importe, importe))
     guardarGrafo(pagos, pagos_db)
 
     return create_confirm(ServicioPago,AgenteMonetario)
