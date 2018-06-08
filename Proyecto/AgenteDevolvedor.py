@@ -1,59 +1,54 @@
-
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 27 15:58:13 2013
-
-Esqueleto de agente usando los servicios web de Flask
-
-/comm es la entrada para la recepcion de mensajes del agente
-/Stop es la entrada que para el agente
-
-Tiene una funcion AgentBehavior1 que se lanza como un thread concurrente
-
-Asume que el agente de registro esta en el puerto 9000
-
-@author: alejandro
-"""
-
 from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
+from multiprocessing import Process
 import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm, create_notUnderstood
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
+#Clase agente
 from Util.Agente import Agent
-
-from Datos.Namespaces import getNamespace,getAgentNamespace
+#Renders del flask
+from flask import Flask, request, render_template,redirect
+from time import sleep
+#Funciones para recuperar las direcciones de los agentes
 from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
+from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
+from Util.OntoNamespaces import ACL, DSO
+from Util.Directorio import *
+
+#Diccionario con los espacios de nombres de la tienda
+from Util.Namespaces import getNamespace,getAgentNamespace,createAction
+#Utilidades de RDF
+from rdflib import Graph, Namespace, Literal,BNode
+from rdflib.namespace import FOAF, RDF
 
 __author__ = 'alejandro'
 
 host = 'localhost'
 port = 8017
 
-
 directorio_host = 'localhost'
 directorio_port = 9000
 
+monetario_host = 'localhost'
+monetario_port = 8002
 
+ont = Namespace('Ontologias/root-ontology.owl')
 agn = getAgentNamespace()
 
 devolvedor = getNamespace('AgenteDevolvedor')
+monetario = getNamespace('AgenteMonetario')
 #Objetos agente
 AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
+AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(monetario_host,monetario_port) + '/comm',None)
 
 devoluciones_ns = getNamespace('Devoluciones')
-
 devoluciones_db = 'Datos/devoluciones.turtle'
 devoluciones = Graph()
 
-cola1 = Queue()
+pedidos_ns = getNamespace('Pedidos')
+pedidos_db = 'Datos/pedidos.turtle'
+pedidos = Graph()
+
+productos_ns = getNamespace('Productos')
 
 # Flask stuff
 app = Flask(__name__)
@@ -65,36 +60,85 @@ actions = {}
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
     global devoluciones
+    global pedidos
     devoluciones = Graph()
+    pedidos = Graph()
     if os.path.isfile(devoluciones_db):
         devoluciones.parse(devoluciones_db,format="turtle")
+    if os.path.isfile(pedidos_db):
+        pedidos.parse(pedidos_db,format="turtle")
     
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
 
-@app.route("/")
-def hola():
-    return "soy el agente devolvedor, hola!"
+def nuevaDevolucion(graph):     #empieza un thread de decidirDevolucion
 
-@app.route("/altaDevolucion")
-def altaDevolucion():
-    return 'ruta no definida'
+    ab1 = Process(target=decidirDevolucion, args=(graph))
+    ab1.start()
 
-
-def nuevaDevolucion(graph):
+    '''
     global devoluciones
     p = graph.subjects(predicate=RDF.type,object=devoluciones_ns.type)
     for pe in p:
         for a,b,c in graph.triples((pe,None,None)):
             devoluciones.add((a,b,c))
-    guardarGrafo(devoluciones,devoluciones_db)
+    guardarGrafo(devoluciones,devoluciones_db)'''
+
     return create_confirm(AgenteDevolvedor,None)
+
+def decidirDevolucion(graph):   #decidir si se acepta o no la devolucion (RazonDevolucion == ("Defectuoso" || "Equivocado" || "NoSatisface"))
+    for s,p,o in graph.triples((ont.Devolucion, ont.RazonDevolucion, None)):
+        if str(s) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
+            comunicarRespuesta(graph, false)
+        elif str(s) == "Defectuoso":
+            elegirEmpresaMensajeria(graph)
+        elif str(s) == "Equivocado":
+            elegirEmpresaMensajeria(graph)
+
+def elegirEmpresaMensajeria(graph): #elegir la empresa de mensajeria
+    comunicarRespuesta(graph, true)
+    pass
+
+def comunicarRespuesta(graph, aceptado): #si se ha aceptado o no enviar la respuesta al usuario
+    pedirReembolso(graph)
+    pass
+
+def pedirReembolso(graph):      #pedir al agente monetario el reembolso del importe del producto
+    global ont
+    obj = createAction(AgenteMonetario,'pedirDevolucion')
+
+    persona = None
+    importe = None
+    producto = None
+    for p, o in graph[ont.Devolucion]:
+        if p == ont.Persona:
+            persona = str(o)
+        if p == ont.Producto:
+            producto = str(o)
+
+    # hay que mirar la base de datos de productos para ver el importe a devolver
+    importe = 1
+
+    gcom = Graph()
+    #ontologias
+    gcom.add((ont.Pago,ont.Persona,Literal(persona)))
+    gcom.add((ont.Pago,ont.Importe,Literal(importe)))
+    gcom.add((obj,RDF.type,agn.MonetarioPedirDevolucion))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteMonetario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente monetario
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
 
 
 @app.route("/comm")
 def comunicacion():
-
+    global actions
+    global AgenteDevolvedor
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()
@@ -153,15 +197,31 @@ def init_agent():
 
 def registerActions():
     global actions
-    #actions[agn.VendedorNuevoProducto] = nuevaDevolucion
+    actions[agn.DevolvedorPedirDevolucion] = nuevaDevolucion
 
+@app.route("/test1")
+def test1():
+    global ont
+    obj = createAction(AgenteDevolvedor,'nuevaDevolucion')
+    gcom = Graph()
+    gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
+    
+    gcom.add((ont.Devolucion, ont.Pedido, Literal(0)))    #el objeto debera ser el identificador del pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("Patatas")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Usuario, Literal("adrian")))
+    gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("Defectuoso")))
 
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteDevolvedor.uri,
+        content=obj)
+    send_message_any(msg,AgenteDevolvedor,DirectorioAgentes,devolvedor.type)
 
+    return 'Exit'
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
-    ab1.start()
+    
 
     registerActions()
 
@@ -170,6 +230,4 @@ if __name__ == '__main__':
     # Ponemos en marcha el servidor
     app.run(host=host, port=port)
 
-    # Esperamos a que acaben los behaviors
-    ab1.join()
     print('The End')

@@ -239,6 +239,17 @@
     
 
 
+    <!-- http://webprotege.stanford.edu/RBA3NALMxHdTs1VjfnsYulc -->
+
+    <owl:ObjectProperty rdf:about="http://webprotege.stanford.edu/RBA3NALMxHdTs1VjfnsYulc">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://webprotege.stanford.edu/RCBtmNtNiUS0lGiXOEsaHzA"/>
+        <rdfs:range rdf:resource="http://webprotege.stanford.edu/R84nF8lWfSwCh29yVNLfmxa"/>
+        <rdfs:label>Sepideladevolucion</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://webprotege.stanford.edu/RBcadJgePMnkdml0wK1DIsn -->
 
     <owl:ObjectProperty rdf:about="http://webprotege.stanford.edu/RBcadJgePMnkdml0wK1DIsn">
@@ -812,6 +823,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RB5X8KP4b9SXrgtJMPD8NVS"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RCPRHJSTXKOnIVhGki1d1VX"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -912,6 +929,18 @@
 
     <owl:Class rdf:about="http://webprotege.stanford.edu/R84nF8lWfSwCh29yVNLfmxa">
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RCrSAhe96uwbbR1IXd4Eq9v"/>
+                <owl:someValuesFrom rdf:resource="http://webprotege.stanford.edu/R768EfuDmJ6arWeu2lfWlP2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RO3pUP69fcdcu0f2yDtnJ7"/>
+                <owl:someValuesFrom rdf:resource="http://webprotege.stanford.edu/R9DOGs6q3w3gmmybKOGws3o"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:label>Devolucion</rdfs:label>
     </owl:Class>
     
@@ -1163,14 +1192,8 @@
         <rdfs:subClassOf rdf:resource="http://webprotege.stanford.edu/R8U2zo9G35O9sOErrEmXEcK"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RCrSAhe96uwbbR1IXd4Eq9v"/>
-                <owl:someValuesFrom rdf:resource="http://webprotege.stanford.edu/R768EfuDmJ6arWeu2lfWlP2"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RO3pUP69fcdcu0f2yDtnJ7"/>
-                <owl:someValuesFrom rdf:resource="http://webprotege.stanford.edu/R9DOGs6q3w3gmmybKOGws3o"/>
+                <owl:onProperty rdf:resource="http://webprotege.stanford.edu/RBA3NALMxHdTs1VjfnsYulc"/>
+                <owl:someValuesFrom rdf:resource="http://webprotege.stanford.edu/R84nF8lWfSwCh29yVNLfmxa"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label>Peticiondevolucion</rdfs:label>
