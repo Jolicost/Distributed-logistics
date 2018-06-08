@@ -85,7 +85,6 @@ def registrarResponsabilidadEnvio(graph):
 	Si es a cabo de nosotros nos informaran de los datos de la entrega,
 	aunque no haremos mucho con ellos
 	'''
-	print("hola")
 	pedido = graph.subjects(predicate=RDF.type,object=getNamespace('Pedidos').type).next()
 	subgraph = expandirGrafoRec(graph,pedido)
 	g += subgraph
@@ -232,13 +231,9 @@ def ponerVenda():
 	id = request.args['id']
 
 	#Hacemos una subseleccion del grafo con solo el producto a enviar
-	producto = g.triples((productos[id],None,None))
+	producto = expandirGrafoRec(g,productos[id])
 	gcom = Graph()
-
-	for triple in producto:
-		gcom.add(triple)
-
-
+	gcom+=producto
 
 	#Esta variable sirve para poca cosa, se podria utilizar cualquier nombre en teoria
 	obj = createAction(AgenteVendedorExterno,'nuevoProducto')

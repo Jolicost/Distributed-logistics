@@ -94,3 +94,40 @@ def producto_a_dict(graph,producto):
 
 	dic['centros'] = centros
 	return dic
+
+
+def centro_a_dict(graph,centro):
+	dic = {}
+	centros_ns = getNamespace('Centros')
+	direcciones_ns = getNamespace('Direcciones')
+	dic['id'] = graph.value(subject=centro,predicate=centros_ns.Id)
+
+	loc = graph.value(centro,centros_ns.Ubicadoen)
+	dic['direccion'] = graph.value(loc,direcciones_ns.Direccion)
+	dic['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
+	
+	return dic
+
+def dict_a_centro(dict):
+	g = Graph()
+	centros_ns = getNamespace('Centros')
+	direcciones_ns = getNamespace('Direcciones')
+
+	id = dict['id']
+	cp = dict['cp']
+	dir = dict['direccion']
+
+	centro = centros_ns[id]
+
+	g.add((centro,centros_ns.Id,Literal(id)))
+	g.add((centro,RDF.type,centros_ns.type))
+
+	localizacion = direcciones_ns[dir+cp]
+
+	g.add((localizacion,RDF.type,direcciones_ns.type))
+	g.add((localizacion,direcciones_ns.Direccion,Literal(dir)))
+	g.add((localizacion,direcciones_ns.Codigopostal,Literal(cp)))
+
+	g.add((centro,centros_ns.Ubicadoen,localizacion))
+
+	return g
