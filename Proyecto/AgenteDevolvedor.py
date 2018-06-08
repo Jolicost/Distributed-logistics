@@ -12,12 +12,14 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+import datetime
 
 #Diccionario con los espacios de nombres de la tienda
 from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
+from random import randint
 
 __author__ = 'alejandro'
 
@@ -30,15 +32,20 @@ directorio_port = 9000
 monetario_host = 'localhost'
 monetario_port = 8002
 
+usuario_host = 'localhost'
+usuario_port = 8034
+
 ont = Namespace('Ontologias/root-ontology.owl')
 agn = getAgentNamespace()
 
 devolvedor = getNamespace('AgenteDevolvedor')
 monetario = getNamespace('AgenteMonetario')
+usuario = getNamespace('AgenteUsuario')
 #Objetos agente
 AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(monetario_host,monetario_port) + '/comm',None)
+AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(usuario_host,usuario_port) + '/comm',None)
 
 devoluciones_ns = getNamespace('Devoluciones')
 devoluciones_db = 'Datos/devoluciones.turtle'
@@ -90,24 +97,36 @@ def nuevaDevolucion(graph):     #empieza un thread de decidirDevolucion
 def decidirDevolucion(graph):   #decidir si se acepta o no la devolucion (RazonDevolucion == ("Defectuoso" || "Equivocado" || "NoSatisface"))
     for s,p,o in graph.triples((ont.Devolucion, ont.RazonDevolucion, None)):
         if str(s) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
-            comunicarRespuesta(graph, false)
+            elegirEmpresaMensajeria(graph, "NoSatisface")
+            #comunicarRespuesta(graph, False, None, None)
         elif str(s) == "Defectuoso":
-            elegirEmpresaMensajeria(graph)
+            elegirEmpresaMensajeria(graph, "Defectuoso")
         elif str(s) == "Equivocado":
-            elegirEmpresaMensajeria(graph)
+            elegirEmpresaMensajeria(graph, "Equivocado")
 
-def elegirEmpresaMensajeria(graph): #elegir la empresa de mensajeria
-    comunicarRespuesta(graph, true)
-    pass
+def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
+    int rand = randint(0,4)
+    mensajeria = None
+    direccion = None
+    if rand == 0:
+        mensajeria = "Correos"
+    elif rand == 1:
+        mensajeria = "Seur"
+    elif rand == 2:
+        mensajeria = "UPS"
+    elif rand == 3:
+        mensajeria = "ASM"
 
-def comunicarRespuesta(graph, aceptado): #si se ha aceptado o no enviar la respuesta al usuario
-    pedirReembolso(graph)
-    pass
+    if razon == "NoSatisface":
+        direccion = "Revision"
+    elif razon == "Defectuoso":
+        direccion = "Vertedero"
+    elif razon == "Equivocado":
+        direccion = "Tienda"
 
-def pedirReembolso(graph):      #pedir al agente monetario el reembolso del importe del producto
-    global ont
-    obj = createAction(AgenteMonetario,'pedirDevolucion')
+    comunicarRespuesta(graph, True, mensajeria, direccion, razon)
 
+def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha aceptado o no enviar la respuesta al agente de usuario
     persona = None
     importe = None
     producto = None
@@ -119,6 +138,32 @@ def pedirReembolso(graph):      #pedir al agente monetario el reembolso del impo
 
     # hay que mirar la base de datos de productos para ver el importe a devolver
     importe = 1
+    pedirReembolso(graph, persona, importe)
+
+    now = datetime.datetime.now()
+    fecha = now.day + "-" + now.month + "-" + now.year
+    estado = None
+    if aceptado:
+        estado = "En marcha"
+    else:
+        estado = "Denegado"
+
+    tienda = getNamespace('Devoluciones')
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Persona, persona))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Producto, producto))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Fecha, fecha))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.EmpresaMensajeria, mensajeria))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Direccion, direccion))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Razon, razon))
+    devoluciones.add((tienda[persona+producto+fecha], tienda.Estado, estado))
+    guardarGrafo(devoluciones, devoluciones_db)
+
+    #TODO enviar la respuesta al agente de usuario
+
+
+def pedirReembolso(graph, persona, importe):      #pedir al agente monetario el reembolso del importe del producto
+    global ont
+    obj = createAction(AgenteMonetario,'pedirDevolucion')
 
     gcom = Graph()
     #ontologias
@@ -134,6 +179,8 @@ def pedirReembolso(graph):      #pedir al agente monetario el reembolso del impo
     # Enviamos el mensaje a cualquier agente monetario
     send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
 
+def finalizarDevolucion(graph):
+    pass
 
 @app.route("/comm")
 def comunicacion():
@@ -198,6 +245,7 @@ def init_agent():
 def registerActions():
     global actions
     actions[agn.DevolvedorPedirDevolucion] = nuevaDevolucion
+    actions[agn.DevolvedorDevolucionRecibida] = finalizarDevolucion #TODO
 
 @app.route("/test1")
 def test1():
