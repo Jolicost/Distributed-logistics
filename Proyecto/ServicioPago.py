@@ -20,6 +20,8 @@ from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
+__author__ = 'adrian'
+
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteServicioPago/templates")
 host = 'localhost'
