@@ -27,6 +27,7 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 from Util.Directorio import *
+from Util.GraphUtil import *
 
 from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.GestorDirecciones import formatDir
@@ -60,8 +61,7 @@ productos = Graph()
 cola1 = Queue()
 
 # Flask stuff
-app = Flask(__name__)
-
+app = Flask(__name__,template_folder="AgenteAdmisor/templates")
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
 actions = {}
@@ -89,10 +89,11 @@ def altaProducto():
 def nuevoProducto(graph):
 	#TODO hay que generar una lista de centros logisticos que tienen este producto (lo generamos aleatoreamente?)
 	global productos
+	graph.serialize("test.turlte",format="turtle")
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
-		for a,b,c in graph.triples((pe,None,None)):
-			productos.add((a,b,c))
+		add = expandirGrafoRec(graph,pe)
+		productos += add
 	guardarGrafo(productos,productos_db)
 	return create_confirm(AgenteAdmisor,None)
 
@@ -123,6 +124,12 @@ def comunicacion():
 
 	return gr.serialize(format='xml')
 
+
+@app.route("/info")
+def info():
+	list = [productos]
+	list = [g.serialize(format="turtle") for g in list]
+	return render_template("info.html",list=list)
 
 
 @app.route("/Stop")
@@ -172,7 +179,7 @@ if __name__ == '__main__':
 	cargarGrafos()
 	init_agent()
 	# Ponemos en marcha el servidor
-	app.run(host=host, port=port)
+	app.run(host=host, port=port,debug=True)
 
 	# Esperamos a que acaben los behaviors
 	ab1.join()
