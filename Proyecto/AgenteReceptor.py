@@ -68,6 +68,9 @@ productos = Graph()
 pedidos_db = 'Datos/pedidos.turtle'
 pedidos = Graph()
 
+centros_db = 'Datos/centros.turtle'
+centros = Graph()
+
 
 direcciones_ns = getNamespace('Direcciones')
 
@@ -92,12 +95,15 @@ def cargarGrafos():
 		productos.parse(productos_db,format="turtle")
 	if os.path.isfile(pedidos_db):
 		pedidos.parse(pedidos_db,format="turtle")
+	if os.path.isfile(centros_db):
+		pedidos.parse(centros_db,format="turtle")
 
 def guardarGrafo(g,file):
 	g.serialize(file,format="turtle")	
 
 def guardarGrafoPedidos():
 	pedidos.serialize(pedidos_db,format="turtle")
+
 
 @app.route("/comm")
 def comunicacion():
@@ -294,6 +300,67 @@ def decidirResponsabilidadEnvio(pedido):
 def resolverEnvio():
 	pedido = registrarPedido()
 	decidirResponsabilidadEnvio(pedido)
+
+def centroMasCercano(pedido,producto):
+	''' Atencion, localizacion y centros logisticos son 2 nodos de los grafos pedidos y productos '''
+	g = Graph()
+	g += pedidos
+	g += productos
+	g += centros
+
+	direcciones_ns = getNamespace('Direcciones')
+	productos_ns = getNamespace('Productos')
+
+	#Obtenemos la direccion de entrega del pedido
+	loc = g.value(pedido,pedidos_ns.Tienedirecciondeentrega)
+	dir = g.value(loc,direcciones_ns.Direccion)
+	cp = g.value(loc,direcciones_ns.Codigopostal)
+
+	nodoLista = g.value(producto,productos_ns.CentrosLogisticos)
+
+	col  = Collection(g,nodoLista)
+
+	#Busca el centro logistico mas cercano que a nuestro caso equivale al que tiene
+	#Un codigo postal mas cercano al del pedido
+	res = {}
+	for c in col:
+		loc = g.value(c,getNamespace('Centros').Ubicadoen)
+		centro_cp = g.value(loc,getNamespace('Direcciones').Codigopostal)
+		try:
+			res[c] = abs(int(cp) - int(centro_cp))
+		except Exception:
+			''' la operacion ha fallado porque algun input no esta bien '''
+			pass
+
+	if len(res) > 0:
+		masCercano = min(res)
+	else:
+		raise Exception("No se ha podido derivar ningun centro para el producto: " + producto)
+
+	return masCercano
+
+
+@app.route("/simularOrganizar")
+def simulacionOrganizar():
+	id = request.args['id']
+	pedido = pedidos_ns[id]
+
+	nodo = pedidos.value(pedido,pedidos_ns.Contiene)
+
+	col = Collection(pedidos,nodo)
+
+	decision = {}
+	#Itera los productos del pedido
+	for producto in col:
+		masCercano = centroMasCercano(pedido,producto)
+		if masCercano in decision:
+			decision[masCercano] += [producto]
+		else:
+			decision[masCercano] = [producto]
+
+
+	return redirect("/")
+
 
 
 def organizarPedido():

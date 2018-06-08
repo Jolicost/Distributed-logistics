@@ -25,6 +25,7 @@ th, td {
 				{% endfor %}
 					<th>Mandar notificacion</th>
 					<th>Anadir producto a pedido</th>
+					<th>Simular Organizar</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -42,6 +43,9 @@ th, td {
 					</td>
 					<td>
 						<a href="/pedidos/{{elem['id']}}/anadirProductoPedido"><button>Nuevo Producto</button></a>
+					</td>
+					<td>
+						<a href="/simularOrganizar?id={{elem['id']}}"><button>Simular org.</button></a>
 					</td>
 				</tr>
 				{% endfor %}
