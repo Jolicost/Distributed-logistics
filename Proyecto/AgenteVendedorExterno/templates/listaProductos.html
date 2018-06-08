@@ -25,6 +25,7 @@ th, td {
 				{% endfor %}
 					<th>Poner a la venta</th>
 					<th>Borrar producto</th>
+					<th>Anadir Centro</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -45,6 +46,9 @@ th, td {
 							<a href="/borrar?id={{ elem['id'] }}"><button>Borrar</button></a>
 							{% endif %}
 						</td>	
+						<th>
+							<a href="/productos/{{ elem['id'] }}/nuevoCentro"><button>Anadir Centro</button></a>
+						</th>
 				</tr>
 				{% endfor %}
 			</tbody>

@@ -193,6 +193,8 @@ def send_message_set(msg,agentSender,directoryAgent,type,uris):
 	responses = []
 	#Enviamos un mensaje para cada agente que este dentro de la subseleccion
 	#(TODO se puede enfocar de forma concurrente) y esperamos las respuestas
+
+	#uris = [str(s) for s in uris]
 	for agente in agentes:
 		if agente in uris:
 			address = res.objects(subject=agente,predicate=DSO.Address).next()

@@ -14,7 +14,7 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
 from Util.GraphUtil import *
 from Util.ModelParser import *
-import inspect
+from rdflib.collection import Collection
 
 import Util.Namespaces
 #Diccionario con los espacios de nombres de la tienda
@@ -26,7 +26,7 @@ from rdflib.namespace import FOAF, RDF
 
 #Nombre del vendedor externo. Servira para generar una URI de recurso 
 #Aun asi es probable que solo utilitzemos 1 vendedor
-nombre = 'juan'
+nombre = '324'
 
 
 #Direcciones hardcodeadas (propia)
@@ -140,14 +140,7 @@ def verProductos():
 	#De esta forma los obtenemos con mas facilidad y sin consulta sparql
 	#La funcoin subjects retorna los sujetos con tal predicado y objeto
 	for s in g.subjects(predicate=RDF.type,object=productos.type):
-		# Anadimos los atributos que queremos renderizar a la vista
-		dic = {}
-		dic['resource'] = s
-		dic['nom'] = g.value(subject = s,predicate = productos.Nombre)
-		dic['preu'] = g.value(subject = s,predicate = productos.Importe)
-		dic['id'] = g.value(subject = s,predicate = productos.Id)
-		dic['enVenta'] = g.value(subject = s,predicate = productos.enVenta)
-		l = l + [dic]
+		l+=[producto_a_dict(g,s)]
 
 	#Renderizamos la vista
 	return render_template('listaProductos.html',list=l)
@@ -163,13 +156,40 @@ def verPedidos():
 	"""
 	pedidos = g.subjects(predicate=RDF.type,object=getNamespace('Pedidos').type)
 	l = []
-	for pedido in pedidos:
-		dict = pedido_a_dict(g,pedido)
-		l += [dict]
+	for p in pedidos:
+		d = pedido_a_dict(g,p)
+		mi_tienda = vendedor[nombre]
+		d['mi_responsabilidad'] = g.value(subject=p,predicate=getNamespace('Pedidos').VendedorResponsable) == mi_tienda or False
+		l+=[d]
 
-	print(l)
+
 	return render_template('listaPedidos.html',list=l)
 
+@app.route("/productos/<id>/nuevoCentro")
+def nuevoCentro(id):
+	return render_template('nuevoCentro.html',id=id)
+
+
+@app.route("/productos/<id>/crearCentroProducto")
+def crearCentro(id):
+	productos_ns = getNamespace('Productos')
+	centros_ns = getNamespace('Centros')
+
+	producto = getNamespace('Productos')[id]
+
+	centro = centros_ns[request.args['centro_id']]
+	g.add((centro,centros_ns.Id,Literal(request.args['centro_id'])))
+
+	node = g.value(subject=producto,predicate=productos_ns.CentrosLogisticos) or productos_ns[id + '-listaCentros']
+
+	g.add((producto,productos_ns.CentrosLogisticos,node))
+
+	c = Collection(g,node)
+	c.append(centro)
+
+	guardarGrafo()
+	
+	return redirect('/verProductos')
 @app.route("/enviarPedido")
 def enviarPedido():
 	""" 

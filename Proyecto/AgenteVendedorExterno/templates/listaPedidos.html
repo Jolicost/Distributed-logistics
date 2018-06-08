@@ -33,7 +33,7 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 					<td>
-						{% if False %}
+						{% if elem['mi_responsabilidad'] %}
 							<a href="/enviarPedido?id={{ elem['id'] }}"><button>Enviar</button></a>
 						{%else%}
 							-
