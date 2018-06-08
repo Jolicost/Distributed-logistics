@@ -198,7 +198,11 @@ def crearProductoPedido(id):
 
 	pedidos += g
 
-	node = productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns.lista
+
+	node =  productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns[id + 'listaProductos']
+
+
+	#node = productos.objects(subject=pedido,predicate=pedidos_ns.Contiene).next() or BNode()
 	pedidos.add((pedido,pedidos_ns.Contiene,node))
 	c = Collection(pedidos,node)
 	c.append(prod_parent)
@@ -223,22 +227,25 @@ def simularPedido():
 
 	responsabilidad = decidirResponsabilidadEnvio(pedidos_ns[id])
 
-	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
-
 	responsable = responsabilidad['responsabilidad']
 
+	if responsable:
+		#Hay que asignar el respnsable al pedido
+		pedidos.add((pedidos_ns[id],pedidos_ns.VendedorResponsable,responsabilidad['vendedores'][0]))
+
+	#Preparamos el mensaje
+	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
 	obj = createAction(AgenteReceptor,'informarResponsabilidad')
 	#Anadimos la accion del mensaje
 	pedido.add((obj,RDF.type,agn.ReceptorInformarResponsabilidad))
 	#Indicamos si el receptor es el responsable o no del pedido
-	pedido.add((obj,pedidos_ns.responsable,Literal(responsable)))
 	msg = build_message(pedido,
 		perf=ACL.inform,
 		sender=AgenteReceptor.uri,
 		content=obj)
 
-	print(responsabilidad)
 	send_message_set(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,responsabilidad['vendedores'])
+	guardarGrafoPedidos()
 	return redirect("/verPedidos")
 
 def productoPerteneceTiendaExterna(producto):

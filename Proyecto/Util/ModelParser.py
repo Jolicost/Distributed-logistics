@@ -51,7 +51,6 @@ def dict_a_pedido(dict):
 	prioridad = dict['prioridad']
 	direccion = dict['direccion']
 	cp = dict['cp']
-	vendedor = dict['responsable']
 	direccion_id = direccion + cp
 
 
@@ -69,6 +68,5 @@ def dict_a_pedido(dict):
 	ret.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
 	ret.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
 	ret.add((pedidos_ns[id],pedidos_ns.Hechopor,usuarios_ns[user_id]))
-	if vendedor: ret.add((pedidos_ns[id],pedidos_ns.VendedorResponsable,vendedores_ns[vendedor]))
 
 	return ret
