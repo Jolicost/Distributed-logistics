@@ -21,7 +21,7 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
-app = Flask(__name__,template_folder="ServicioPago/templates")
+app = Flask(__name__,template_folder="AgenteServicioPago/templates")
 host = 'localhost'
 port = 8003
 monetario_host = 'localhost'
@@ -89,8 +89,6 @@ def pedirPago(graph):
 
     global pagos
     global pagos_db
-    #no llega
-    graph.serialize('test.turtle',format='turtle')
     #ontologias
     ont = Namespace('Ontologias/root-ontology.owl')
     persona = importe = None
@@ -101,14 +99,34 @@ def pedirPago(graph):
             importe = o
 
     random = str(randint(0,50))
-    pagos.add((ont[persona+importe+random], ont.Persona, persona))
-    pagos.add((ont[persona+importe+random], ont.Importe, importe))
+    tienda = getNamespace('Pagos')
+    pagos.add((tienda[persona+importe+random], tienda.Persona, persona))
+    pagos.add((tienda[persona+importe+random], tienda.Importe, importe))
     guardarGrafo(pagos, pagos_db)
 
     return create_confirm(ServicioPago,AgenteMonetario)
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")  
+
+@app.route("/Pagos")
+def getPagos():
+    global pagos
+
+    idUsuario = request.args['id']
+    tienda = getNamespace('Pagos')
+
+    array = []
+    #g = Graph()
+    for s,p,o in pagos.triples((None, tienda.Persona, Literal(idUsuario))):
+        for ss,pp,oo in pagos.triples((s,tienda.Importe,None)):
+            #g.add((ss,pp,oo))
+            array.append(int(oo))
+
+    #g.serialize('test.turtle',format='turtle')
+
+    return render_template('lista_pagos.html', a = array, u = idUsuario)
+
 
 @app.route("/Stop")
 def stop():
@@ -127,6 +145,9 @@ def tidyup():
     """
     global cola1
     cola1.put(0)
+    pass
+
+def getPagos(graph):
     pass
 
 def registerActions():
