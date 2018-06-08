@@ -20,13 +20,14 @@ from rdflib.namespace import FOAF, RDF
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8021
+port = 8034
 
 
 directorio_host = 'localhost'
 directorio_port = 9000
 
 name = "Alex"
+id_user = 1
 
 agn = getAgentNamespace()
 
@@ -36,7 +37,7 @@ opinador = getNamespace('AgenteOpinador')
 AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-opiniones_ns = getNamespace('Opiniones')
+productosOpinar_db = 'Datos/productos_a_opinar.turtle'
 
 recomendaciones_db = 'Datos/recomendaciones.turtle'
 
@@ -45,6 +46,8 @@ productos_ns = getNamespace('Productos')
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
+opiniones_ns = getNamespace('Opiniones')
+productos_a_opinar = Graph()
 
 cola1 = Queue()
 
@@ -98,7 +101,7 @@ def verRecomendaciones():
 
     #Renderizamos la vista
     return render_template('recomendaciones.html',list=l)
-
+"""
 @app.route("/crearOpinion", methods=['GET'])
 def darOpinion():
     crearOpinion(request.args)
@@ -125,10 +128,55 @@ def crearOpinion(attrs):
 
 @app.route("/opinar")
 def nuevaOpinion():
-    """
-    Mostrar pagina para poner un producto a la venda
-    """
+
+
+
     return render_template('darOpinion.html')
+"""
+@app.route("/opinar")
+def verProductosaOpinar():
+    g = Graph()
+    if os.path.isfile(productosOpinar_db):
+        g.parse(productosOpinar_db,format="turtle")
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in g.subjects(predicate=RDF.type,object=productos_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = g.value(subject = s,predicate = productos_ns.Nombre)
+        dic['id'] = g.value(subject = s,predicate = productos_ns.Id)
+        l = l + [dic]
+
+    #Renderizamos la vista
+    return render_template('listaProductosaOpinar.html',list=l)
+
+@app.route("/productosaOpinar/<id>/opinar", methods=['GET'])
+def darOpinion(id):
+    return render_template('darOpinion.html',id=id)
+
+@app.route("/productosaOpinar/<id>/crearOpinion", methods=['GET'])
+def crearOpinion(id):
+    puntuacion = request.args['puntuacion']
+    descripcion = request.args['descripcion']
+    g = Graph()
+    g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.puntuacion, Literal(puntuacion)))
+    g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.descripcion, Literal(descripcion)))
+    g.add((opiniones_ns[str(id_user)+str(id)], RDF.type, opiniones_ns.type))
+    obj = createAction(AgenteUsuario,'darOpinion')
+
+    g.add((obj, RDF.type, agn.DarOpinion))
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    print("antes")
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
+    print("llego aqui")
+    return "Se ha enviado correctamente"
 
 @app.route("/buscar")
 def pag():
@@ -177,9 +225,14 @@ def rebreRecomanacions(graph):
     guardarGrafo(graph, recomendaciones_db)
     return create_confirm(AgenteUsuario,None)
 
+def recibirProductosaOpinar(graph):
+    guardarGrafo(graph,productosOpinar_db)
+    return create_confirm(AgenteUsuario,None)
+
 def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
+    actions[agn.PedirOpiniones] = recibirProductosaOpinar
 
 def init_agent():
     register_message(AgenteUsuario,DirectorioAgentes,usuario.type)
