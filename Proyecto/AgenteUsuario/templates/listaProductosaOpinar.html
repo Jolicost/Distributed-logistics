@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Lista de pedidos</title>
+    <title>Lista de productos</title>
 </head>
 <style>
 table, th, td {
@@ -14,7 +14,7 @@ th, td {
 }
 </style>
 <body>
-	<h1>Lista de pedidos de la tienda externa</h1>
+	<h1>Lista de productos a opinar</h1>
 	{% if list %}
 		{% set header = list[0] %}
 		<table>
@@ -23,7 +23,6 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
-					<th>Enviar pedido</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -32,13 +31,9 @@ th, td {
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
 					{% endfor %}
-					<td>
-						{% if elem['mi_responsabilidad'] %}
-							<a href="/enviarPedido?id={{ elem['id'] }}"><button>Enviar</button></a>
-						{%else%}
-							-
-						{%endif%}
-					</td>
+						<th>
+							<a href="/productosaOpinar/{{ elem['id'] }}/opinar"><button>Opinar sobre el producto</button></a>
+						</th>
 				</tr>
 				{% endfor %}
 			</tbody>

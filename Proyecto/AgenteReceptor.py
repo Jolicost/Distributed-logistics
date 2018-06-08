@@ -224,17 +224,19 @@ def simularPedido():
 	notifica a la tienda externa que el pedido sera llevado a cabo por ellos
 	'''
 	id = request.args['id']
+	pedido = pedidos_ns[id]
+	decidirResponsabilidadEnvio(pedido)
+	return redirect("/verPedidos")
 
-	responsabilidad = decidirResponsabilidadEnvio(pedidos_ns[id])
-
+def procesarDecision(pedido,responsabilidad):
 	responsable = responsabilidad['responsabilidad']
 
 	if responsable:
 		#Hay que asignar el respnsable al pedido
-		pedidos.add((pedidos_ns[id],pedidos_ns.VendedorResponsable,responsabilidad['vendedores'][0]))
+		pedidos.add((pedido,pedidos_ns.VendedorResponsable,responsabilidad['vendedores'][0]))
 
 	#Preparamos el mensaje
-	pedido = expandirGrafoRec(pedidos,pedidos_ns[id])
+	pedido = expandirGrafoRec(pedidos,pedido)
 	obj = createAction(AgenteReceptor,'informarResponsabilidad')
 	#Anadimos la accion del mensaje
 	pedido.add((obj,RDF.type,agn.ReceptorInformarResponsabilidad))
@@ -246,14 +248,13 @@ def simularPedido():
 
 	send_message_set(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,responsabilidad['vendedores'])
 	guardarGrafoPedidos()
-	return redirect("/verPedidos")
 
 def productoPerteneceTiendaExterna(producto):
 	vendedor = productos.value(subject=producto,predicate=productos_ns.Esvendidopor)
 	if (vendedor): return vendedor
 	else: return False
 
-def decidirResponsabilidadEnvio(pedido):
+def decidirResponsabilidad(pedido):
 	'''
 	Devuelve True si el envio es responsabilidad del vendedor externo
 	Devuelve False si el envio es responsabilidad de la tienda
@@ -282,14 +283,22 @@ def decidirResponsabilidadEnvio(pedido):
 		'vendedores':vendedores
 	}
 	return ret
-	#Si todos pertenecen entonces i == pertenecen
 
-def informarResponsabilidadEnvio(pedido):
-	''' 
-	Envia un mensaje al vendedor del producto si este era ofrecido por ellos. 
-	'''
+def registrarPedido():
 	pass
+def decidirResponsabilidadEnvio(pedido):
+	responsabilidad = decidirResponsabilidad(pedido)
+	procesarDecision(pedido,responsabilidad)
 
+
+def resolverEnvio():
+	pedido = registrarPedido()
+	decidirResponsabilidadEnvio(pedido)
+
+
+def organizarPedido():
+	'''Busca que centros logisticos pueden resolver la peticion de envio '''
+	
 
 
 @app.route("/Stop")

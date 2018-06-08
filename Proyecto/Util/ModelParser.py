@@ -70,3 +70,27 @@ def dict_a_pedido(dict):
 	ret.add((pedidos_ns[id],pedidos_ns.Hechopor,usuarios_ns[user_id]))
 
 	return ret
+
+
+
+def producto_a_dict(graph,producto):
+	# Anadimos los atributos que queremos renderizar a la vista
+	dic = {}
+	productos_ns = getNamespace('Productos')
+	centros_ns = getNamespace('Centros')
+	dic['nom'] = graph.value(subject = producto,predicate = productos_ns.Nombre)
+	dic['preu'] = graph.value(subject = producto,predicate = productos_ns.Importe)
+	dic['id'] = graph.value(subject = producto,predicate = productos_ns.Id)
+	dic['enVenta'] = graph.value(subject = producto,predicate = productos_ns.enVenta)
+
+	container = graph.value(subject=producto,predicate=productos_ns.CentrosLogisticos)
+
+	c = Collection(graph,container)
+	centros = []
+	for item in c:
+		dict = {}
+		dict['id'] = graph.value(subject=item,predicate=centros_ns.Id)
+		centros += [dict]
+
+	dic['centros'] = centros
+	return dic

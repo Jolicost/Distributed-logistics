@@ -36,7 +36,7 @@ from random import randint
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8023
+port = 8026
 
 
 directorio_host = 'localhost'
@@ -138,7 +138,38 @@ def generarRecomendacion():
 
     # Enviamos el mensaje a cualquier agente admisor
     send_message_all(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
-    return "hola"
+
+@app.route("/pedirOpinion")
+def pedirOpinion():
+    g = Graph()
+
+    g.add((productos_ns["999"],RDF.type,productos_ns.type))
+    g.add((productos_ns["999"],productos_ns.Nombre,Literal('producto1aOpinar')))
+    g.add((productos_ns["999"],productos_ns.Id,Literal('999')))
+    
+    g.add((productos_ns["998"],RDF.type,productos_ns.type))
+    g.add((productos_ns["998"],productos_ns.Nombre,Literal('producto2aOpinar')))
+    g.add((productos_ns["998"],productos_ns.Id,Literal('998')))
+    
+    g.add((productos_ns["997"],RDF.type,productos_ns.type))
+    g.add((productos_ns["997"],productos_ns.Nombre,Literal('producto3aOpinar')))
+    g.add((productos_ns["997"],productos_ns.Id,Literal('997')))
+       
+    print(str(g) )
+     
+    obj = createAction(AgenteOpinador,'pedirOpinion')
+
+    g.add((obj, RDF.type, agn.PedirOpiniones))
+    
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteOpinador.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_all(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
+    return redirect("/")
+
 
 
 def nuevaOpinion(graph):
