@@ -33,6 +33,7 @@ def pedido_a_dict(graph,pedido):
 		dict = {}
 		dict['id'] = graph.value(subject=item,predicate=productos_ns.Id)
 		dict['estado'] = graph.value(subject=item,predicate=productos_ns.EstadoProducto)
+		dict['fechaEntrega'] = graph.value(subject=item,predicate=productos_ns.Fechaenvio)
 		prods += [dict]
 
 	ret['productos'] = prods

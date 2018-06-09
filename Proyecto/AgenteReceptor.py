@@ -195,15 +195,16 @@ def crearProductoPedido(id):
 
 	producto_id = request.args['id']
 	estado = request.args['estado']
+	fechaEnvio = request.args['fechaEnvio']
 
 	g = Graph()
 	prod_parent = productos_ns[producto_id]
 	g.add((prod_parent,RDF.type,productos_ns.type))
 	g.add((prod_parent,productos_ns.Id,Literal(producto_id)))
 	g.add((prod_parent,productos_ns.EstadoProducto,Literal(estado)))
+	g.add((prod_parent,productos_ns.Fechaenvio,Literal(fechaEnvio)))
 
 	pedidos += g
-
 
 	node =  productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns[id + 'listaProductos']
 
