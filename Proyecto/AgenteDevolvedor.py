@@ -1,5 +1,5 @@
-# -- coding: utf-8 --
-from _future_ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 from multiprocessing import Process
 import os.path
 #Clase agente
@@ -21,7 +21,7 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from random import randint
 
-_author_ = 'adrian'
+__author__ = 'adrian'
 
 host = 'localhost'
 port = 8017
@@ -60,7 +60,7 @@ productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 # Flask stuff
-app = Flask(_name_,template_folder="AgenteDevolvedor/templates")
+app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -359,7 +359,7 @@ def test1():
 
     return 'Exit'
 
-if _name_ == '_main_':
+if __name__ == "__main__":
     # Ponemos en marcha los behaviors
     
 
