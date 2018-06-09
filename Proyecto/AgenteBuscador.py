@@ -59,6 +59,9 @@ productos = Graph()
 
 peticiones_ns = getNamespace("Peticiones")
 
+peticiones_db = 'Datos/peticiones.turtle'
+peticiones = Graph()
+
 cola1 = Queue()
 
 # Flask stuff
@@ -73,6 +76,8 @@ def cargarGrafos():
     global productos
     if os.path.isfile(productos_db):
         productos.parse(productos_db,format="turtle")
+    elif os.path.isfile(peticiones_db):
+        peticiones.parse(peticiones_db, format="turtle")
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
@@ -94,39 +99,25 @@ def buscarProductos(graph):
                     if len(similar) != 0:
                         g.add(d,f,e)
     """
+    nuevaPeticion(graph)
 
     for pe in graph.subjects(predicate=RDF.type, object=peticiones_ns.type):
-        for a,b,c in graph.triples((pe,productos_ns.Nombre,None)):
+        for a,b,c in graph.triples((pe,peticiones_ns.Busqueda,None)):
             for m in productos.subjects(predicate=RDF.type, object=productos_ns.type):
                 for d,e,f in productos.triples((m,productos_ns.Nombre,None)):
                     if c in f:
-                        g.add((d,e,f))
- 
-    obj = createAction(AgenteBuscador,'resultadoBusqueda')
-    print(str(g.serialize(format="turtle")))
-    print("holae")
+                        for h,i,j in productos.triples((d,None,None)):
+                            g.add((h,i,j))
+    return g
 
-    g.add((obj, RDF.type, agn.resultadoBusqueda))
-    msg = build_message(g,
-        perf=ACL.request,
-        sender=AgenteBuscador.uri,
-        content=obj)
-
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteBuscador,DirectorioAgentes,usuario.type)
-
-
-
-"""
-def nuevaDevolucion(graph):
-    global devoluciones
-    p = graph.subjects(predicate=RDF.type,object=devoluciones_ns.type)
+def nuevaPeticion(graph):
+    global peticiones
+    p = graph.subjects(predicate=RDF.type,object=peticiones_ns.type)
     for pe in p:
         for a,b,c in graph.triples((pe,None,None)):
-            devoluciones.add((a,b,c))
-    guardarGrafo(devoluciones,devoluciones_db)
-    return create_confirm(AgenteDevolvedor,None)
-"""
+            peticiones.add((a,b,c))
+    guardarGrafo(peticiones,peticiones_db)
+
 
 @app.route("/comm")
 def comunicacion():
