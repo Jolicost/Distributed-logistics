@@ -33,6 +33,7 @@ agn = getAgentNamespace()
 
 usuario = getNamespace('AgenteUsuario')
 opinador = getNamespace('AgenteOpinador')
+buscador = getNamespace('AgenteBuscador')
 #Objetos agente
 AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
@@ -49,6 +50,8 @@ productos = Graph()
 opiniones_ns = getNamespace('Opiniones')
 productos_a_opinar = Graph()
 
+peticiones_ns = getNamespace('Peticiones')
+
 cola1 = Queue()
 
 
@@ -64,10 +67,9 @@ app = Flask(__name__,template_folder="AgenteUsuario/templates")
 def cargarGrafos():
     global productos
     opiniones = Graph()
-    if os.path.isfile(opiniones_db):
-        opiniones.parse(opiniones_db,format="turtle")
-    elif os.path.isfile(productos_db):
-        productos.parse(productos_db,format="turtle")
+    if os.path.isfile(productosOpinar_db):
+        productos_a_opinar.parse(productosOpinar_db,format="turtle")
+
     
 
 def guardarGrafo(g,file):
@@ -101,38 +103,7 @@ def verRecomendaciones():
 
     #Renderizamos la vista
     return render_template('recomendaciones.html',list=l)
-"""
-@app.route("/crearOpinion", methods=['GET'])
-def darOpinion():
-    crearOpinion(request.args)
-    return redirect("/")
 
-def crearOpinion(attrs):
-    puntuacion = attrs['puntuacion']
-    descripcion = attrs['descripcion']
-    g = Graph()
-    g.add((opiniones_ns[1],opiniones_ns.puntuacion,Literal(puntuacion)))
-    g.add((opiniones_ns[1],opiniones_ns.descripcion,Literal(descripcion)))
-    obj = createAction(AgenteUsuario,'darOpinion')
-
-    g.add((obj, RDF.type, agn.DarOpinion))
-    
-    msg = build_message(g,
-        perf=ACL.request,
-        sender=AgenteUsuario.uri,
-        content=obj)
-
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
-
-
-@app.route("/opinar")
-def nuevaOpinion():
-
-
-
-    return render_template('darOpinion.html')
-"""
 @app.route("/opinar")
 def verProductosaOpinar():
     g = Graph()
@@ -161,6 +132,7 @@ def crearOpinion(id):
     puntuacion = request.args['puntuacion']
     descripcion = request.args['descripcion']
     g = Graph()
+    g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.producto, Literal(id)))
     g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.puntuacion, Literal(puntuacion)))
     g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.descripcion, Literal(descripcion)))
     g.add((opiniones_ns[str(id_user)+str(id)], RDF.type, opiniones_ns.type))
@@ -173,10 +145,14 @@ def crearOpinion(id):
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    print("antes")
     send_message_any(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
-    print("llego aqui")
-    return "Se ha enviado correctamente"
+    """
+    for p in g.subjects(predicate=productos_ns.Id, object=Literal(id)):
+        for a,b,c in graph.triples((p,None,None)):
+            productos_a_opinar.remove(a,b,c)
+    guardarGrafo(productos_a_opinar, productosOpinar_db)
+    """
+    return redirect("/opinar")
 
 @app.route("/buscar")
 def pag():
@@ -214,18 +190,30 @@ def comunicacion():
 
 @app.route("/buscarProductos", methods=['GET','POST'])
 def buscarProductos():
-    resultado = ["peras","manzanas","zanahorias"]
+    criterio = request.args['criterio']
+    g = Graph()
+    g.add((peticiones_ns[str(id_user)+criterio], productos_ns.Nombre, Literal(criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], RDF.type, peticiones_ns.type))
+    obj = createAction(AgenteUsuario,'peticionBusqueda')
 
-    return render_template(
-        'resultadoBusqueda.html',
-        criterio=request.args['criterio'],
-        values=resultado)
+    g.add((obj, RDF.type, agn.peticionBusqueda))
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,buscador.type)
+
+
+    return "hola"
 
 def rebreRecomanacions(graph):
     guardarGrafo(graph, recomendaciones_db)
     return create_confirm(AgenteUsuario,None)
 
 def recibirProductosaOpinar(graph):
+    productos_a_opinar = graph
     guardarGrafo(graph,productosOpinar_db)
     return create_confirm(AgenteUsuario,None)
 
@@ -233,6 +221,7 @@ def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
     actions[agn.PedirOpiniones] = recibirProductosaOpinar
+    #actions[agn.resultadoBusqueda] = mostrarResultadoBusqueda
 
 def init_agent():
     register_message(AgenteUsuario,DirectorioAgentes,usuario.type)
@@ -240,6 +229,7 @@ def init_agent():
 def start_server():
     init_agent()
     registerActions()
+    cargarGrafos()
     app.run(host=host,port=port,debug=True)
 
 
