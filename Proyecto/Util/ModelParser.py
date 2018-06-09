@@ -3,6 +3,8 @@ from Namespaces import *
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from rdflib.collection import Collection
+from GraphUtil import *
+import random
 
 
 
@@ -31,6 +33,7 @@ def pedido_a_dict(graph,pedido):
 		dict = {}
 		dict['id'] = graph.value(subject=item,predicate=productos_ns.Id)
 		dict['estado'] = graph.value(subject=item,predicate=productos_ns.EstadoProducto)
+		dict['fechaEntrega'] = graph.value(subject=item,predicate=productos_ns.Fechaenvio)
 		prods += [dict]
 
 	ret['productos'] = prods
@@ -133,7 +136,66 @@ def dict_a_centro(dict):
 	return g
 
 
-def pedido_a_envio(graph,pedido):
-	'''devuelve el pedido transformado en un envio'''
-	envios_ns = getNamespace('envios')
-	return False
+def pedido_a_envio(graph,pedido,productos):
+	'''
+	devuelve el pedido transformado en un envio
+	Graph tiene que contener toda la informacion del pedido + toda la informacion de los productos 
+	para cada producto del pedido (importe mas que nada)
+	'''
+
+	g = Graph()
+
+	envios_ns = getNamespace('Envios')
+	pedidos_ns = getNamespace('Pedidos')
+	productos_ns = getNamespace('Productos')
+
+	#Generamos un id aleatorio
+	envio_id = str(random.getrandbits(64))
+
+	#Anadimos el ID al envio
+	g.add((envios_ns[envio_id],RDF.type,envios_ns.type))
+	g.add((envios_ns[envio_id],envios_ns.Id,Literal(envio_id)))
+
+	#Anadimos el usuario al envio
+	user = graph.value(pedido,pedidos_ns.Hechopor)
+	g.add((envios_ns[envio_id],envios_ns.Hechopor,user))
+
+	#Anadimos la referencia al pedido original
+	pedido_uri = pedido
+	g.add((envios_ns[envio_id],envios_ns.Llevaacabo,pedido_uri))
+
+
+	#fecha de realizacion
+	fecha = graph.value(pedido,pedidos_ns.Fecharealizacion)
+	g.add((envios_ns[envio_id],envios_ns.Fecharealizacion,fecha))
+
+
+	#direccion de entrega
+	loc = graph.value(pedido,pedidos_ns.Tienedirecciondeentrega)
+	locGraph = expandirGrafoRec(graph,loc)
+
+	#sumamos la localizacion al grafo que devolvemos
+	g+=locGraph
+	g.add((envios_ns[envio_id],envios_ns.Tienedirecciondeentrega,loc))
+
+	#Anadimos el conjunto de productos al grafo de envio. Hay que crear un nodo no anonimo para la lista
+	# o sino la libreria no funciona bien
+	lista = envios_ns[envio_id + '-ListaProductos']
+	g.add((envios_ns[envio_id],envios_ns.Contiene,lista))
+	c = Collection(g,lista)
+
+	#Anadimos las uris de los productos al envio y sumamos el importe total
+	importe = 0
+	for p in productos: 
+		c.append(p)
+		importe += int(graph.value(p,productos_ns.Importe))
+
+
+	#Anadimos el importe total
+	g.add((envios_ns[envio_id],envios_ns.Importetotal,Literal(importe)))
+
+	#Anadimos la prioridad del envio que es la misma que la prioridad de la entrega
+	prioridad = graph.value(pedido,pedidos_ns.Prioridad)
+	g.add((envios_ns[envio_id],envios_ns.Prioridad,prioridad))
+
+	return g

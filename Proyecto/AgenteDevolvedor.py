@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
+# -- coding: utf-8 --
+from _future_ import print_function
 from multiprocessing import Process
 import os.path
 #Clase agente
@@ -21,7 +21,7 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from random import randint
 
-__author__ = 'alejandro'
+_author_ = 'adrian'
 
 host = 'localhost'
 port = 8017
@@ -60,7 +60,7 @@ productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 # Flask stuff
-app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
+app = Flask(_name_,template_folder="AgenteDevolvedor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -86,19 +86,21 @@ def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
 
 def nuevaDevolucion(graph):     #empieza un thread de decidirDevolucion
-
+    """
     ab1 = Process(target=decidirDevolucion, args=(graph))
     ab1.start()
-
+    """
+    decidirDevolucion(graph)
     return create_confirm(AgenteDevolvedor,None)
 
 def decidirDevolucion(graph):   #decidir si se acepta o no la devolucion (RazonDevolucion == ("Defectuoso" || "Equivocado" || "NoSatisface"))
     for s,p,o in graph.triples((ont.Devolucion, ont.RazonDevolucion, None)):
-        if str(s) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
+        if str(o) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
             comprobar15Dias(graph)
-        elif str(s) == "Defectuoso":
+        elif str(o) == "Defectuoso":
+            print("entro aqui")
             elegirEmpresaMensajeria(graph, "Defectuoso")
-        elif str(s) == "Equivocado":
+        elif str(o) == "Equivocado":
             elegirEmpresaMensajeria(graph, "Equivocado")
 
 def comprobar15Dias(graph):
@@ -129,7 +131,7 @@ def comprobar15Dias(graph):
         comunicarRespuesta(graph, False, None, None)
 
 def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
-    rand = randint(0,4)
+    rand = randint(0,3)
     mensajeria = None
     direccion = None
     if rand == 0:
@@ -158,7 +160,7 @@ def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha
     importe = None
     producto = None
     for p, o in graph[ont.Devolucion]:
-        if p == ont.Persona:
+        if p == ont.Usuario:
             persona = str(o)
         if p == ont.Producto:
             producto = str(o)
@@ -169,7 +171,7 @@ def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha
 
     if aceptado:
         crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, producto, aceptado)
-
+    """
     #enviar la respuesta al agente de usuario
     obj = createAction(AgenteUsuario,'respuestaDevolucion')
 
@@ -182,6 +184,7 @@ def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha
     else:
         estado = "Denegado"
     gcom.add((ont.Devolucion,ont.Estado,Literal(estado)))
+    gcom.add((ont.Devolucion,RDF.type,devoluciones_ns.type))
     gcom.add((obj,RDF.type,agn.RespuestaDevolucion))
 
     msg = build_message(gcom,
@@ -191,12 +194,11 @@ def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha
 
     # Enviamos el mensaje a cualquier agente monetario
     send_message_any(msg,AgenteDevolvedor,DirectorioAgentes,usuario.type)
-
+    """
 def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, producto, aceptado):
     global devoluciones_ns
 
-    now = datetime.datetime.now()
-    fecha = now.day + "/" + now.month + "/" + now.year
+    fecha = datetime.date.today()
     estado = None
     if aceptado:
         estado = "En marcha"
@@ -205,14 +207,14 @@ def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, produ
 
 
     rand = randint(0, 50)
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Persona, persona))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Producto, producto))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Importe, importe))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Fecha, fecha))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.EmpresaMensajeria, mensajeria))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Direccion, direccion))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Razon, razon))
-    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Estado, estado))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Persona, Literal(persona)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Producto, Literal(producto)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Importe, Literal(importe)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Fecha, Literal(fecha)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.EmpresaMensajeria, Literal(mensajeria)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Direccion, Literal(direccion)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Razon, Literal(razon)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Estado, Literal(estado)))
     guardarGrafo(devoluciones, devoluciones_db)
 
 @app.route("/Devoluciones")
@@ -344,8 +346,8 @@ def test1():
     gcom = Graph()
     gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
     
-    gcom.add((ont.Devolucion, ont.Pedido, Literal(0)))    #el objeto debera ser el identificador del pedido
-    gcom.add((ont.Devolucion, ont.Producto, Literal("Patatas")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Pedido, Literal("2")))    #el objeto debera ser el identificador del pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("sdf")))    #el objeto debera ser el identificador del producto en un pedido
     gcom.add((ont.Devolucion, ont.Usuario, Literal("adrian")))
     gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("Defectuoso")))
 
@@ -357,7 +359,7 @@ def test1():
 
     return 'Exit'
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     # Ponemos en marcha los behaviors
     
 
@@ -366,6 +368,6 @@ if __name__ == '__main__':
     cargarGrafos()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)
 
     print('The End')
