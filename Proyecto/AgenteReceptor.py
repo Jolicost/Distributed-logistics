@@ -340,6 +340,10 @@ def centroMasCercano(pedido,producto):
 	return masCercano
 
 
+def informarCentroLogisticoEnvio(centro,pedido,productos):
+	print (centro,pedido,productos)
+
+
 @app.route("/simularOrganizar")
 def simulacionOrganizar():
 	id = request.args['id']
@@ -358,6 +362,9 @@ def simulacionOrganizar():
 		else:
 			decision[masCercano] = [producto]
 
+
+	for c in decision:
+		informarCentroLogisticoEnvio(c,pedido,decision[c])
 
 	return redirect("/")
 

@@ -131,3 +131,9 @@ def dict_a_centro(dict):
 	g.add((centro,centros_ns.Ubicadoen,localizacion))
 
 	return g
+
+
+def pedido_a_envio(graph,pedido):
+	'''devuelve el pedido transformado en un envio'''
+	envios_ns = getNamespace('envios')
+	return False

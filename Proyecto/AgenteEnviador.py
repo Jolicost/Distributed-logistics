@@ -49,10 +49,10 @@ actions = {}
 
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafo():
-    global g
-    if os.path.isfile(graphFile):
+	global g
+	if os.path.isfile(graphFile):
 		g.parse(graphFile,format="turtle")
-    return g
+	return g
 
 #cargamos el grafo
 g = cargarGrafo()
@@ -65,6 +65,7 @@ def comunicacion():
 	gm.parse(data=message)
 
 	msgdic = get_message_properties(gm)
+	gr = None
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic:
 		# Si no es, respondemos que no hemos entendido el mensaje
@@ -85,60 +86,61 @@ def comunicacion():
 
 @app.route("/test")
 def test():
-    global lotes_ns
-    id = 1234
-    gg = Graph()
-    for i in range(1,10):
-        gg.add((lotes_ns[i],RDF.type,lotes_ns.type))
-        gg.add((lotes_ns[i],lotes_ns.Nombre,Literal("name"+str(i))))
+	global lotes_ns
+	id = 1234
+	gg = Graph()
+	for i in range(1,10):
+		gg.add((lotes_ns[i],RDF.type,lotes_ns.type))
+		gg.add((lotes_ns[i],lotes_ns.Nombre,Literal("name"+str(i))))
 
-    for s in gg.subjects():
-        print(gg.triples((s, )))
+	for s in gg.subjects():
+		print(gg.triples((s, )))
 
-    print(gg)
-    print("TEST PASSED")
-    return "Hello agents!"
-    #return create_confirm(AgenteEnviador,None)
+	print(gg)
+	print("TEST PASSED")
+	return "Hello agents!"
+	#return create_confirm(AgenteEnviador,None)
 
 @app.route("/enviarLote")
 def enviarLote(graf):
-    #global lotes_ns
-    #global g
-    #lts = g.subjects(predicate=RDF.type,object=lotes_ns.type)
-    #list = []
+	#global lotes_ns
+	#global g
+	#lts = g.subjects(predicate=RDF.type,object=lotes_ns.type)
+	#list = []
 
-    #gt = Graph()
-    #gt.add((lotes_ns[1], lotes_ns.TestField1, Literal(42)))
-    #gt.add((lotes_ns[2], lotes_ns.TestField2, Literal(69)))
-    #gettest = gt.triples((lotes_ns[1], None, None))
-    #print("-- Result --")
-    #for s,p,o in gt:
-    #    print (s,p,o)
-    #print(gettest)
-    #print("-- End result --")
-    return "OK"
+	#gt = Graph()
+	#gt.add((lotes_ns[1], lotes_ns.TestField1, Literal(42)))
+	#gt.add((lotes_ns[2], lotes_ns.TestField2, Literal(69)))
+	#gettest = gt.triples((lotes_ns[1], None, None))
+	#print("-- Result --")
+	#for s,p,o in gt:
+	#    print (s,p,o)
+	#print(gettest)
+	#print("-- End result --")
+	return "OK"
 
 
 @app.route("/testMensaje")
 def testMensaje():
-    obj = createAction(AgenteEnviador,'callbackTest')
-    gcom = Graph()
+	obj = createAction(AgenteEnviador,'callbackTest')
+	gcom = Graph()
 
-    gcom.add((obj,RDF.type,agn.EnviadorTestCallback))
+	gcom.add((obj,RDF.type,agn.EnviadorTestCallback))
 
-    msg = build_message(gcom,
-        perf=ACL.request,
-        sender=AgenteEnviador.uri,
-        content=obj)
+	msg = build_message(gcom,
+		perf=ACL.request,
+		sender=AgenteEnviador.uri,
+		content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    print("Envio mensaje test")
-    send_message_any(msg,AgenteEnviador,DirectorioAgentes,enviador.type)
-    return "Envio en curso"
+	# Enviamos el mensaje a cualquier agente admisor
+	print("Envio mensaje test")
+	send_message_any(msg,AgenteEnviador,DirectorioAgentes,enviador.type)
+	return "Envio en curso"
 
-
-def callbackTest():
-    print("Callback working!")
+''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
+def callbackTest(graph):
+	print("Callback working!")
+	return create_confirm(AgenteEnviador)
 
 def registerActions():
 	global actions
@@ -146,18 +148,20 @@ def registerActions():
 
 @app.route("/")
 def main_page():
-    """
-    El hola mundo de los servicios web
-    :return:
-    """
-    return render_template('main.html')
+	"""
+	El hola mundo de los servicios web
+	:return:
+	"""
+	return render_template('main.html')
 
-
-if __name__ == "__main__":
-    app.run()
 
 
 def start_server():
-    register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
-    registerActions()
-    app.run()
+	register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
+	registerActions()
+	app.run(host=host,port=port,debug=True)
+
+
+if __name__ == "__main__":
+	start_server()
+
