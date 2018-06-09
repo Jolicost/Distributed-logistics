@@ -87,6 +87,7 @@ def comunicacion():
 
 
 def nuevoEnvio(graph):
+	graph.serialize('test.turtle',format="turtle")
 	print("parece que me llega un envio")
 	return create_confirm(AgenteEmpaquetador)
 

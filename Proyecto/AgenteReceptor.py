@@ -208,7 +208,6 @@ def crearProductoPedido(id):
 
 	node =  productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns[id + 'listaProductos']
 
-
 	#node = productos.objects(subject=pedido,predicate=pedidos_ns.Contiene).next() or BNode()
 	pedidos.add((pedido,pedidos_ns.Contiene,node))
 	c = Collection(pedidos,node)
