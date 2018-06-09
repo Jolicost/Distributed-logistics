@@ -60,7 +60,7 @@ productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 # Flask stuff
-app = Flask(__name__)
+app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -212,6 +212,21 @@ def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, produ
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Estado, estado))
     guardarGrafo(devoluciones, devoluciones_db)
 
+@app.route("/Devoluciones")
+def getDevoluciones():
+    global devoluciones
+    global devoluciones_ns
+
+    idUsuario = request.args['id']
+
+    array = [][]
+    for s,p,o in devoluciones.triples((None, devoluciones_ns.Persona, idUsuario)):
+        aux = []
+        for ss,pp,oo in devoluciones.triples((s, None, None)):
+            aux.append(str(oo))
+        array.append(aux)
+
+    return render_template('lista_devoluciones.html', a = array, u = idUsuario)
 
 def pedirReembolso(persona, importe):      #pedir al agente monetario el reembolso del importe del producto
     global ont
