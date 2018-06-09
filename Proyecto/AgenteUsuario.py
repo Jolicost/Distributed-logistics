@@ -26,6 +26,9 @@ port = 8034
 directorio_host = 'localhost'
 directorio_port = 9000
 
+
+ont = Namespace('Ontologias/root-ontology.owl')
+
 name = "Alex"
 id_user = 1
 
@@ -46,6 +49,8 @@ productos_ns = getNamespace('Productos')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
+
+devoluciones_ns = getNamespace('Devoluciones')
 
 opiniones_ns = getNamespace('Opiniones')
 productos_a_opinar = Graph()
@@ -229,11 +234,26 @@ def recibirProductosaOpinar(graph):
     productos_a_opinar = graph
     guardarGrafo(graph,productosOpinar_db)
     return create_confirm(AgenteUsuario,None)
-
+"""
+def resultadoDevolucion(graph):
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in res.subjects(predicate=RDF.type,object=devoluciones_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = res.value(subject = s,predicate = ont.Producto)
+        dic['razon'] = res.value(subject = s,predicate = ont.Razon)
+        dic['estado'] = res.value(subject = s,predicate = ont.Estado)
+        l = l + [dic]
+    return render_template('devoluciones.html',list=l)
+"""
 def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
     actions[agn.PedirOpiniones] = recibirProductosaOpinar
+    actions[agn.RespuestaDevolucion] = resultadoDevolucion
     #actions[agn.resultadoBusqueda] = mostrarResultadoBusqueda
 
 def init_agent():
