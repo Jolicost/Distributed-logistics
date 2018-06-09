@@ -345,7 +345,7 @@ def test1():
     gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
     
     gcom.add((ont.Devolucion, ont.Pedido, Literal(0)))    #el objeto debera ser el identificador del pedido
-    gcom.add((ont.Devolucion, ont.Producto, Literal("Patatas")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("1764669413770059")))    #el objeto debera ser el identificador del producto en un pedido
     gcom.add((ont.Devolucion, ont.Usuario, Literal("adrian")))
     gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("Defectuoso")))
 
