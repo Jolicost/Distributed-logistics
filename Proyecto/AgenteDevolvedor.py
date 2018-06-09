@@ -113,12 +113,15 @@ def comprobar15Dias(graph):
             idPedido = int(o)
         if p == ont.Producto:
             idProducto == str(o)
-'''
-    for s,p,o in pedidos.triples((pedidos_ns[idPedido], None, None)):
-        for 
-            
 
-    '''
+    fecha = None
+    for s,p,o in pedidos.triples((pedidos_ns[idPedido], pedidos_ns.Fecharealizacion, None)):
+        fecha = o
+
+    now = datetime.datetime.now()
+    fechahoy = now.day + "/" + now.month + "/" + now.year
+    #TODO comparar las fechas
+
     aceptado = False    # si > 15 dias False, else true
     if aceptado:
         elegirEmpresaMensajeria(graph, "NoSatisface")
@@ -193,7 +196,7 @@ def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, produ
     global devoluciones_ns
 
     now = datetime.datetime.now()
-    fecha = now.day + "-" + now.month + "-" + now.year
+    fecha = now.day + "/" + now.month + "/" + now.year
     estado = None
     if aceptado:
         estado = "En marcha"
