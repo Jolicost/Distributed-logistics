@@ -192,7 +192,9 @@ def comunicacion():
 def buscarProductos():
     criterio = request.args['criterio']
     g = Graph()
-    g.add((peticiones_ns[str(id_user)+criterio], productos_ns.Nombre, Literal(criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Busqueda, Literal(criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Id, Literal(str(id_user)+criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.User, Literal(AgenteUsuario.uri)))
     g.add((peticiones_ns[str(id_user)+criterio], RDF.type, peticiones_ns.type))
     obj = createAction(AgenteUsuario,'peticionBusqueda')
 
@@ -203,10 +205,21 @@ def buscarProductos():
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteUsuario,DirectorioAgentes,buscador.type)
+    res = send_message_any(msg,AgenteUsuario,DirectorioAgentes,buscador.type)
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in res.subjects(predicate=RDF.type,object=productos_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = res.value(subject = s,predicate = productos_ns.Nombre)
+        dic['id'] = res.value(subject = s,predicate = productos_ns.Id)
+        dic['import'] = res.value(subject = s,predicate = productos_ns.Importe)
+        l = l + [dic]
 
-
-    return "hola"
+    #Renderizamos la vista
+    return render_template('resultadoBusqueda.html',criterio=criterio, list=l)
 
 def rebreRecomanacions(graph):
     guardarGrafo(graph, recomendaciones_db)
