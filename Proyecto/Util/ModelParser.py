@@ -226,3 +226,4 @@ def lote_a_dict(graph,lote):
 
 	ret['envios'] = envs
 	return ret
+

@@ -292,7 +292,11 @@ def decidirResponsabilidad(pedido):
 
 def registrarPedido(graph):
 	''' registra un pedido en la base de datos de pedidos de la tienda '''
-	pass
+	global pedidos
+	pedido = graph.subjects(predicate=RDF.type,object=pedidos_ns.type).next()
+	pedidos += pedido
+	return pedido
+
 def decidirResponsabilidadEnvio(pedido):
 	responsabilidad = decidirResponsabilidad(pedido)
 	procesarDecision(pedido,responsabilidad)
@@ -301,6 +305,8 @@ def decidirResponsabilidadEnvio(pedido):
 def resolverEnvio(graph):
 	pedido = registrarPedido(graph)
 	decidirResponsabilidadEnvio(pedido)
+	organizarPedido(pedido)
+
 
 def centroMasCercano(pedido,producto):
 	''' Atencion, localizacion y centros logisticos son 2 nodos de los grafos pedidos y productos '''
@@ -427,7 +433,8 @@ def agentbehavior1(cola):
 
 def registerActions():
 	global actions
-	#actions[agn.VendedorNuevoProducto] = nuevoProducto
+	#Procesado de peticiones del usuario de compra
+	actions[agn.UsuarioNuevoPedido] = resolverEnvio
 
 '''Percepciones'''
 def peticionDeCompra(graph):

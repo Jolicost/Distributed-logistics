@@ -27,8 +27,9 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 from Util.Directorio import *
+from Util.GraphUtil import *
 
-from Util.Namespaces import getNamespace,getAgentNamespace
+from Util.Namespaces import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 
@@ -46,18 +47,13 @@ directorio_port = 9000
 
 agn = getAgentNamespace()
 
-buscador = getNamespace('AgenteBuscador')
-usuario = getNamespace('AgenteUsuario')
 #Objetos agente
-AgenteBuscador = Agent('AgenteBuscador',buscador['generic'],formatDir(host,port) + '/comm',None)
+AgenteBuscador = Agent('AgenteBuscador',agenteBuscador_ns['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-productos_ns = getNamespace("Productos")
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
-
-peticiones_ns = getNamespace("Peticiones")
 
 peticiones_db = 'Datos/peticiones.turtle'
 peticiones = Graph()
@@ -82,6 +78,12 @@ def cargarGrafos():
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
 
+def guardarGrafoProductos():
+    guardarGrafo(productos,productos_db)
+
+def guardarGrafoPeticiones():
+    guardarGrafo(peticiones,peticiones_db)
+
 @app.route("/")
 def hola():
     return "soy el agente buscador, hola!"
@@ -90,33 +92,27 @@ def hola():
 def buscarProductos(graph):
     global productos
     g = Graph()
-    """
-    for pe in graph.subjects(predicate=RDF.type, object=productos_ns.type):
-        for a,b,c in graph.triples((pe,productos_ns.Nombre,None)):
-            for m in productos.subjects(predicate=RDF.type, object=productos_ns.type):
-                for d,f,e in productos.triples((pe,productos_ns.Nombre,None)):
-                    similar = get_close_matches(c,e)
-                    if len(similar) != 0:
-                        g.add(d,f,e)
-    """
     nuevaPeticion(graph)
 
+    # Nombre equivalente
     for pe in graph.subjects(predicate=RDF.type, object=peticiones_ns.type):
-        for a,b,c in graph.triples((pe,peticiones_ns.Busqueda,None)):
-            for m in productos.subjects(predicate=RDF.type, object=productos_ns.type):
-                for d,e,f in productos.triples((m,productos_ns.Nombre,None)):
-                    if c in f:
-                        for h,i,j in productos.triples((d,None,None)):
-                            g.add((h,i,j))
-    return g
+        busqueda = graph.value(subject=pe,predicate=peticiones_ns.Busqueda)
+        for p in productos.subjects(predicate=RDF.type, object=productos_ns.type):
+            nombre = productos.value(subject=p,predicate=productos_ns.Nombre)
+            if nombre == busqueda:
+                g += expandirGrafoRec(productos,p)
+    return g 
+
 
 def nuevaPeticion(graph):
     global peticiones
     p = graph.subjects(predicate=RDF.type,object=peticiones_ns.type)
+    save = Graph()
     for pe in p:
-        for a,b,c in graph.triples((pe,None,None)):
-            peticiones.add((a,b,c))
-    guardarGrafo(peticiones,peticiones_db)
+        save+= expandirGrafoRec(graph,pe)
+
+    peticiones+=save
+    guardarGrafoPeticiones()
 
 
 @app.route("/comm")
@@ -176,7 +172,7 @@ def agentbehavior1(cola):
     pass
 
 def init_agent():
-    register_message(AgenteBuscador,DirectorioAgentes,buscador.type)
+    register_message(AgenteBuscador,DirectorioAgentes,agenteBuscador_ns.type)
 
 def registerActions():
     global actions
@@ -196,7 +192,7 @@ if __name__ == '__main__':
     cargarGrafos()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port,debug=True)
 
     # Esperamos a que acaben los behaviors
     ab1.join()

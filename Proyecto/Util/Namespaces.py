@@ -51,7 +51,8 @@ ns_bases = {
 	'Ofertas':tienda_prefix + 'Ofertas', #de transporte
 	'Peticiones':tienda_prefix + 'Peticiones', #de busqueda
 	'Centros':tienda_prefix + 'Centros', #Centros logisticos
-	'Direcciones':tienda_prefix + 'Direcciones' #Direcciones de entrega o de centros
+	'Direcciones':tienda_prefix + 'Direcciones', #Direcciones de entrega o de centros
+	'Recomendaciones':tienda_prefix + 'Recomendaciones' #Recomendaciones de productos
 }
 
 def createAction(Agent,actionName):
@@ -96,6 +97,7 @@ ofertas_ns = getNamespace('Ofertas')
 peticiones_ns = getNamespace('Peticiones')
 centros_ns = getNamespace('Centros')
 direcciones_ns = getNamespace('Direcciones')
+recomendaciones_ns = getNamespace('Recomendaciones')
 
 if __name__ == "__main__":
 	pass

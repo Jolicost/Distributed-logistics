@@ -12,10 +12,11 @@ from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
 #Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
+from Util.Namespaces import *
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
+import random
 
 __author__ = 'alejandro'
 
@@ -26,41 +27,33 @@ port = 8034
 directorio_host = 'localhost'
 directorio_port = 9000
 
-
-ont = Namespace('Ontologias/root-ontology.owl')
-
+#Nombre de la persona
 name = "Alex"
-id_user = 1
+
 
 agn = getAgentNamespace()
 
-usuario = getNamespace('AgenteUsuario')
-opinador = getNamespace('AgenteOpinador')
-buscador = getNamespace('AgenteBuscador')
-devolvedor = getNamespace('AgenteDevolvedor')
 #Objetos agente
-AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(host,port) + '/comm',None)
+AgenteUsuario = Agent('AgenteUsuario',agenteUsuario_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-productosOpinar_db = 'Datos/productos_a_opinar.turtle'
 
-recomendaciones_db = 'Datos/recomendaciones.turtle'
+productos_a_opinar_db = 'AgenteUsuario/Opinar/%s.turtle'
+recomendaciones_db = 'AgenteUsuario/Recomendaciones/%s.turtle'
+carrito_db = 'AgenteUsuario/Carritos/%s.turtle'
+pedidos_db = 'AgenteUsuario/Pedidos/%s.turtle'
+envios_db = 'AgenteUsuario/Envios/%s.turtle'
 
-productos_ns = getNamespace('Productos')
-
-pedidos_ns = getNamespace('Pedidos')
-
-productos_db = 'Datos/productos.turtle'
-productos = Graph()
-
-devoluciones_ns = getNamespace('Devoluciones')
-
-opiniones_ns = getNamespace('Opiniones')
+#En los pedidos se guardan los productos comprados que ya han sido enviados (y que por tanto pueden 
+# ser devueltos)
 productos_a_opinar = Graph()
+recomendaciones = Graph()
+carrito = Graph()
+pedidos = Graph()
+envios = Graph()
 
-peticiones_ns = getNamespace('Peticiones')
 
-cola1 = Queue()
+
 
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
@@ -68,20 +61,49 @@ cola1 = Queue()
 actions = {}
 
 
-
 app = Flask(__name__,template_folder="AgenteUsuario/templates")
 
+def getDatos():
+    datos = [
+        {
+            'db':productos_a_opinar_db,
+            'graph':productos_a_opinar
+        },
+        {
+            'db':recomendaciones_db,
+            'graph':recomendaciones
+        },
+        {
+            'db':carrito_db,
+            'graph':carrito
+        },
+        {
+            'db':pedidos_db,
+            'graph':pedidos
+        },
+        {
+            'db':envios_db,
+            'graph':envios
+        }
+    ]
+    return datos
 
+#Carga el grafo rdf del fichero graphFile
 def cargarGrafos():
-    global productos
-    opiniones = Graph()
-    if os.path.isfile(productosOpinar_db):
-        productos_a_opinar.parse(productosOpinar_db,format="turtle")
 
-    
+    datos = getDatos()
+    for s in datos:
+        file = s['db']%name
+        if os.path.isfile(file):
+            s['graph'].parse(file,format="turtle")
+        else:
+            s['graph'] = Graph()
 
-def guardarGrafo(g,file):
-    g.serialize(file,format="turtle")   
+def guardarGrafo(g):
+    datos = getDatos()
+    for d in datos:
+        if d['graph'] is g:
+            g.serialize(d['db']%name,format="turtle")
 
 @app.route("/")
 def main_page():
@@ -91,19 +113,73 @@ def main_page():
     """
     return render_template('main.html')
 
+def calcularTotalCarrito():
+    total = 0
+    for p in carrito.subjects(RDF.type,productos_ns.type):
+        try:
+            total += carrito.value(p,productos_ns.Importe)
+        except ValueError:
+            pass
+
+    return total
+
+@app.route("/carrito")
+def verCarrito():
+    total = calcularTotalCarrito()
+    list = []
+    for p in carrito.subjects(RDF.type,productos_ns.type):
+        dict = {}
+        dict['Nombre'] = carrito.value(p,productos_ns.Nombre)
+        dict['Cantidad'] = carrito.value(p,productos_ns.Cantidad)
+        dict['Subtotal'] = carrito.value(p,productos_ns.Importe)
+        dict['Total'] = str(int(dict['Subtotal']) * int(dict['Cantidad']))
+        list+=[dict]
+
+    return render_template('carrito.html',list=list,total=total,name=name)
+
+
+
+@app.route("/checkout")
+def checkout():
+    pass
+
+
+@app.route("/anadirProductoCarrito")
+def anadirProductoCarrito():
+    dict = request.args
+    ref = dict['ref']
+    id = dict['id']
+    importe = dict['importe']
+    nombre = dict['nombre']
+
+    try:
+
+        
+        carrito.triples((productos_ns[id],None,None)).next()
+        value = carrito.value(productos_ns[id],productos_ns.Cantidad)
+        carrito.set((productos_ns[id],productos_ns.Cantidad,Literal(int(value)+1)))
+        guardarGrafo(carrito)
+    except StopIteration:
+        carrito.add((productos_ns[id], productos_ns.Id,Literal(id)))
+        carrito.add((productos_ns[id], productos_ns.Importe,Literal(importe)))
+        carrito.add((productos_ns[id], productos_ns.Nombre,Literal(nombre)))
+        carrito.add((productos_ns[id], productos_ns.Cantidad,Literal(1)))
+        carrito.add((productos_ns[id], RDF.type, productos_ns.type))
+        guardarGrafo(carrito)
+    except ValueError:
+        return "Error en el formato de los numeros"
+
+    return redirect("/" + ref)
 @app.route("/recomendaciones")
 def verRecomendaciones():
-    g = Graph()
-    if os.path.isfile(recomendaciones_db):
-        g.parse(recomendaciones_db,format="turtle")
     l = []
+    g = recomendaciones
     #Todos los productos tienen el predicado "type" a productos.type.
     #De esta forma los obtenemos con mas facilidad y sin consulta sparql
     #La funcoin subjects retorna los sujetos con tal predicado y objeto
     for s in g.subjects(predicate=RDF.type,object=productos_ns.type):
         # Anadimos los atributos que queremos renderizar a la vista
         dic = {}
-        dic['resource'] = s
         dic['nom'] = g.value(subject = s,predicate = productos_ns.Nombre)
         dic['preu'] = g.value(subject = s,predicate = productos_ns.Importe)
         dic['id'] = g.value(subject = s,predicate = productos_ns.Id)
@@ -114,9 +190,7 @@ def verRecomendaciones():
 
 @app.route("/opinar")
 def verProductosaOpinar():
-    g = Graph()
-    if os.path.isfile(productosOpinar_db):
-        g.parse(productosOpinar_db,format="turtle")
+    g = productos_a_opinar
     l = []
     #Todos los productos tienen el predicado "type" a productos.type.
     #De esta forma los obtenemos con mas facilidad y sin consulta sparql
@@ -137,6 +211,7 @@ def darOpinion(id):
 
 @app.route("/devolver")
 def verProductosaDevolver():
+    '''
     g = Graph()
     if os.path.isfile(productos_db):
         g.parse(productos_db,format="turtle")
@@ -153,6 +228,8 @@ def verProductosaDevolver():
 
     #Renderizamos la vista
     return render_template('listaProductosDevolver.html',list=l)
+    '''
+    return "Mantenimiento"
 
 @app.route("/productosDevolver/<id>/devolver", methods=['GET'])
 def crearDevolucion(id):
@@ -165,7 +242,7 @@ def crearPeticionDevolucion(id):
     g = Graph()
     g.add((devoluciones_ns[str(id_user)+str(id)], productos_ns.Id, Literal(id)))
     g.add((devoluciones_ns[str(id_user)+str(id)], pedidos_ns.Id, Literal("2")))
-    g.add((devoluciones_ns[str(id_user)+str(id)], usuario.Id, Literal(name)))
+    g.add((devoluciones_ns[str(id_user)+str(id)], agenteUsuario_ns.Id, Literal(name)))
     g.add((devoluciones_ns[str(id_user)+str(id)], RDF.type, devoluciones_ns.type))
     obj = createAction(AgenteUsuario,'crearDevolucion')
 
@@ -176,13 +253,8 @@ def crearPeticionDevolucion(id):
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteUsuario,DirectorioAgentes,devolvedor.type)
-    """
-    for p in g.subjects(predicate=productos_ns.Id, object=Literal(id)):
-        for a,b,c in graph.triples((p,None,None)):
-            productos_a_opinar.remove(a,b,c)
-    guardarGrafo(productos_a_opinar, productosOpinar_db)
-    """
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
+
     return redirect("/devolver")
 
 @app.route("/productosaOpinar/<id>/crearOpinion", methods=['GET'])
@@ -190,10 +262,10 @@ def crearOpinion(id):
     puntuacion = request.args['puntuacion']
     descripcion = request.args['descripcion']
     g = Graph()
-    g.add((opiniones_ns[str(id_user)+str(id)], devoluciones_ns.producto, Literal(id)))
-    g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.puntuacion, Literal(puntuacion)))
-    g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.descripcion, Literal(descripcion)))
-    g.add((opiniones_ns[str(id_user)+str(id)], RDF.type, opiniones_ns.type))
+    g.add((opiniones_ns[name+id], productos_ns.Id, Literal(id)))
+    g.add((opiniones_ns[name+id], opiniones_ns.Puntuacion, Literal(puntuacion)))
+    g.add((opiniones_ns[name+id], opiniones_ns.Descripcion, Literal(descripcion)))
+    g.add((opiniones_ns[name+id], RDF.type, opiniones_ns.type))
     obj = createAction(AgenteUsuario,'darOpinion')
 
     g.add((obj, RDF.type, agn.DarOpinion))
@@ -202,14 +274,9 @@ def crearOpinion(id):
         sender=AgenteUsuario.uri,
         content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
-    """
-    for p in g.subjects(predicate=productos_ns.Id, object=Literal(id)):
-        for a,b,c in graph.triples((p,None,None)):
-            productos_a_opinar.remove(a,b,c)
-    guardarGrafo(productos_a_opinar, productosOpinar_db)
-    """
+    # Enviamos el mensaje a cualquier agente opinador
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteOpinador_ns.type)
+
     return redirect("/opinar")
 
 @app.route("/buscar")
@@ -250,10 +317,12 @@ def comunicacion():
 def buscarProductos():
     criterio = request.args['criterio']
     g = Graph()
-    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Busqueda, Literal(criterio)))
-    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Id, Literal(str(id_user)+criterio)))
-    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.User, Literal(AgenteUsuario.uri)))
-    g.add((peticiones_ns[str(id_user)+criterio], RDF.type, peticiones_ns.type))
+    peticion_id = random.getrandbits(64)
+    peticion = peticiones_ns[peticion_id]
+    g.add((peticion, peticiones_ns.Busqueda, Literal(criterio)))
+    g.add((peticion, peticiones_ns.Id, Literal(peticion_id)))
+    g.add((peticion, peticiones_ns.User, AgenteUsuario.uri))
+    g.add((peticion, RDF.type, peticiones_ns.type))
     obj = createAction(AgenteUsuario,'peticionBusqueda')
 
     g.add((obj, RDF.type, agn.peticionBusqueda))
@@ -263,7 +332,7 @@ def buscarProductos():
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    res = send_message_any(msg,AgenteUsuario,DirectorioAgentes,buscador.type)
+    res = send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteBuscador_ns.type)
     l = []
     #Todos los productos tienen el predicado "type" a productos.type.
     #De esta forma los obtenemos con mas facilidad y sin consulta sparql
@@ -271,21 +340,32 @@ def buscarProductos():
     for s in res.subjects(predicate=RDF.type,object=productos_ns.type):
         # Anadimos los atributos que queremos renderizar a la vista
         dic = {}
-        dic['nom'] = res.value(subject = s,predicate = productos_ns.Nombre)
+        dic['nombre'] = res.value(subject = s,predicate = productos_ns.Nombre)
         dic['id'] = res.value(subject = s,predicate = productos_ns.Id)
-        dic['import'] = res.value(subject = s,predicate = productos_ns.Importe)
+        dic['importe'] = res.value(subject = s,predicate = productos_ns.Importe)
         l = l + [dic]
 
     #Renderizamos la vista
     return render_template('resultadoBusqueda.html',criterio=criterio, list=l)
 
 def rebreRecomanacions(graph):
-    guardarGrafo(graph, recomendaciones_db)
+    global recomendaciones
+    save = Graph()
+    for r in graph.subjects(predicate=RDF.type,value=recomendaciones_ns.type):
+        save+=expandirGrafoRec(graph,r)
+
+    recomendaciones += save
+    guardarGrafo(recomendaciones)
     return create_confirm(AgenteUsuario,None)
 
 def recibirProductosaOpinar(graph):
-    productos_a_opinar = graph
-    guardarGrafo(graph,productosOpinar_db)
+    global productos_a_opinar
+    save = Graph()
+    for r in graph.subjects(predicate=RDF.type,value=productos_ns.type):
+        save+=expandirGrafoRec(graph,r)
+
+    productos_a_opinar += save
+    guardarGrafo(productos_a_opinar)
     return create_confirm(AgenteUsuario,None)
 """
 def resultadoDevolucion(graph):
@@ -309,7 +389,7 @@ def registerActions():
     #actions[agn.resultadoBusqueda] = mostrarResultadoBusqueda
 
 def init_agent():
-    register_message(AgenteUsuario,DirectorioAgentes,usuario.type)
+    register_message(AgenteUsuario,DirectorioAgentes,agenteUsuario_ns.type)
 
 def start_server():
     init_agent()
