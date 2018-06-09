@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Resultado de busqueda</title>
+    <title>Lista de productos</title>
 </head>
 <style>
 table, th, td {
@@ -14,7 +14,7 @@ th, td {
 }
 </style>
 <body>
-	<h1>Resultados a la busqueda {{ criterio }}</h1>
+	<h1>Lista de productos a devolver</h1>
 	{% if list %}
 		{% set header = list[0] %}
 		<table>
@@ -31,6 +31,9 @@ th, td {
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
 					{% endfor %}
+						<th>
+							<a href="/productosDevolver/{{ elem['id'] }}/devolver"><button>Devolver el producto</button></a>
+						</th>
 				</tr>
 				{% endfor %}
 			</tbody>

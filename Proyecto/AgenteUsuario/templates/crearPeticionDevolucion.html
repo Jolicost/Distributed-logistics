@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dar una opinión</title>
+</head>
+<body>
+	<h1>Danos tu opinión</h1>
+	<form action="/productosDevolver/{{id}}/crearDevolucion" method="GET">
+		<p>Razón: </p>
+		<select name="razon">
+			<option value="NoSatisface">NoSatisface</option>
+  			<option value="Defectuoso">Defectuoso</option>
+  			<option value="Equivocado">Equivocado</option>
+		</select>
+		<br>
+		<button type="submit">Enviar</button>
+	</form>
+</body>

@@ -26,6 +26,9 @@ port = 8034
 directorio_host = 'localhost'
 directorio_port = 9000
 
+
+ont = Namespace('Ontologias/root-ontology.owl')
+
 name = "Alex"
 id_user = 1
 
@@ -33,6 +36,8 @@ agn = getAgentNamespace()
 
 usuario = getNamespace('AgenteUsuario')
 opinador = getNamespace('AgenteOpinador')
+buscador = getNamespace('AgenteBuscador')
+devolvedor = getNamespace('AgenteDevolvedor')
 #Objetos agente
 AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
@@ -43,11 +48,17 @@ recomendaciones_db = 'Datos/recomendaciones.turtle'
 
 productos_ns = getNamespace('Productos')
 
+pedidos_ns = getNamespace('Pedidos')
+
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
+devoluciones_ns = getNamespace('Devoluciones')
+
 opiniones_ns = getNamespace('Opiniones')
 productos_a_opinar = Graph()
+
+peticiones_ns = getNamespace('Peticiones')
 
 cola1 = Queue()
 
@@ -64,10 +75,9 @@ app = Flask(__name__,template_folder="AgenteUsuario/templates")
 def cargarGrafos():
     global productos
     opiniones = Graph()
-    if os.path.isfile(opiniones_db):
-        opiniones.parse(opiniones_db,format="turtle")
-    elif os.path.isfile(productos_db):
-        productos.parse(productos_db,format="turtle")
+    if os.path.isfile(productosOpinar_db):
+        productos_a_opinar.parse(productosOpinar_db,format="turtle")
+
     
 
 def guardarGrafo(g,file):
@@ -101,38 +111,7 @@ def verRecomendaciones():
 
     #Renderizamos la vista
     return render_template('recomendaciones.html',list=l)
-"""
-@app.route("/crearOpinion", methods=['GET'])
-def darOpinion():
-    crearOpinion(request.args)
-    return redirect("/")
 
-def crearOpinion(attrs):
-    puntuacion = attrs['puntuacion']
-    descripcion = attrs['descripcion']
-    g = Graph()
-    g.add((opiniones_ns[1],opiniones_ns.puntuacion,Literal(puntuacion)))
-    g.add((opiniones_ns[1],opiniones_ns.descripcion,Literal(descripcion)))
-    obj = createAction(AgenteUsuario,'darOpinion')
-
-    g.add((obj, RDF.type, agn.DarOpinion))
-    
-    msg = build_message(g,
-        perf=ACL.request,
-        sender=AgenteUsuario.uri,
-        content=obj)
-
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
-
-
-@app.route("/opinar")
-def nuevaOpinion():
-
-
-
-    return render_template('darOpinion.html')
-"""
 @app.route("/opinar")
 def verProductosaOpinar():
     g = Graph()
@@ -156,11 +135,62 @@ def verProductosaOpinar():
 def darOpinion(id):
     return render_template('darOpinion.html',id=id)
 
+@app.route("/devolver")
+def verProductosaDevolver():
+    g = Graph()
+    if os.path.isfile(productos_db):
+        g.parse(productos_db,format="turtle")
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in g.subjects(predicate=RDF.type,object=productos_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = g.value(subject = s,predicate = productos_ns.Nombre)
+        dic['id'] = g.value(subject = s,predicate = productos_ns.Id)
+        l = l + [dic]
+
+    #Renderizamos la vista
+    return render_template('listaProductosDevolver.html',list=l)
+
+@app.route("/productosDevolver/<id>/devolver", methods=['GET'])
+def crearDevolucion(id):
+    return render_template('crearPeticionDevolucion.html',id=id)
+
+
+@app.route("/productosDevolver/<id>/crearDevolucion", methods=['GET'])        
+def crearPeticionDevolucion(id):
+    razon = request.args['razon']
+    g = Graph()
+    g.add((devoluciones_ns[str(id_user)+str(id)], productos_ns.Id, Literal(id)))
+    g.add((devoluciones_ns[str(id_user)+str(id)], pedidos_ns.Id, Literal("2")))
+    g.add((devoluciones_ns[str(id_user)+str(id)], usuario.Id, Literal(name)))
+    g.add((devoluciones_ns[str(id_user)+str(id)], RDF.type, devoluciones_ns.type))
+    obj = createAction(AgenteUsuario,'crearDevolucion')
+
+    g.add((obj, RDF.type, agn.DevolvedorPedirOpinion))
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,devolvedor.type)
+    """
+    for p in g.subjects(predicate=productos_ns.Id, object=Literal(id)):
+        for a,b,c in graph.triples((p,None,None)):
+            productos_a_opinar.remove(a,b,c)
+    guardarGrafo(productos_a_opinar, productosOpinar_db)
+    """
+    return redirect("/devolver")
+
 @app.route("/productosaOpinar/<id>/crearOpinion", methods=['GET'])
 def crearOpinion(id):
     puntuacion = request.args['puntuacion']
     descripcion = request.args['descripcion']
     g = Graph()
+    g.add((opiniones_ns[str(id_user)+str(id)], devoluciones_ns.producto, Literal(id)))
     g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.puntuacion, Literal(puntuacion)))
     g.add((opiniones_ns[str(id_user)+str(id)], opiniones_ns.descripcion, Literal(descripcion)))
     g.add((opiniones_ns[str(id_user)+str(id)], RDF.type, opiniones_ns.type))
@@ -173,10 +203,14 @@ def crearOpinion(id):
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    print("antes")
     send_message_any(msg,AgenteUsuario,DirectorioAgentes,opinador.type)
-    print("llego aqui")
-    return "Se ha enviado correctamente"
+    """
+    for p in g.subjects(predicate=productos_ns.Id, object=Literal(id)):
+        for a,b,c in graph.triples((p,None,None)):
+            productos_a_opinar.remove(a,b,c)
+    guardarGrafo(productos_a_opinar, productosOpinar_db)
+    """
+    return redirect("/opinar")
 
 @app.route("/buscar")
 def pag():
@@ -214,25 +248,65 @@ def comunicacion():
 
 @app.route("/buscarProductos", methods=['GET','POST'])
 def buscarProductos():
-    resultado = ["peras","manzanas","zanahorias"]
+    criterio = request.args['criterio']
+    g = Graph()
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Busqueda, Literal(criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.Id, Literal(str(id_user)+criterio)))
+    g.add((peticiones_ns[str(id_user)+criterio], peticiones_ns.User, Literal(AgenteUsuario.uri)))
+    g.add((peticiones_ns[str(id_user)+criterio], RDF.type, peticiones_ns.type))
+    obj = createAction(AgenteUsuario,'peticionBusqueda')
 
-    return render_template(
-        'resultadoBusqueda.html',
-        criterio=request.args['criterio'],
-        values=resultado)
+    g.add((obj, RDF.type, agn.peticionBusqueda))
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    res = send_message_any(msg,AgenteUsuario,DirectorioAgentes,buscador.type)
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in res.subjects(predicate=RDF.type,object=productos_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = res.value(subject = s,predicate = productos_ns.Nombre)
+        dic['id'] = res.value(subject = s,predicate = productos_ns.Id)
+        dic['import'] = res.value(subject = s,predicate = productos_ns.Importe)
+        l = l + [dic]
+
+    #Renderizamos la vista
+    return render_template('resultadoBusqueda.html',criterio=criterio, list=l)
 
 def rebreRecomanacions(graph):
     guardarGrafo(graph, recomendaciones_db)
     return create_confirm(AgenteUsuario,None)
 
 def recibirProductosaOpinar(graph):
+    productos_a_opinar = graph
     guardarGrafo(graph,productosOpinar_db)
     return create_confirm(AgenteUsuario,None)
-
+"""
+def resultadoDevolucion(graph):
+    l = []
+    #Todos los productos tienen el predicado "type" a productos.type.
+    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
+    #La funcoin subjects retorna los sujetos con tal predicado y objeto
+    for s in res.subjects(predicate=RDF.type,object=devoluciones_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['nom'] = res.value(subject = s,predicate = ont.Producto)
+        dic['razon'] = res.value(subject = s,predicate = ont.Razon)
+        dic['estado'] = res.value(subject = s,predicate = ont.Estado)
+        l = l + [dic]
+    return render_template('devoluciones.html',list=l)
+"""
 def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
     actions[agn.PedirOpiniones] = recibirProductosaOpinar
+    #actions[agn.resultadoBusqueda] = mostrarResultadoBusqueda
 
 def init_agent():
     register_message(AgenteUsuario,DirectorioAgentes,usuario.type)
@@ -240,6 +314,7 @@ def init_agent():
 def start_server():
     init_agent()
     registerActions()
+    cargarGrafos()
     app.run(host=host,port=port,debug=True)
 
 

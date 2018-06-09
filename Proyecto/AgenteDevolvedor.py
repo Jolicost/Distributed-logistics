@@ -12,6 +12,7 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+from Util.ModelParser import *
 import datetime
 
 #Diccionario con los espacios de nombres de la tienda
@@ -21,7 +22,7 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from random import randint
 
-__author__ = 'alejandro'
+__author__ = 'adrian'
 
 host = 'localhost'
 port = 8017
@@ -56,9 +57,11 @@ pedidos_db = 'Datos/pedidos.turtle'
 pedidos = Graph()
 
 productos_ns = getNamespace('Productos')
+productos_db = 'Datos/productos.turtle'
+productos = Graph()
 
 # Flask stuff
-app = Flask(__name__)
+app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -68,44 +71,86 @@ actions = {}
 def cargarGrafos():
     global devoluciones
     global pedidos
+    global productos
     devoluciones = Graph()
     pedidos = Graph()
+    productos = Graph()
     if os.path.isfile(devoluciones_db):
         devoluciones.parse(devoluciones_db,format="turtle")
     if os.path.isfile(pedidos_db):
         pedidos.parse(pedidos_db,format="turtle")
+    if os.path.isfile(productos_db):
+        productos.parse(productos_db,format="turtle")
     
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
 
 def nuevaDevolucion(graph):     #empieza un thread de decidirDevolucion
-
+    """
     ab1 = Process(target=decidirDevolucion, args=(graph))
     ab1.start()
-
-    '''
-    global devoluciones
-    p = graph.subjects(predicate=RDF.type,object=devoluciones_ns.type)
-    for pe in p:
-        for a,b,c in graph.triples((pe,None,None)):
-            devoluciones.add((a,b,c))
-    guardarGrafo(devoluciones,devoluciones_db)'''
-
+    """
+    decidirDevolucion(graph)
     return create_confirm(AgenteDevolvedor,None)
 
 def decidirDevolucion(graph):   #decidir si se acepta o no la devolucion (RazonDevolucion == ("Defectuoso" || "Equivocado" || "NoSatisface"))
     for s,p,o in graph.triples((ont.Devolucion, ont.RazonDevolucion, None)):
-        if str(s) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
-            elegirEmpresaMensajeria(graph, "NoSatisface")
-            #comunicarRespuesta(graph, False, None, None)
-        elif str(s) == "Defectuoso":
+        if str(o) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
+            comprobar15Dias(graph)
+        elif str(o) == "Defectuoso":
+            print("entro aqui")
             elegirEmpresaMensajeria(graph, "Defectuoso")
-        elif str(s) == "Equivocado":
+        elif str(o) == "Equivocado":
             elegirEmpresaMensajeria(graph, "Equivocado")
 
+def comprobar15Dias(graph):
+    global ont
+    global pedidos
+    global pedidos_ns
+
+    idPedido = None
+    idProducto = None
+    for p,o in graph[ont.Devolucion]:
+        if p == ont.Pedido:
+            idPedido = str(o)
+        if p == ont.Producto:
+            idProducto == str(o)
+
+    fecha = None
+    dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
+    for item in dict['productos']:
+        if item['id'] == idProducto:
+            fecha = item['fechaEntrega']
+
+    year,month,day = fecha.split("-")
+    year = int(year)
+    month = int(month)
+    day = int(day)
+
+    now = datetime.datetime.now()
+    yearToday = int(now.year)
+    monthToday = int(now.month)
+    dayToday = int(now.day)
+    aceptado = True
+    if yearToday == year:
+        if monthToday == month:
+            if (dayToday - day) > 15:
+                aceptado = False
+        elif (monthToday - 1) == month:
+            daysTo30 = abs(day - 30)
+            if (dayToday + daysTo30) > 15:
+                aceptado = False
+    else:
+        aceptado = False
+
+    if aceptado:
+        elegirEmpresaMensajeria(graph, "NoSatisface")
+    else:
+        comunicarRespuesta(graph, False, None, None)
+
 def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
-    int rand = randint(0,4)
+    rand = randint(0,3)
     mensajeria = None
     direccion = None
     if rand == 0:
@@ -127,41 +172,87 @@ def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
     comunicarRespuesta(graph, True, mensajeria, direccion, razon)
 
 def comunicarRespuesta(graph, aceptado, mensajeria, direccion, razon): #si se ha aceptado o no enviar la respuesta al agente de usuario
+    global productos
+    global ont
+
     persona = None
     importe = None
     producto = None
     for p, o in graph[ont.Devolucion]:
-        if p == ont.Persona:
+        if p == ont.Usuario:
             persona = str(o)
         if p == ont.Producto:
             producto = str(o)
 
     # hay que mirar la base de datos de productos para ver el importe a devolver
-    importe = 1
-    pedirReembolso(graph, persona, importe)
+    for s,p,o in productos.triples((productos_ns[producto], productos_ns.Importe, None)):
+        importe = str(o)
 
-    now = datetime.datetime.now()
-    fecha = now.day + "-" + now.month + "-" + now.year
+    if aceptado:
+        crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, producto, aceptado)
+    """
+    #enviar la respuesta al agente de usuario
+    obj = createAction(AgenteUsuario,'respuestaDevolucion')
+
+    gcom = Graph()
+    gcom.add((ont.Devolucion,ont.Producto,Literal(producto)))
+    gcom.add((ont.Devolucion,ont.Razon,Literal(razon)))
+    estado = None
+    if aceptado:
+        estado = "En marcha"
+    else:
+        estado = "Denegado"
+    gcom.add((ont.Devolucion,ont.Estado,Literal(estado)))
+    gcom.add((ont.Devolucion,RDF.type,devoluciones_ns.type))
+    gcom.add((obj,RDF.type,agn.RespuestaDevolucion))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteDevolvedor.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente monetario
+    send_message_any(msg,AgenteDevolvedor,DirectorioAgentes,usuario.type)
+    """
+def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, producto, aceptado):
+    global devoluciones_ns
+
+    fecha = datetime.date.today()
     estado = None
     if aceptado:
         estado = "En marcha"
     else:
         estado = "Denegado"
 
-    tienda = getNamespace('Devoluciones')
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Persona, persona))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Producto, producto))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Fecha, fecha))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.EmpresaMensajeria, mensajeria))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Direccion, direccion))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Razon, razon))
-    devoluciones.add((tienda[persona+producto+fecha], tienda.Estado, estado))
+
+    rand = randint(0, 50)
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Persona, Literal(persona)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Producto, Literal(producto)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Importe, Literal(importe)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Fecha, Literal(fecha)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.EmpresaMensajeria, Literal(mensajeria)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Direccion, Literal(direccion)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Razon, Literal(razon)))
+    devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Estado, Literal(estado)))
     guardarGrafo(devoluciones, devoluciones_db)
 
-    #TODO enviar la respuesta al agente de usuario
+@app.route("/Devoluciones")
+def getDevoluciones():
+    global devoluciones
+    global devoluciones_ns
 
+    idUsuario = request.args['id']
 
-def pedirReembolso(graph, persona, importe):      #pedir al agente monetario el reembolso del importe del producto
+    array = [[]]
+    for s,p,o in devoluciones.triples((None, devoluciones_ns.Persona, idUsuario)):
+        aux = []
+        for ss,pp,oo in devoluciones.triples((s, None, None)):
+            aux.append(str(oo))
+        array.append(aux)
+
+    return render_template('lista_devoluciones.html', a = array, u = idUsuario)
+
+def pedirReembolso(persona, importe):      #pedir al agente monetario el reembolso del importe del producto
     global ont
     obj = createAction(AgenteMonetario,'pedirDevolucion')
 
@@ -173,14 +264,34 @@ def pedirReembolso(graph, persona, importe):      #pedir al agente monetario el 
 
     msg = build_message(gcom,
         perf=ACL.request,
-        sender=AgenteMonetario.uri,
+        sender=AgenteDevolvedor.uri,
         content=obj)
 
     # Enviamos el mensaje a cualquier agente monetario
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    send_message_any(msg,AgenteDevolvedor,DirectorioAgentes,monetario.type)
 
 def finalizarDevolucion(graph):
-    pass
+    global devoluciones
+    global devoluciones_db
+    global devoluciones_ns
+    global ont
+
+    idDev = None
+    for s,p,o in graph.triples((ont.Devolucion, ont.IdDevolucion, None)):
+        idDev = int(o)
+
+    devoluciones.set((devoluciones_ns[idDev], devoluciones_ns.Estado, Literal("Finalizado")))
+    guardarGrafo(devoluciones, devoluciones_db)
+
+
+    persona = importe = None
+    for s,p,o in graph.triples((devoluciones_ns[idDev])):
+        if p == devoluciones_ns.Persona:
+            persona = str(o)
+        if p == devoluciones_ns.Importe:
+            importe = int(o)
+
+    pedirReembolso(persona, importe)
 
 @app.route("/comm")
 def comunicacion():
@@ -245,7 +356,7 @@ def init_agent():
 def registerActions():
     global actions
     actions[agn.DevolvedorPedirDevolucion] = nuevaDevolucion
-    actions[agn.DevolvedorDevolucionRecibida] = finalizarDevolucion #TODO
+    actions[agn.DevolvedorDevolucionRecibida] = finalizarDevolucion
 
 @app.route("/test1")
 def test1():
@@ -254,8 +365,8 @@ def test1():
     gcom = Graph()
     gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
     
-    gcom.add((ont.Devolucion, ont.Pedido, Literal(0)))    #el objeto debera ser el identificador del pedido
-    gcom.add((ont.Devolucion, ont.Producto, Literal("Patatas")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Pedido, Literal("2")))    #el objeto debera ser el identificador del pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("sdf")))    #el objeto debera ser el identificador del producto en un pedido
     gcom.add((ont.Devolucion, ont.Usuario, Literal("adrian")))
     gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("Defectuoso")))
 
@@ -267,7 +378,7 @@ def test1():
 
     return 'Exit'
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Ponemos en marcha los behaviors
     
 
@@ -276,6 +387,6 @@ if __name__ == '__main__':
     cargarGrafos()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)
 
     print('The End')
