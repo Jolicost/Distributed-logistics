@@ -5,6 +5,13 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
+<http://www.tienda.org/Productos#12345> a ns1:type ;
+    ns1:Esvendidopor <http://www.agentes.org/Vendedor#Janster> ;
+    ns1:Id "12345" ;
+    ns1:Importe "42" ;
+    ns1:Nombre "Janster" ;
+    ns1:enVenta false .
+
 <http://www.tienda.org/Productos#1764669413770059> a ns1:type ;
     ns1:CentrosLogisticos <http://www.tienda.org/Productos#1764669413770059-listaCentros> ;
     ns1:Esvendidopor <http://www.agentes.org/Vendedor#dsf> ;

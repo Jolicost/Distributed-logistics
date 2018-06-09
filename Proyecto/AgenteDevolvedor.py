@@ -1,5 +1,5 @@
-# -- coding: utf-8 --
-from _future_ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 from multiprocessing import Process
 import os.path
 #Clase agente
@@ -12,6 +12,7 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+from Util.ModelParser import *
 import datetime
 
 #Diccionario con los espacios de nombres de la tienda
@@ -21,7 +22,7 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from random import randint
 
-_author_ = 'adrian'
+__author__ = 'adrian'
 
 host = 'localhost'
 port = 8017
@@ -60,7 +61,7 @@ productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 # Flask stuff
-app = Flask(_name_,template_folder="AgenteDevolvedor/templates")
+app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -112,19 +113,37 @@ def comprobar15Dias(graph):
     idProducto = None
     for p,o in graph[ont.Devolucion]:
         if p == ont.Pedido:
-            idPedido = int(o)
+            idPedido = str(o)
         if p == ont.Producto:
             idProducto == str(o)
 
     fecha = None
-    for s,p,o in pedidos.triples((pedidos_ns[idPedido], pedidos_ns.Fecharealizacion, None)):
-        fecha = o
+    dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
+    for item in dict['productos']:
+        if item['id'] == idProducto:
+            fecha = item['fechaEntrega']
+
+    year,month,day = fecha.split("-")
+    year = int(year)
+    month = int(month)
+    day = int(day)
 
     now = datetime.datetime.now()
-    fechahoy = now.day + "/" + now.month + "/" + now.year
-    #TODO comparar las fechas
+    yearToday = int(now.year)
+    monthToday = int(now.month)
+    dayToday = int(now.day)
+    aceptado = True
+    if yearToday == year:
+        if monthToday == month:
+            if (dayToday - day) > 15:
+                aceptado = False
+        elif (monthToday - 1) == month:
+            daysTo30 = abs(day - 30)
+            if (dayToday + daysTo30) > 15:
+                aceptado = False
+    else:
+        aceptado = False
 
-    aceptado = False    # si > 15 dias False, else true
     if aceptado:
         elegirEmpresaMensajeria(graph, "NoSatisface")
     else:
@@ -359,7 +378,7 @@ def test1():
 
     return 'Exit'
 
-if _name_ == '_main_':
+if __name__ == "__main__":
     # Ponemos en marcha los behaviors
     
 
