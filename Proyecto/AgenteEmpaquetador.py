@@ -18,8 +18,6 @@ from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 from Util.GraphUtil import *
 from rdflib.collection import Collection
-
-
 import random
 
 app = Flask(__name__,template_folder="AgenteEmpaquetador/templates")
@@ -125,26 +123,45 @@ def calcularPesoEnvio(envio):
 
 def crearLote(envio):
 	peso = calcularPesoEnvio(envio)
-	test = lotes_ns["hola"]
-	print(test)
+
+	#Generamos un id aleatorio
+	lote_id = str(random.getrandbits(64))
+
+	lote = lotes_ns[lote_id]
+
+	lotes.add((lote,RDF.type,lotes_ns.type))
+	lotes.add((lote,lotes_ns.Id,Literal(lote_id)))
+	#Hacemos que el lote este en reposo inicialmente
+	lotes.add((lote,lotes_ns.Estadodellote,Literal("Idle")))
+	#Anadimos el peso del lote
+	lotes.add((lote,lotes_ns.Peso,Literal(peso)))
+
+	node = lotes.value(subject=lote,predicate=lotes_ns.TieneEnvios) or lotes_ns[lote_id + '-listaEnvios']
+
+	lotes.add((lote,lotes_ns.TieneEnvios,node))
+
+	c = Collection(lotes,node)
+
+	c.append(envio)
+
+	guardarGrafoLotes(centroLogistico)
 
 def anadirEnvioLote(lote,envio):
 	peso = calcularPesoEnvio(envio)
 
-	test = lotes_ns["hola"]
-	print(test)
-	'''
-	node =  lotes.value(subject=lote,predicate=centros_ns.Contiene) or centros_ns[id + '-listaProductos']
+	try:
+		peso += int(lotes.value(subject=lote,predicate=lotes_ns.Peso)) 
+	except NumerError:
+		#No sumar ningun peso. Esto no deberia ocurrir en situaciones normales
+		pass
 
-	#Afegim el node pare de la coleccio de productes
-	g.add((centro,centros_ns.Contiene,node))
+	node = lotes.value(subject=lote,predicate=lotes_ns.TieneEnvios) or lotes_ns[lote_id + '-listaEnvios']
 
-	c = Collection(g,node)
-	list = []
-	for prod in c:
-	'''
+	c = Collection(lotes,node)
 
+	c.append(envio)
 
+	guardarGrafoLotes(centroLogistico)
 
 def registrarEnvio(graph):
 	global envios
