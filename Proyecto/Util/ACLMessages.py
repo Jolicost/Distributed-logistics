@@ -89,15 +89,19 @@ def get_message_properties(msg):
 				msgdic[key] = val
 	return msgdic
 
-def create_confirm(agentSender,agentReciever = None):
-	if agentReciever is None:
-		return build_message(Graph(),ACL.confirm,sender=agentSender.uri)
+def create_confirm(agentSender = None,agentReciever = None):
+	s_uri = None
+	r_uri = None
+	if agentReciever is not None:
+		r_uri = agentReciever.uri
+	if agentSender is not None:
+		s_uri = agentSender.uri
 
 	return build_message(
 		Graph(),
 		ACL.confirm,
-		sender=agentSender.uri,
-		receiver=agentReciever.uri
+		sender=s_uri,
+		receiver=r_uri
 		)
 
 def create_notUnderstood(agentSender,agentReciever):

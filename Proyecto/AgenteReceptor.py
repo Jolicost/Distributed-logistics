@@ -54,13 +54,14 @@ agn = getAgentNamespace()
 
 receptor = getNamespace('AgenteReceptor')
 #Objetos agente
-AgenteReceptor = Agent('AgenteAdmisor',receptor['generic'],formatDir(host,port) + '/comm',None)
+AgenteReceptor = Agent('AgenteReceptor',receptor['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 productos_ns = getNamespace('Productos')
 pedidos_ns = getNamespace('Pedidos')
 vendedores_ns = getNamespace('AgenteVendedorExterno')
 usuarios_ns = getNamespace('AgenteUsuario')
+centros_ns = getNamespace('Centros')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
@@ -96,7 +97,7 @@ def cargarGrafos():
 	if os.path.isfile(pedidos_db):
 		pedidos.parse(pedidos_db,format="turtle")
 	if os.path.isfile(centros_db):
-		pedidos.parse(centros_db,format="turtle")
+		centros.parse(centros_db,format="turtle")
 
 def guardarGrafo(g,file):
 	g.serialize(file,format="turtle")	
@@ -115,7 +116,6 @@ def comunicacion():
 
 	msgdic = get_message_properties(gm)
 
-	print(message)
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic or msgdic['performative'] != ACL.request:
 		# Si no es, respondemos que no hemos entendido el mensaje
@@ -340,15 +340,32 @@ def centroMasCercano(pedido,producto):
 	return masCercano
 
 
-def informarCentroLogisticoEnvio(centro,pedido,productos):
-	print (centro,pedido,productos)
+def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
+	#Pedidos y productos juntados para obtener mas facilmente los atributos
+	graph = pedidos + productos
+	envio = pedido_a_envio(graph,pedido,listaProductos)
+
+	centro_id = centros.value(centro,centros_ns.Id)
+
+	empaquetador_ns = getNamespace('AgenteEmpaquetador')
+
+	empaquetador_uri = empaquetador_ns[centro_id]
 
 
-@app.route("/simularOrganizar")
-def simulacionOrganizar():
-	id = request.args['id']
-	pedido = pedidos_ns[id]
+	obj = createAction(AgenteReceptor,'nuevoEnvio')
+	envio.add((obj, RDF.type, agn.ReceptorNuevoEnvio))
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(envio,
+		perf=ACL.inform,
+		sender=AgenteReceptor.uri,
+		content=obj)
 
+	print(empaquetador_uri)
+	# Enviamos el mensaje a cualquier agente admisor
+	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,empaquetador_ns.type,empaquetador_uri)
+
+def organizarPedido(pedido):
+	'''Busca que centros logisticos pueden resolver la peticion de envio '''
 	nodo = pedidos.value(pedido,pedidos_ns.Contiene)
 
 	col = Collection(pedidos,nodo)
@@ -366,13 +383,16 @@ def simulacionOrganizar():
 	for c in decision:
 		informarCentroLogisticoEnvio(c,pedido,decision[c])
 
+
+@app.route("/simularOrganizar")
+def simulacionOrganizar():
+	id = request.args['id']
+	pedido = pedidos_ns[id]
+	organizarPedido(pedido)
 	return redirect("/")
 
 
 
-def organizarPedido():
-	'''Busca que centros logisticos pueden resolver la peticion de envio '''
-	
 
 
 @app.route("/Stop")
