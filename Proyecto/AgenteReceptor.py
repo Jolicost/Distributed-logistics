@@ -290,15 +290,16 @@ def decidirResponsabilidad(pedido):
 	}
 	return ret
 
-def registrarPedido():
+def registrarPedido(graph):
+	''' registra un pedido en la base de datos de pedidos de la tienda '''
 	pass
 def decidirResponsabilidadEnvio(pedido):
 	responsabilidad = decidirResponsabilidad(pedido)
 	procesarDecision(pedido,responsabilidad)
 
 
-def resolverEnvio():
-	pedido = registrarPedido()
+def resolverEnvio(graph):
+	pedido = registrarPedido(graph)
 	decidirResponsabilidadEnvio(pedido)
 
 def centroMasCercano(pedido,producto):

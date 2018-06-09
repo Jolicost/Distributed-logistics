@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Lista de centros de la tienda</title>
+    <title>Lista de productos de un centro</title>
 </head>
 <style>
 table, th, td {
@@ -14,7 +14,7 @@ th, td {
 }
 </style>
 <body>
-	<h1>Lista de centros</h1>
+	<h1>Lista de productos del centro {{ centro }}</h1>
 	{% if list %}
 		{% set header = list[0] %}
 		<table>
@@ -24,7 +24,7 @@ th, td {
 					<th>{{ key }}</th>
 				{% endfor %}
 					<th>Borrar</th>
-					<th>Ver productos</th>
+					<th>Editar</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -34,10 +34,10 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 					<td>
-						<a href="/borrarCentro?id={{ elem['id'] }}"><button>Borrar Centro</button></a>
+						<a href="/centros/{{id}}/productos/{{elem['id']}}/borrar"><button>Borrar Producto</button></a>
 					</td>
 					<td>
-						<a href="/centros/{{ elem['id'] }}/productos"><button>Ver Productos</button></a>
+						<a href="/centros/{{id}}/productos/{{elem['id']}}/editar"><button>Editar Producto</button></a>
 					</td>
 				</tr>
 				{% endfor %}
@@ -46,5 +46,5 @@ th, td {
 	{% else %}
 		<h2>No hay elementos en la lista<h2>
 	{% endif %}
-	<a href="/crearCentro"><button>Crear nuevo centro</button></a>
+	<a href="/centros/{{id}}/crearProducto"><button>Crear nuevo producto</button></a>
 </body>
