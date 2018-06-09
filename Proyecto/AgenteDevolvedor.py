@@ -129,7 +129,7 @@ def comprobar15Dias(graph):
         comunicarRespuesta(graph, False, None, None)
 
 def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
-    int rand = randint(0,4)
+    rand = randint(0,4)
     mensajeria = None
     direccion = None
     if rand == 0:
@@ -204,7 +204,7 @@ def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, produ
         estado = "Denegado"
 
 
-    int rand = randint(0, 50)
+    rand = randint(0, 50)
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Persona, persona))
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Producto, producto))
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Importe, importe))
@@ -222,7 +222,7 @@ def getDevoluciones():
 
     idUsuario = request.args['id']
 
-    array = [][]
+    array = [[]]
     for s,p,o in devoluciones.triples((None, devoluciones_ns.Persona, idUsuario)):
         aux = []
         for ss,pp,oo in devoluciones.triples((s, None, None)):
