@@ -1,0 +1,21 @@
+@prefix acl: <http://www.nuin.org/ontology/fipa/acl#> .
+@prefix ns1: <http://www.tienda.org/Productos#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+acl:message--9151480866567813427-0000 a acl:FipaAclMessage ;
+    acl:content <http://www.agentes.org/AgenteVendedorExterno-nuevoProducto> ;
+    acl:performative acl:request ;
+    acl:sender <http://www.agentes.org/Vendedor#324> .
+
+<http://www.tienda.org/Productos#12345> a ns1:type ;
+    ns1:Esvendidopor <http://www.agentes.org/Vendedor#Janster> ;
+    ns1:Id "12345" ;
+    ns1:Importe "42" ;
+    ns1:Nombre "Janster" ;
+    ns1:enVenta false .
+
+<http://www.agentes.org/AgenteVendedorExterno-nuevoProducto> a <http://www.agentes.org/VendedorNuevoProducto> .
+

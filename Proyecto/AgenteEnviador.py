@@ -11,6 +11,8 @@ from Util.GestorDirecciones import formatDir
 from Util.ACLMessages import build_message, get_message_properties, send_message
 from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
+from Util.ModelParser import *
+from Util.GraphUtil import *
 #Diccionario con los espacios de nombres de la tienda
 from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 #Utilidades de RDF
@@ -21,7 +23,7 @@ app = Flask(__name__,template_folder="AgenteEnviador/templates")
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 8000
+port = 5000
 nombre = 'enviador'
 
 directorio_host = 'localhost'
@@ -31,6 +33,7 @@ enviador = getNamespace('AgenteEnviador')
 productos = getNamespace('Productos')
 pedidos = getNamespace('Pedidos')
 lotes_ns = getNamespace('Lotes')
+envios_ns = getNamespace('Envios')
 vendedor = getNamespace('AgenteVendedorExterno')
 
 agn = getAgentNamespace()
@@ -83,41 +86,33 @@ def comunicacion():
 
 	return gr.serialize(format='xml')
 
-
-@app.route("/test")
-def test():
-	global lotes_ns
-	id = 1234
-	gg = Graph()
-	for i in range(1,10):
-		gg.add((lotes_ns[i],RDF.type,lotes_ns.type))
-		gg.add((lotes_ns[i],lotes_ns.Nombre,Literal("name"+str(i))))
-
-	for s in gg.subjects():
-		print(gg.triples((s, )))
-
-	print(gg)
-	print("TEST PASSED")
-	return "Hello agents!"
-	#return create_confirm(AgenteEnviador,None)
+@app.route("/verLotes")
+def verLotes():
+	lotes = g.subjects(predicate=RDF.type,object=lotes_ns.type)
+	print(lotes)
+	list = []
+	for l in lotes:
+		print("Lote:")
+		print(l)
+		d = lote_a_dict(g,l)
+		list += [d]
+	return render_template('listaLotes.html',list=list)
 
 @app.route("/enviarLote")
-def enviarLote(graf):
-	#global lotes_ns
-	#global g
-	#lts = g.subjects(predicate=RDF.type,object=lotes_ns.type)
-	#list = []
+def enviarLote():
+	id = request.args['id']
+	lote = grafoADict(g, lotes_ns[id])
+	lote['envios'] = [] # Temporal, porque si esta vacio peta
+	print("Lote:", lote)
+	# Marcar pedidos como enviados
+	g.set((lotes_ns[id], lotes_ns.Estadodellote, Literal("Enviado")))
+	for s in lote['envios']:	# lote['envios'] contiene los ids de los envios
+		g.set((s, envios_ns.Estadodelenvio, Literal("Enviado")))
+	guardarGrafo()
 
-	#gt = Graph()
-	#gt.add((lotes_ns[1], lotes_ns.TestField1, Literal(42)))
-	#gt.add((lotes_ns[2], lotes_ns.TestField2, Literal(69)))
-	#gettest = gt.triples((lotes_ns[1], None, None))
-	#print("-- Result --")
-	#for s,p,o in gt:
-	#    print (s,p,o)
-	#print(gettest)
-	#print("-- End result --")
-	return "OK"
+	# TODO: Enviar factura al usuario
+
+	return "Envio en curso"
 
 
 @app.route("/testMensaje")
@@ -142,9 +137,27 @@ def callbackTest(graph):
 	print("Callback working!")
 	return create_confirm(AgenteEnviador)
 
+def createFakeLote():
+	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
+	g.add((lotes_ns['11'],lotes_ns.Id,Literal(11)))
+	g.add((lotes_ns['11'],lotes_ns.Estadodellote,Literal("Idle")))
+	g.add((lotes_ns['11'],lotes_ns.Peso,Literal(40)))
+	g.add((lotes_ns['11'],lotes_ns.Ciudad,Literal("Bcn")))
+
+	g.add((lotes_ns['15'],RDF.type,lotes_ns.type))
+	g.add((lotes_ns['15'],lotes_ns.Id,Literal(15)))
+	g.add((lotes_ns['15'],lotes_ns.Estadodellote,Literal("Idle")))
+	g.add((lotes_ns['15'],lotes_ns.Peso,Literal(99)))
+	g.add((lotes_ns['15'],lotes_ns.Ciudad,Literal("Cancun")))
+	print("Created fakes")
+	print(g.serialize(format='turtle'))
+
 def registerActions():
 	global actions
 	actions[agn.EnviadorTestCallback] = callbackTest
+
+def guardarGrafo():
+	g.serialize(graphFile,format="turtle")
 
 @app.route("/")
 def main_page():
@@ -159,9 +172,8 @@ def main_page():
 def start_server():
 	register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
 	registerActions()
+	createFakeLote()
 	app.run(host=host,port=port,debug=True)
-
 
 if __name__ == "__main__":
 	start_server()
-
