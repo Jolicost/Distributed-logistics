@@ -51,7 +51,8 @@ ns_bases = {
 	'Ofertas':tienda_prefix + 'Ofertas', #de transporte
 	'Peticiones':tienda_prefix + 'Peticiones', #de busqueda
 	'Centros':tienda_prefix + 'Centros', #Centros logisticos
-	'Direcciones':tienda_prefix + 'Direcciones' #Direcciones de entrega o de centros
+	'Direcciones':tienda_prefix + 'Direcciones', #Direcciones de entrega o de centros
+	'Recomendaciones':tienda_prefix + 'Recomendaciones' #Recomendaciones de productos
 }
 
 def createAction(Agent,actionName):
@@ -67,12 +68,36 @@ def getNamespace(name):
 		return Namespace(ns_bases[name] + '#')
 	raise Exception('Namespace no encontrado')
 
-
 directorio_ns = getNamespace('AgenteDirectorio')
-vendedor_ns = getNamespace('AgenteVendedorExterno')
+agenteVendedor_ns = getNamespace('AgenteVendedorExterno')
 agenteUsuario_ns = getNamespace('AgenteUsuario')
+agenteTransportista_ns = getNamespace('AgenteTransportista')
+agenteServicioPago_ns = getNamespace('AgenteServicioPago')
+agenteAdmisor_ns = getNamespace('AgenteAdmisor')
+agenteDevolvedor_ns = getNamespace('AgenteDevolvedor')
+agenteEnviador_ns = getNamespace('AgenteEnviador')
+agenteMonetario_ns = getNamespace('AgenteMonetario')
+agenteReceptor_ns = getNamespace('AgenteReceptor')
+agenteBuscador_ns = getNamespace('AgenteBuscador')
+agenteEmpaquetador = getNamespace('AgenteEmpaquetador')
+agenteOpinador_ns = getNamespace('AgenteOpinador')
 
-pedido_ns = getNamespace('Pedidos')
+productos_ns = getNamespace('Productos')
+vendedores_ns = getNamespace('Vendedores')
+usuarios_ns = getNamespace('Usuarios')
+pedidos_ns = getNamespace('Pedidos')
+pesos_ns = getNamespace('Pesos')
+envios_ns = getNamespace('Envios')
+lotes_ns = getNamespace('Lotes')
+pagos_ns = getNamespace('Pagos')
+devoluciones_ns = getNamespace('Devoluciones')
+transportistas_ns = getNamespace('Transportistas')
+opiniones_ns = getNamespace('Opiniones')
+ofertas_ns = getNamespace('Ofertas')
+peticiones_ns = getNamespace('Peticiones')
+centros_ns = getNamespace('Centros')
+direcciones_ns = getNamespace('Direcciones')
+recomendaciones_ns = getNamespace('Recomendaciones')
 
 if __name__ == "__main__":
 	pass

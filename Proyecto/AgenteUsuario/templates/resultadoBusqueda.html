@@ -23,7 +23,9 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
+					<th>Anadir al carrito</th>
 				</tr>
+					
 			</thead>
 			<tbody>
 				{% for elem in list %}
@@ -31,6 +33,7 @@ th, td {
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
 					{% endfor %}
+					<td><a href="/anadirProductoCarrito?ref=buscar&id={{elem['id']}}&importe={{elem['importe']}}&nombre={{elem['nombre']}}"><button>Anadir al carrito</button></a>
 				</tr>
 				{% endfor %}
 			</tbody>
