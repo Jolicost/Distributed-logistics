@@ -92,11 +92,19 @@ def comprobar15Dias(graph):
         if p == ont.Producto:
             idProducto = str(o)    
     fecha = None
+    ''' 1a forma (no va)
     dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
     print(str(dict))
     for item in dict['productos']:
         if item['id'] == idProducto:
-            fecha = item['fechaEntrega']
+            fecha = item['fechaEntrega']'''
+
+    # 2a forma (no he podido probarla)
+    container = pedidos.value(subject=pedidos_ns[idPedido], predicate=pedidos_ns.Contiene)
+    c = Collection(pedidos, container)
+    for item in c:
+        if item == pedidos_ns[idProducto]:
+            fecha = str(graph.value(subject=pedidos_ns[idProducto], predicate=productos_ns.Fechaenvio))
 
     year,month,day = fecha.split("-")
     year = int(year)
@@ -118,6 +126,13 @@ def comprobar15Dias(graph):
                 aceptado = False
         else:
             aceptado = False
+    elif (yearToday - 1) == year:
+        if monthToday == 1 and month == 12:
+            daysTo30 = abs(day - 30)
+            if (dayToday + daysTo30) > 15:
+                aceptado = False
+        else:
+            aceptado = false
     else:
         aceptado = False
 
