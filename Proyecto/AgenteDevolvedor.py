@@ -22,8 +22,6 @@ usuario = getNamespace('AgenteUsuario')
 #Objetos agente
 AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
-AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(monetario_host,monetario_port) + '/comm',None)
-AgenteUsuario = Agent('AgenteUsuario',usuario['generic'],formatDir(usuario_host,usuario_port) + '/comm',None)
 
 devoluciones_ns = getNamespace('Devoluciones')
 devoluciones_db = 'Datos/devoluciones.turtle'
@@ -88,14 +86,14 @@ def comprobar15Dias(graph):
 
     idPedido = None
     idProducto = None
-    for p,o in graph[ont.Devolucion]:
+    for s,p,o in graph.triples((ont.Devolucion,None,None)):
         if p == ont.Pedido:
             idPedido = str(o)
         if p == ont.Producto:
-            idProducto == str(o)
-
+            idProducto = str(o)    
     fecha = None
     dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
+    print(str(dict))
     for item in dict['productos']:
         if item['id'] == idProducto:
             fecha = item['fechaEntrega']
