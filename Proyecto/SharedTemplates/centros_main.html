@@ -24,6 +24,7 @@ th, td {
 					<th>{{ key }}</th>
 				{% endfor %}
 					<th>Borrar</th>
+					<th>Ver productos</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -34,6 +35,9 @@ th, td {
 					{% endfor %}
 					<td>
 						<a href="/borrarCentro?id={{ elem['id'] }}"><button>Borrar Centro</button></a>
+					</td>
+					<td>
+						<a href="/centros/{{ elem['id'] }}/productos"><button>Ver Productos</button></a>
 					</td>
 				</tr>
 				{% endfor %}

@@ -19,32 +19,31 @@ from Util.Namespaces import getNamespace,getAgentNamespace,createAction
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
 
-app = Flask(__name__,template_folder="AgenteEnviador/templates")
+app = Flask(__name__,template_folder="AgenteTransportista/templates")
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 5000
-nombre = 'enviador'
+port = 6000
+nombre = 'transportista'
 
 directorio_host = 'localhost'
 directorio_port = 9000
 
 enviador = getNamespace('AgenteEnviador')
 productos = getNamespace('Productos')
-pedidos = getNamespace('Pedidos')
+transportista_ns = getNamespace('AgenteTransportista')
 lotes_ns = getNamespace('Lotes')
 envios_ns = getNamespace('Envios')
-vendedor = getNamespace('AgenteVendedorExterno')
 
 agn = getAgentNamespace()
 
 g = Graph()
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteEnviador = Agent('AgenteEnviador',enviador[nombre],formatDir(host,port) + '/comm',None)
+AgenteTransportista = Agent('AgenteTransportista',transportista[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
-graphFile = 'AgenteEnviador/' + nombre + '.turtle'
+graphFile = 'AgenteTransportista/' + nombre + '.turtle'
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente
 # cuando llega un mensaje
@@ -72,7 +71,7 @@ def comunicacion():
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
 	if not msgdic:
 		# Si no es, respondemos que no hemos entendido el mensaje
-		gr = create_notUnderstood(AgenteEnviador,None)
+		gr = create_notUnderstood(AgenteTransportista,None)
 	else:
 		content = msgdic['content']
 		# Averiguamos el tipo de la accion
@@ -82,7 +81,7 @@ def comunicacion():
 		if accion in actions:
 			gr = actions[accion](gm)
 		else:
-			gr = create_notUnderstood(AgenteEnviador,None)
+			gr = create_notUnderstood(AgenteTransportista,None)
 
 	return gr.serialize(format='xml')
 
@@ -115,46 +114,29 @@ def enviarLote():
 	return "Envio en curso"
 
 
-@app.route("/testMensaje")
-def testMensaje():
-	obj = createAction(AgenteEnviador,'callbackTest')
+''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
+def peticionOferta(graph):
+	print("Callback working!")
+
+	obj = createAction(AgenteTransportista,'respuestaOferta')
 	gcom = Graph()
 
 	gcom.add((obj,RDF.type,agn.EnviadorTestCallback))
 
 	msg = build_message(gcom,
 		perf=ACL.request,
-		sender=AgenteEnviador.uri,
+		sender=AgenteTransportista.uri,
 		content=obj)
 
 	# Enviamos el mensaje a cualquier agente admisor
-	print("Envio mensaje test")
+	print("Envio mensaje")
 	send_message_any(msg,AgenteEnviador,DirectorioAgentes,enviador.type)
-	return "Envio en curso"
 
-''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
-def callbackTest(graph):
-	print("Callback working!")
-	return create_confirm(AgenteEnviador)
-
-def createFakeLote():
-	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
-	g.add((lotes_ns['11'],lotes_ns.Id,Literal(11)))
-	g.add((lotes_ns['11'],lotes_ns.Estadodellote,Literal("Idle")))
-	g.add((lotes_ns['11'],lotes_ns.Peso,Literal(40)))
-	g.add((lotes_ns['11'],lotes_ns.Ciudad,Literal("Bcn")))
-
-	g.add((lotes_ns['15'],RDF.type,lotes_ns.type))
-	g.add((lotes_ns['15'],lotes_ns.Id,Literal(15)))
-	g.add((lotes_ns['15'],lotes_ns.Estadodellote,Literal("Idle")))
-	g.add((lotes_ns['15'],lotes_ns.Peso,Literal(99)))
-	g.add((lotes_ns['15'],lotes_ns.Ciudad,Literal("Cancun")))
-	print("Created fakes")
-	print(g.serialize(format='turtle'))
+	return create_confirm(AgenteTransportista)
 
 def registerActions():
 	global actions
-	actions[agn.EnviadorTestCallback] = callbackTest
+	actions[agn.TransportistaPeticionOferta] = peticionOferta
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")
@@ -170,9 +152,8 @@ def main_page():
 
 
 def start_server():
-	register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
+	register_message(AgenteTransportista,DirectorioAgentes,transportista.type)
 	registerActions()
-	createFakeLote()
 	app.run(host=host,port=port,debug=True)
 
 if __name__ == "__main__":

@@ -108,7 +108,7 @@ def centro_a_dict(graph,centro):
 	loc = graph.value(centro,centros_ns.Ubicadoen)
 	dic['direccion'] = graph.value(loc,direcciones_ns.Direccion)
 	dic['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
-	
+
 	return dic
 
 def dict_a_centro(dict):
@@ -135,11 +135,10 @@ def dict_a_centro(dict):
 
 	return g
 
-
 def pedido_a_envio(graph,pedido,productos):
 	'''
 	devuelve el pedido transformado en un envio
-	Graph tiene que contener toda la informacion del pedido + toda la informacion de los productos 
+	Graph tiene que contener toda la informacion del pedido + toda la informacion de los productos
 	para cada producto del pedido (importe mas que nada)
 	'''
 
@@ -186,7 +185,7 @@ def pedido_a_envio(graph,pedido,productos):
 
 	#Anadimos las uris de los productos al envio y sumamos el importe total
 	importe = 0
-	for p in productos: 
+	for p in productos:
 		c.append(p)
 		importe += int(graph.value(p,productos_ns.Importe))
 
@@ -199,3 +198,32 @@ def pedido_a_envio(graph,pedido,productos):
 	g.add((envios_ns[envio_id],envios_ns.Prioridad,prioridad))
 
 	return g
+
+# Lotes
+def lote_a_dict(graph,lote):
+	''' devuelve un diccionario con todos los atributos del lote '''
+	lotes_ns = getNamespace('Lotes')
+	direcciones_ns = getNamespace('Direcciones')
+	envios_ns = getNamespace('Envios')
+	ret = {}
+	ret['Id'] = graph.value(lote,lotes_ns.Id)
+	ret['Estadodellote'] = graph.value(lote,lotes_ns.Estadodellote)
+	ret['Ciudad'] = graph.value(lote,lotes_ns.Ciudad)
+	ret['Peso'] = graph.value(lote,lotes_ns.Peso)
+
+	#loc = graph.value(lote,lotes_ns.Tienedirecciondeentrega)
+	#ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
+	#ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
+
+	envs = []
+	container = graph.value(subject=lote,predicate=lotes_ns.Contiene)
+
+	c = Collection(graph,container)
+
+	for item in c:
+		id = graph.value(subject=item,predicate=envios_ns.Id)
+		envs += [id]
+
+	ret['envios'] = envs
+	return ret
+

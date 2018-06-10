@@ -27,11 +27,12 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 from Util.Directorio import *
-
-from Util.Namespaces import getNamespace,getAgentNamespace
+from Util.GraphUtil import * 
+from Util.Namespaces import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 from random import randint
+import random
 
 __author__ = 'alejandro'
 
@@ -45,26 +46,19 @@ directorio_port = 9000
 
 agn = getAgentNamespace()
 
-opinador = getNamespace('AgenteOpinador')
-usuario = getNamespace('AgenteUsuario')
 #Objetos agente
-AgenteOpinador = Agent('AgenteOpinador',opinador['generic'],formatDir(host,port) + '/comm',None)
+AgenteOpinador = Agent('AgenteOpinador',agenteOpinador_ns['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
-
-opiniones_ns = getNamespace('Opiniones')
 
 opiniones_db = 'Datos/opiniones.turtle'
 opiniones = Graph()
-
-productos_ns = getNamespace('Productos')
-
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
 cola1 = Queue()
 
 # Flask stuff
-app = Flask(__name__)
+app = Flask(__name__,template_folder="AgenteOpinador/templates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -77,7 +71,7 @@ def cargarGrafos():
     opiniones = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
-    elif os.path.isfile(productos_db):
+    if os.path.isfile(productos_db):
         productos.parse(productos_db,format="turtle")
     
 
@@ -85,64 +79,53 @@ def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
 
 @app.route("/")
-def hola():
-    return "soy el agente opinador, hola!"
+def main():
+    return render_template("main.html")
 
 @app.route("/altaOpinion")
 def altaOpinion():
     return 'ruta no definida'
 
-def aleatorios(cantidad, min, max):
-    numeros = []
-    while len(numeros) < cantidad:
-        numero = randint(min,max)
 
-        if not numero in numeros:
-            numeros.append(numero)
-    return numeros
-
-def generarRecomendacion():
-    global productos
+def getProductosRecomendadosUsuario(user_uri):
     p = list(productos.subjects(predicate=RDF.type,object=productos_ns.type))
+    try:
+        p = random.sample(p,5)
+    except ValueError:
+        #la lista de productos sera la lista completa
+        pass
 
-    # generar 5 ids aleatorios de 0 a el maximo.
-    #numeros = []
-    numeros = aleatorios(1, 0, len(p)-1)
-    listRes = []
-    res = Graph()
+    g = Graph()
+    for prod in p:
+        g+=expandirGrafoRec(productos,prod)
 
-    for numero in numeros:
-        listRes += [p[numero]]
-        #productos.objects(subject=p[numero],predicate=productos.precio);
-    for li in listRes:
-        ids = productos.triples((li, productos_ns.Id, None))
-        for id in ids:
-            res.add(id)
-        names = productos.triples((li, productos_ns.Nombre, None))  
-        for name in names:     
-            res.add(name)
-        importes = productos.triples((li, productos_ns.Importe, None))
-        for importe in importes:
-            res.add(importe)
-        tipus = productos.triples((li, RDF.type, None))  
-        for tip in tipus:
-            res.add(tip)
+    return g
+
+def enviarProductosRecomendadosUsuario(res,user_uri):
+
     obj = createAction(AgenteOpinador,'rebreRecomanacions')
 
     res.add((obj, RDF.type, agn.RecomendarProductos))
     
     msg = build_message(res,
-        perf=ACL.request,
+        perf=ACL.inform,
         sender=AgenteOpinador.uri,
         content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
+    msg.serialize('test.turtle',format="turtle")
+    send_message_uri(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type,user_uri)
 
-@app.route("/pedirOpinion")
-def pedirOpinion():
+@app.route("/enviarRecomendaciones")
+def generarRecomendacion():
+    usuarios = get_all_uris(AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+    for user in usuarios:
+        prods = getProductosRecomendadosUsuario(user)
+        enviarProductosRecomendadosUsuario(prods,user)
+    return redirect("/")
+
+
+def getProductosAOpinarUsuario(usuario):
     g = Graph()
-
     g.add((productos_ns["999"],RDF.type,productos_ns.type))
     g.add((productos_ns["999"],productos_ns.Nombre,Literal('producto1aOpinar')))
     g.add((productos_ns["999"],productos_ns.Id,Literal('999')))
@@ -154,23 +137,30 @@ def pedirOpinion():
     g.add((productos_ns["997"],RDF.type,productos_ns.type))
     g.add((productos_ns["997"],productos_ns.Nombre,Literal('producto3aOpinar')))
     g.add((productos_ns["997"],productos_ns.Id,Literal('997')))
-       
-    print(str(g) )
-     
+    return g
+
+
+def pedirOpinionUsuario(usuario,grafo):
     obj = createAction(AgenteOpinador,'pedirOpinion')
 
-    g.add((obj, RDF.type, agn.PedirOpiniones))
+    grafo.add((obj, RDF.type, agn.PedirOpiniones))
     
-    msg = build_message(g,
+    msg = build_message(grafo,
         perf=ACL.request,
         sender=AgenteOpinador.uri,
         content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteOpinador,DirectorioAgentes,usuario.type)
+    send_message_uri(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type,usuario)
+
+@app.route("/pedirOpinion")
+def pedirOpinion():
+    usuarios = get_all_uris(AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+
+    for u in usuarios:
+        prods = getProductosAOpinarUsuario(u)
+        pedirOpinionUsuario(u,prods)
+
     return redirect("/")
-
-
 
 def nuevaOpinion(graph):
     global opiniones
@@ -240,7 +230,7 @@ def agentbehavior1(cola):
     pass
 
 def init_agent():
-    register_message(AgenteOpinador,DirectorioAgentes,opinador.type)
+    register_message(AgenteOpinador,DirectorioAgentes,agenteOpinador_ns.type)
 
 def registerActions():
     global actions
@@ -259,7 +249,7 @@ if __name__ == '__main__':
     cargarGrafos()
     init_agent()
     # Ponemos en marcha el servidor
-    app.run(host=host, port=port)
+    app.run(host=host, port=port,debug=True)
 
     # Esperamos a que acaben los behaviors
     ab1.join()

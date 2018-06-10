@@ -9,13 +9,12 @@
 		<p>Identificador del producto: </p>
 		<input type="text" name="id"/>
 		<p>Estado del producto: </p>
-		<input list="estados" name="estado">
-		<datalist id="estados">
-		  <option value="Idle">
-		  <option value="Asignado">
-		  <option value="Enviado">
-		  <option value="Devuelto">
-		</datalist> 
+		<select name="estados">
+			<option value="Idle">Idle</option>
+		 	<option value="Asignado">Asignado</option>
+		  	<option value="Enviado">Enviado</option>
+		  	<option value="Devuelto">Devuelto</option>
+		</select>
 		<p>Fecha de entrega / envio del producto (simulacion)</p>
 		<input id="datetime" type="datetime-local" name="fechaEnvio"/>
 		<button type="submit">Enviar</button>
