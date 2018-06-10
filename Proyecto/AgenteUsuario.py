@@ -228,6 +228,26 @@ def verRecomendaciones():
     #Renderizamos la vista
     return render_template('recomendaciones.html',list=l)
 
+@app.route("/pedidos")
+def verPedidos():
+    l = []
+    g = Graph()
+    if os.path.isfile(pedidos_db):
+        g.parse(pedidos_db,format="turtle")
+
+    print(str(g.serialize(format='turtle')))
+    for s in g.subjects(predicate=RDF.type,object=pedidos_ns.type):
+        # Anadimos los atributos que queremos renderizar a la vista
+        dic = {}
+        dic['id'] = g.value(subject = s,predicate = pedidos_ns.Id)
+        dic['direccionEntrega'] = g.value(subject = s,predicate = pedidos_ns.Tienedirecciondeentrega)
+        for m in s.subjects(predicate=RDF.type, object=productos_ns.type):
+            dic['prod'] += s.value(subject=m, predicate= productos_ns.Nombre)
+        l = l + [dic]
+
+    #Renderizamos la vista
+    return render_template('pedidos.html',list=l)
+
 @app.route("/opinar")
 def verProductosaOpinar():
     g = productos_a_opinar
