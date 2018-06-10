@@ -51,7 +51,6 @@ actions = {}
 def cargarGrafos():
     global opiniones
     global productos
-    opiniones = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
     if os.path.isfile(productos_db):

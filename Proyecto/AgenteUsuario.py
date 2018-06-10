@@ -16,6 +16,8 @@ directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 
+ont = Namespace('Ontologias/root-ontology.owl')
+
 #Objetos agente
 AgenteUsuario = Agent('AgenteUsuario',agenteUsuario_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
@@ -278,13 +280,14 @@ def crearDevolucion(id):
 def crearPeticionDevolucion(id):
     razon = request.args['razon']
     g = Graph()
-    g.add((devoluciones_ns[str(id_user)+str(id)], productos_ns.Id, Literal(id)))
-    g.add((devoluciones_ns[str(id_user)+str(id)], pedidos_ns.Id, Literal("2")))
-    g.add((devoluciones_ns[str(id_user)+str(id)], agenteUsuario_ns.Id, Literal(name)))
-    g.add((devoluciones_ns[str(id_user)+str(id)], RDF.type, devoluciones_ns.type))
+    g.add((ont.Devolucion, ont.Pedido, Literal(id)))
+    g.add((ont.Devolucion, ont.Producto, Literal("sdf")))
+    g.add((ont.Devolucion, ont.Usuario, Literal(name)))
+    g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
+
     obj = createAction(AgenteUsuario,'crearDevolucion')
 
-    g.add((obj, RDF.type, agn.DevolvedorPedirOpinion))
+    g.add((obj, RDF.type, agn.DevolvedorPedirDevolucion))
     msg = build_message(g,
         perf=ACL.request,
         sender=AgenteUsuario.uri,
