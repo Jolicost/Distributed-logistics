@@ -30,11 +30,13 @@ directorio_host = 'localhost'
 directorio_port = 9000
 
 enviador = getNamespace('AgenteEnviador')
+transportista_ns = getNamespace('AgenteTransportista')
 productos = getNamespace('Productos')
 pedidos = getNamespace('Pedidos')
 lotes_ns = getNamespace('Lotes')
 envios_ns = getNamespace('Envios')
 vendedor = getNamespace('AgenteVendedorExterno')
+ofertas_ns = getNamespace('Ofertas')
 
 agn = getAgentNamespace()
 
@@ -42,6 +44,7 @@ g = Graph()
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
 AgenteEnviador = Agent('AgenteEnviador',enviador[nombre],formatDir(host,port) + '/comm',None)
+AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'AgenteEnviador/' + nombre + '.turtle'
@@ -99,7 +102,7 @@ def verLotes():
 	return render_template('listaLotes.html',list=list)
 
 @app.route("/enviarLote")
-def enviarLote():
+def enviarLote(id=None):
 	id = request.args['id']
 	lote = grafoADict(g, lotes_ns[id])
 	lote['envios'] = [] # Temporal, porque si esta vacio peta
@@ -114,28 +117,32 @@ def enviarLote():
 
 	return "Envio en curso"
 
-
-@app.route("/testMensaje")
-def testMensaje():
-	obj = createAction(AgenteEnviador,'callbackTest')
+@app.route("/pedirOferta")
+def pedirOferta():
+	obj = createAction(AgenteEnviador,'peticionOferta')
 	gcom = Graph()
 
-	gcom.add((obj,RDF.type,agn.EnviadorTestCallback))
+	gcom.add((obj,RDF.type,agn.EnviadorPeticionOferta))
 
 	msg = build_message(gcom,
-		perf=ACL.request,
+		perf=ACL.inform,
 		sender=AgenteEnviador.uri,
 		content=obj)
 
-	# Enviamos el mensaje a cualquier agente admisor
-	print("Envio mensaje test")
-	send_message_any(msg,AgenteEnviador,DirectorioAgentes,enviador.type)
-	return "Envio en curso"
+	# Enviamos el mensaje a cualquier agente enviador
+	print("Envio mensaje oferta")
+	send_message_any(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
 
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
 def callbackTest(graph):
 	print("Callback working!")
 	return create_confirm(AgenteEnviador)
+
+def ofertaTransporte(graph):
+	print("Recibida oferta transporte")
+	precio = graph.value(subject=None, predicate=ofertas_ns.Oferta)
+	print("Precio: ", precio)
+	return create_confirm(AgenteEnviador, AgenteTransportista)
 
 def createFakeLote():
 	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
@@ -154,7 +161,7 @@ def createFakeLote():
 
 def registerActions():
 	global actions
-	actions[agn.EnviadorTestCallback] = callbackTest
+	actions[agn.EnviadorOfertaTransporte] = ofertaTransporte
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")

@@ -34,13 +34,14 @@ productos = getNamespace('Productos')
 transportista_ns = getNamespace('AgenteTransportista')
 lotes_ns = getNamespace('Lotes')
 envios_ns = getNamespace('Envios')
+ofertas_ns = getNamespace('Ofertas')
 
 agn = getAgentNamespace()
 
 g = Graph()
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteTransportista = Agent('AgenteTransportista',transportista[nombre],formatDir(host,port) + '/comm',None)
+AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'AgenteTransportista/' + nombre + '.turtle'
@@ -85,58 +86,34 @@ def comunicacion():
 
 	return gr.serialize(format='xml')
 
-@app.route("/verLotes")
-def verLotes():
-	lotes = g.subjects(predicate=RDF.type,object=lotes_ns.type)
-	print(lotes)
-	list = []
-	for l in lotes:
-		print("Lote:")
-		print(l)
-		d = lote_a_dict(g,l)
-		list += [d]
-	return render_template('listaLotes.html',list=list)
-
-@app.route("/enviarLote")
-def enviarLote():
-	id = request.args['id']
-	lote = grafoADict(g, lotes_ns[id])
-	lote['envios'] = [] # Temporal, porque si esta vacio peta
-	print("Lote:", lote)
-	# Marcar pedidos como enviados
-	g.set((lotes_ns[id], lotes_ns.Estadodellote, Literal("Enviado")))
-	for s in lote['envios']:	# lote['envios'] contiene los ids de los envios
-		g.set((s, envios_ns.Estadodelenvio, Literal("Enviado")))
-	guardarGrafo()
-
-	# TODO: Enviar factura al usuario
-
 	return "Envio en curso"
 
 
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
 def peticionOferta(graph):
-	print("Callback working!")
+	print("Recibida peticion de oferta de transporte")
 
 	obj = createAction(AgenteTransportista,'respuestaOferta')
 	gcom = Graph()
 
-	gcom.add((obj,RDF.type,agn.EnviadorTestCallback))
+	# Dummy
+	precio = random.randint(1, 10)
+
+	gcom.add((obj,RDF.type,agn.EnviadorOfertaTransporte))
+	gcom.add((obj,ofertas_ns.Oferta,Literal(precio)))
 
 	msg = build_message(gcom,
-		perf=ACL.request,
+		perf=ACL.inform,
 		sender=AgenteTransportista.uri,
 		content=obj)
 
-	# Enviamos el mensaje a cualquier agente admisor
-	print("Envio mensaje")
-	send_message_any(msg,AgenteEnviador,DirectorioAgentes,enviador.type)
-
-	return create_confirm(AgenteTransportista)
+	# Enviamos el mensaje a cualquier agente enviador
+	print("Envio respuesta oferta")
+	send_message_any(msg,AgenteTransportista,DirectorioAgentes,enviador.type)
 
 def registerActions():
 	global actions
-	actions[agn.TransportistaPeticionOferta] = peticionOferta
+	actions[agn.EnviadorPeticionOferta] = peticionOferta
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")
@@ -152,7 +129,7 @@ def main_page():
 
 
 def start_server():
-	register_message(AgenteTransportista,DirectorioAgentes,transportista.type)
+	register_message(AgenteTransportista,DirectorioAgentes,transportista_ns.type)
 	registerActions()
 	app.run(host=host,port=port,debug=True)
 
