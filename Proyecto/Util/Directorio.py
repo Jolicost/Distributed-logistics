@@ -205,3 +205,9 @@ def send_message_set(msg,agentSender,directoryAgent,type,uris):
 				}
 			]
 	return responses
+
+
+def get_all_uris(agentSender,directoryAgent,type):
+	res = directory_search_global(agentSender,directoryAgent,type)
+	agentes = res.subjects(predicate=DSO.Type,object=DSO.Agent)
+	return list(agentes)

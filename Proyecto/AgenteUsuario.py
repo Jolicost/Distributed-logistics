@@ -13,6 +13,7 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.Directorio import *
 #Diccionario con los espacios de nombres de la tienda
 from Util.Namespaces import *
+from Util.GraphUtil import *
 #Utilidades de RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.namespace import FOAF, RDF
@@ -351,7 +352,7 @@ def buscarProductos():
 def rebreRecomanacions(graph):
     global recomendaciones
     save = Graph()
-    for r in graph.subjects(predicate=RDF.type,value=recomendaciones_ns.type):
+    for r in graph.subjects(predicate=RDF.type,object=recomendaciones_ns.type):
         save+=expandirGrafoRec(graph,r)
 
     recomendaciones += save
@@ -361,7 +362,7 @@ def rebreRecomanacions(graph):
 def recibirProductosaOpinar(graph):
     global productos_a_opinar
     save = Graph()
-    for r in graph.subjects(predicate=RDF.type,value=productos_ns.type):
+    for r in graph.subjects(predicate=RDF.type,object=productos_ns.type):
         save+=expandirGrafoRec(graph,r)
 
     productos_a_opinar += save
