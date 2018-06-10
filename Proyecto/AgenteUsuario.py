@@ -2,15 +2,16 @@ from imports import *
 
 __author__ = 'alejandro'
 
-host = 'localhost'
-port = 8000
+argumentos = getArguments(my_port=8004)
+#Direcciones hardcodeadas (propia)
+host = argumentos['host']
+port = argumentos['port']
 
+#Nombre del usuario (solo )
+name = argumentos['name']
 
-directorio_host = 'localhost'
-directorio_port = 9000
-
-#Nombre de la persona
-name = "Alex"
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 
 agn = getAgentNamespace()

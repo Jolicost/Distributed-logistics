@@ -19,15 +19,14 @@ from imports import *
 
 __author__ = 'joan'
 
+argumentos = getArguments(my_port=8008)
+#Direcciones hardcodeadas (propia)
+host = argumentos['host']
+port = argumentos['port']
 
-# Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 
-# Para contactar con los vendedores externos
-host = 'localhost'
-port = 8008
 
-#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
-directorio_host = 'localhost'
-directorio_port = 9000
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 

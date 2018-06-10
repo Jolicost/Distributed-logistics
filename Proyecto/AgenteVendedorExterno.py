@@ -1,42 +1,18 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-from Util.GraphUtil import *
-from Util.ModelParser import *
-from rdflib.collection import Collection
+from imports import *
 
-import Util.Namespaces
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
 
+argumentos = getArguments(my_port=8004)
+#Direcciones hardcodeadas (propia)
+host = argumentos['host']
+port = argumentos['port']
 
 #Nombre del vendedor externo. Servira para generar una URI de recurso 
 #Aun asi es probable que solo utilitzemos 1 vendedor
-nombre = '324'
+nombre = argumentos['name']
 
-
-#Direcciones hardcodeadas (propia)
-host = 'localhost'
-port = 8010
-
-#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
-directorio_host = 'localhost'
-directorio_port = 9000
-
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafo(graph):

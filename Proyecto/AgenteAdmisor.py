@@ -1,59 +1,23 @@
 
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 27 15:58:13 2013
+from imports import *
 
-Esqueleto de agente usando los servicios web de Flask
+__author__ = 'joan'
 
-/comm es la entrada para la recepcion de mensajes del agente
-/Stop es la entrada que para el agente
+argumentos = getArguments(my_port=8001)
 
-Tiene una funcion AgentBehavior1 que se lanza como un thread concurrente
-
-Asume que el agente de registro esta en el puerto 9000
-
-@author: javier
-"""
-
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-from Util.GraphUtil import *
-
-from Util.Namespaces import getNamespace,getAgentNamespace
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
-
-__author__ = 'javier'
+host = argumentos['host']
+port = argumentos['port']
 
 
-# Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 
-# Para contactar con los vendedores externos
-host = 'localhost'
-port = 8001
-
-
-directorio_host = 'localhost'
-directorio_port = 9000
-
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 
-admisor = getNamespace('AgenteAdmisor')
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',admisor['generic'],formatDir(host,port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',agenteAdmisor_ns['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
-
-productos_ns = getNamespace('Productos')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
@@ -160,7 +124,7 @@ def agentbehavior1(cola):
 	pass
 
 def init_agent():
-	register_message(AgenteAdmisor,DirectorioAgentes,admisor.type)
+	register_message(AgenteAdmisor,DirectorioAgentes,agenteAdmisor_ns.type)
 
 def registerActions():
 	global actions

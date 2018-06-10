@@ -1,49 +1,18 @@
 
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 27 15:58:13 2013
-
-Esqueleto de agente usando los servicios web de Flask
-
-/comm es la entrada para la recepcion de mensajes del agente
-/Stop es la entrada que para el agente
-
-Tiene una funcion AgentBehavior1 que se lanza como un thread concurrente
-
-Asume que el agente de registro esta en el puerto 9000
-
-@author: alejandro
-"""
-
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-from Util.GraphUtil import *
-
-from Util.Namespaces import *
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
+from imports import *
 
 import difflib
 
 __author__ = 'alejandro'
 
-host = 'localhost'
-port = 8002
+argumentos = getArguments(my_port=8002)
 
+host = argumentos['host']
+port = argumentos['port']
 
-directorio_host = 'localhost'
-directorio_port = 9000
-
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 

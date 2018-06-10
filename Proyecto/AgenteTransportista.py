@@ -1,33 +1,17 @@
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-from Util.ModelParser import *
-from Util.GraphUtil import *
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
+from imports import * 
 
 app = Flask(__name__,template_folder="AgenteTransportista/templates")
 
-#Direcciones hardcodeadas (propia)
-host = 'localhost'
-port = 8009
-nombre = 'transportista'
+argumentos = getArguments(my_port=8009,name='transportista')
 
-directorio_host = 'localhost'
-directorio_port = 9000
+host = argumentos['host']
+port = argumentos['port']
+
+nombre = argumentos['name']
+
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
+
 
 enviador = getNamespace('AgenteEnviador')
 productos = getNamespace('Productos')

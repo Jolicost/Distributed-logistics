@@ -1,39 +1,26 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-from random import randint
-
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
+from imports import *
 
 __author__ = 'adrian'
 
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteServicioPago/templates")
-host = 'localhost'
-port = 8003
-monetario_host = 'localhost'
-monetario_port = 8002
+
+argumentos = getArguments(my_port=8011)
+
+host = argumentos['host']
+port = argumentos['port']
+
+
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
+
+
 #Espacio de nombres para los productos y los agentes
 agn = getAgentNamespace()
-pago = getNamespace('AgenteServicioPago')
-monetario = getNamespace('AgenteMonetario')
-ServicioPago = Agent('AgenteServicioPago',pago['generic'],formatDir(host,port) + '/comm',None)
-AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(monetario_host,monetario_port) + '/comm',None)
+
+
+ServicioPago = Agent('AgenteServicioPago',agenteServicioPago_ns['generic'],formatDir(host,port) + '/comm',None)
 
 #Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'
@@ -44,7 +31,7 @@ pagos = Graph()
 pagos_db = 'Datos/pagos.turtle'
 
 def init_agent():
-    register_message(ServicioPago,DirectorioAgentes,pago.type)
+    register_message(ServicioPago,DirectorioAgentes,agenteServicioPago_ns.type)
 
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafo():
@@ -106,7 +93,7 @@ def pedirPago(graph):
     pagos.add((tienda[persona+importe+random], tienda.Importe, importe))
     guardarGrafo(pagos, pagos_db)
 
-    return create_confirm(ServicioPago,AgenteMonetario)
+    return create_confirm(ServicioPago)
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")  

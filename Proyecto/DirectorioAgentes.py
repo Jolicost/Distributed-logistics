@@ -31,30 +31,16 @@ from Util.ACLMessages import build_message, get_message_properties
 from Util.Logging import config_logger
 from Util.Namespaces import createAction
 from Util.Namespaces import getNamespace,getAgentNamespace
-
-
-# Definimos los parametros de la linea de comandos
-parser = argparse.ArgumentParser()
-parser.add_argument('--open', help="Define si el servidor est abierto al exterior o no", action='store_true',
-					default=False)
-parser.add_argument('--port', type=int, help="Puerto de comunicacion del agente")
+from Util.General import * 
 
 # Logging
 logger = config_logger(level=1)
 
-# parsing de los parametros de la linea de comandos
-args = parser.parse_args()
 
-# Configuration stuff
-if args.port is None:
-	port = 9000
-else:
-	port = args.port
-
-if args.open:
-	hostname = '0.0.0.0'
-else:
-	hostname = 'localhost'
+argumentos = getArguments(my_port=9000)
+#Direcciones hardcodeadas (propia)
+hostname = argumentos['host']
+port = argumentos['port']
 
 # Directory Service Graph
 dsgraph = Graph()

@@ -1,37 +1,24 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
+from imports import * 
 
 __author__ = 'adrian'
 
+
+argumentos = getArguments(my_port=8006)
+
+host = argumentos['host']
+port = argumentos['port']
+
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
+
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
-host = 'localhost'
-port = 8006
 
 #Espacio de nombres para los productos y los agentes
 agn = getAgentNamespace()
-monetario = getNamespace('AgenteMonetario')
-pago = getNamespace('AgenteServicioPago')
-AgenteMonetario = Agent('AgenteMonetario',monetario['generic'],formatDir(host,port) + '/comm',None)
-ServicioPago = Agent('AgenteServicioPago',pago['generic'],formatDir(pago_host,pago_port) + '/comm',None)
+
+AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns['generic'],formatDir(host,port) + '/comm',None)
 
 actions = {}
 
@@ -41,12 +28,11 @@ directorio_port = 9000
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 def init_agent():
-    register_message(AgenteMonetario,DirectorioAgentes,monetario.type)
+    register_message(AgenteMonetario,DirectorioAgentes,agenteMonetario_ns.type)
 
 @app.route("/comm")
 def comunicacion():
     global actions
-    global ServicioPago
     global AgenteMonetario
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
@@ -87,7 +73,7 @@ def pedirPagoPedido(graph):
         content=obj)
 
     # Enviamos el mensaje a cualquier servicio de pago
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteServicioPago_ns.type)
 
     return create_confirm(AgenteMonetario,None)
 
@@ -105,7 +91,7 @@ def pedirPagoTiendaExterna(graph):
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteServicioPago_ns.type)
 
     return create_confirm(AgenteMonetario,None)
 
@@ -130,7 +116,7 @@ def pedirDevolucion(graph):
         sender=AgenteMonetario.uri,
         content=obj)
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,pago.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteServicioPago_ns.type)
 
     return create_confirm(AgenteMonetario,None)
 
@@ -153,7 +139,7 @@ def test1():
 
     # Enviamos el mensaje a cualquier agente admisor
     print("Agente monetario envia mensaje a servicio pago")
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteMonetario_ns.type)
     return 'Exit'
 
 @app.route("/test2")
@@ -175,7 +161,7 @@ def test2():
 
     # Enviamos el mensaje a cualquier agente admisor
     print("Agente monetario envia mensaje a servicio pago")
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteMonetario_ns.type)
     return 'Exit'
 
 @app.route("/test3")
@@ -197,7 +183,7 @@ def test3():
 
     # Enviamos el mensaje a cualquier agente admisor
     print("Agente monetario envia mensaje a servicio pago")
-    send_message_any(msg,AgenteMonetario,DirectorioAgentes,monetario.type)
+    send_message_any(msg,AgenteMonetario,DirectorioAgentes,agenteMonetario_ns.type)
     return 'Exit'
 
 @app.route("/Stop")
