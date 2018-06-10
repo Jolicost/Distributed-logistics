@@ -189,11 +189,11 @@ def send_message_set(msg,agentSender,directoryAgent,type,uris):
 	devuelve: grafo del mensaje de retorno del agente (despues de contactar con el)
 	'''
 	res = directory_search_global(agentSender,directoryAgent,type)
+	res.serialize("test.turtle",format="turtle")
 	agentes = res.subjects(predicate=DSO.Type,object=DSO.Agent)
 	responses = []
 	#Enviamos un mensaje para cada agente que este dentro de la subseleccion
 	#(TODO se puede enfocar de forma concurrente) y esperamos las respuestas
-
 	#uris = [str(s) for s in uris]
 	for agente in agentes:
 		if agente in uris:

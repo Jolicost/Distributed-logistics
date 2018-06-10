@@ -120,6 +120,8 @@ def pedirOferta():
 	print("Envio mensaje oferta")
 	send_message_any(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
 
+	return redirect("/")
+
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
 def callbackTest(graph):
 	print("Callback working!")

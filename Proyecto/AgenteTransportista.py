@@ -91,9 +91,7 @@ def peticionOferta(graph):
 		sender=AgenteTransportista.uri,
 		content=obj)
 
-	# Enviamos el mensaje a cualquier agente enviador
-	print("Envio respuesta oferta")
-	send_message_any(msg,AgenteTransportista,DirectorioAgentes,enviador.type)
+	return msg
 
 def registerActions():
 	global actions

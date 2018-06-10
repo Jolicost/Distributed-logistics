@@ -97,7 +97,6 @@ def enviarProductosRecomendadosUsuario(res,user_uri):
         sender=AgenteOpinador.uri,
         content=obj)
 
-    msg.serialize('test.turtle',format="turtle")
     send_message_uri(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type,user_uri)
 
 @app.route("/enviarRecomendaciones")

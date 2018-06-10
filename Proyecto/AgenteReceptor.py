@@ -222,7 +222,7 @@ def procesarDecision(pedido,responsabilidad):
 		sender=AgenteReceptor.uri,
 		content=obj)
 
-	send_message_set(msg,AgenteReceptor,DirectorioAgentes,vendedores_ns.type,responsabilidad['vendedores'])
+	send_message_set(msg,AgenteReceptor,DirectorioAgentes,agenteVendedor_ns.type,responsabilidad['vendedores'])
 	guardarGrafoPedidos()
 
 def productoPerteneceTiendaExterna(producto):
@@ -242,8 +242,7 @@ def decidirResponsabilidad(pedido):
 	i = 0
 	for item in c:
 		#Iteramos los productos del pedido
-		prod_id = pedidos.value(subject=item,predicate=productos_ns.Id)
-		vendedor = productoPerteneceTiendaExterna(productos_ns[prod_id])
+		vendedor = productoPerteneceTiendaExterna(item)
 		if (vendedor):
 			vendedores += [vendedor]
 			pertenecen += 1
@@ -270,7 +269,6 @@ def calcularImportePedido(graph,pedido):
 	c = Collection(total,node)
 
 	for p in c:
-		print(p)
 		try:
 			suma += int(total.value(subject=p,predicate=productos_ns.Importe))
 		except ValueError:
@@ -325,11 +323,8 @@ def centroMasCercano(pedido,producto):
 
 	#Obtenemos la direccion de entrega del pedido
 	loc = g.value(pedido,pedidos_ns.Tienedirecciondeentrega)
-	print(pedido)
 	dir = g.value(loc,direcciones_ns.Direccion)
 	cp = g.value(loc,direcciones_ns.Codigopostal)
-
-	g.serialize("test.turtle",format='turtle')
 
 	nodoLista = g.value(producto,productos_ns.CentrosLogisticos)
 
@@ -341,8 +336,6 @@ def centroMasCercano(pedido,producto):
 	for c in col:
 		loc = g.value(c,getNamespace('Centros').Ubicadoen)
 		centro_cp = g.value(loc,getNamespace('Direcciones').Codigopostal)
-		print("hola")
-		print(cp,centro_cp)
 		try:
 			res[c] = abs(int(cp) - int(centro_cp))
 		except Exception:
@@ -375,7 +368,6 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 		sender=AgenteReceptor.uri,
 		content=obj)
 
-	print(empaquetador_uri)
 	# Enviamos el mensaje a cualquier agente admisor
 	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,agenteEmpaquetador_ns.type,empaquetador_uri)
 

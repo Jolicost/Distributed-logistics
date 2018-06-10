@@ -63,6 +63,7 @@ def registrarResponsabilidadEnvio(graph):
 	Si es a cabo de nosotros nos informaran de los datos de la entrega,
 	aunque no haremos mucho con ellos
 	'''
+	print("hemos llegado")
 	pedido = graph.subjects(predicate=RDF.type,object=getNamespace('Pedidos').type).next()
 	subgraph = expandirGrafoRec(graph,pedido)
 	g += subgraph
