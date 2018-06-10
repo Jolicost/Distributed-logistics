@@ -15,53 +15,26 @@ Asume que el agente de registro esta en el puerto 9000
 @author: javier
 """
 
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
+from imports import *
 
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-from Util.Namespaces import *
-from Util.GraphUtil import *
-from Util.ModelParser import *
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.collection import Collection
-
-__author__ = 'javier'
+__author__ = 'joan'
 
 
 # Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 
 # Para contactar con los vendedores externos
 host = 'localhost'
-port = 8003
+port = 8008
 
 #Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'
 directorio_port = 9000
 
-#Hardcoding de los empaquetadores
-empaquetador = getNamespace('AgenteEmpaquetador')
-
 agn = getAgentNamespace()
 
-receptor = getNamespace('AgenteReceptor')
 #Objetos agente
-AgenteReceptor = Agent('AgenteReceptor',receptor['generic'],formatDir(host,port) + '/comm',None)
+AgenteReceptor = Agent('AgenteReceptor',agenteReceptor_ns['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-productos_ns = getNamespace('Productos')
-pedidos_ns = getNamespace('Pedidos')
-vendedores_ns = getNamespace('AgenteVendedorExterno')
-usuarios_ns = getNamespace('AgenteUsuario')
-centros_ns = getNamespace('Centros')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
@@ -73,8 +46,6 @@ centros_db = 'Datos/centros.turtle'
 centros = Graph()
 
 
-direcciones_ns = getNamespace('Direcciones')
-
 cola1 = Queue()
 
 # Flask stuff
@@ -85,7 +56,7 @@ app = Flask(__name__,template_folder="AgenteReceptor/templates")
 actions = {}
 
 def initAgent():
-	register_message(AgenteReceptor,DirectorioAgentes,receptor.type)
+	register_message(AgenteReceptor,DirectorioAgentes,agenteReceptor_ns.type)
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
 	global productos
@@ -290,11 +261,40 @@ def decidirResponsabilidad(pedido):
 	}
 	return ret
 
-def registrarPedido(graph):
+def calcularImportePedido(graph,pedido):
+
+
+	total = graph + productos
+	suma = 0
+	node = total.value(pedido,pedidos_ns.Contiene)
+
+	c = Collection(total,node)
+
+	for p in c:
+		try:
+			suma += int(total.value(subject=p,predicate=productos_ns.Importe))
+		except ValueError:
+			#Si hay un importe mal formado ignoramos
+			pass
+
+	return suma
+	
+
+def registrarPedido(graph,pedido):
 	''' registra un pedido en la base de datos de pedidos de la tienda '''
+	''' hay que anadir los atributos extra al pedido '''
 	global pedidos
-	pedido = graph.subjects(predicate=RDF.type,object=pedidos_ns.type).next()
-	pedidos += pedido
+
+	fechaPedido = getCurrentDateTime()
+	#estado = 'idle'
+
+	graph.add((pedido,pedidos_ns.Fecharealizacion,Literal(fechaPedido)))
+	graph.add((pedido,pedidos_ns.Importetotal,Literal(calcularImportePedido(graph,pedido))))
+	#No necesitamos el estado
+	#graph.add((pedido,pedidos_ns.Estadodelpedido,Literal(estado)))
+
+	pedidos += graph
+	guardarGrafoPedidos()
 	return pedido
 
 def decidirResponsabilidadEnvio(pedido):
@@ -303,10 +303,14 @@ def decidirResponsabilidadEnvio(pedido):
 
 
 def resolverEnvio(graph):
-	pedido = registrarPedido(graph)
-	decidirResponsabilidadEnvio(pedido)
-	organizarPedido(pedido)
 
+	pedidos = graph.subjects(predicate=RDF.type,object=pedidos_ns.type)
+	for p in pedidos:
+		pedido = registrarPedido(expandirGrafoRec(graph,p),p)
+		'''decidirResponsabilidadEnvio(pedido)
+		organizarPedido(pedido)'''
+	
+	return create_confirm(AgenteReceptor)
 
 def centroMasCercano(pedido,producto):
 	''' Atencion, localizacion y centros logisticos son 2 nodos de los grafos pedidos y productos '''
@@ -353,8 +357,6 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 	envio = pedido_a_envio(graph,pedido,listaProductos)
 
 	centro_id = centros.value(centro,centros_ns.Id)
-
-	empaquetador_ns = getNamespace('AgenteEmpaquetador')
 
 	empaquetador_uri = empaquetador_ns[centro_id]
 

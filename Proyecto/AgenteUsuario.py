@@ -1,28 +1,9 @@
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import *
-from Util.GraphUtil import *
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
-import random
+from imports import *
 
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8034
+port = 8000
 
 
 directorio_host = 'localhost'
@@ -118,7 +99,7 @@ def calcularTotalCarrito():
     total = 0
     for p in carrito.subjects(RDF.type,productos_ns.type):
         try:
-            total += carrito.value(p,productos_ns.Importe)
+            total += int(carrito.value(p,productos_ns.Importe)) * int(carrito.value(p,productos_ns.Cantidad))
         except ValueError:
             pass
 
@@ -133,29 +114,81 @@ def verCarrito():
         dict['Nombre'] = carrito.value(p,productos_ns.Nombre)
         dict['Cantidad'] = carrito.value(p,productos_ns.Cantidad)
         dict['Subtotal'] = carrito.value(p,productos_ns.Importe)
-        dict['Total'] = str(int(dict['Subtotal']) * int(dict['Cantidad']))
+        try:
+            dict['Total'] = str(int(dict['Subtotal']) * int(dict['Cantidad']))
+        except ValueError:
+            dict['Total'] = 0
         list+=[dict]
 
     return render_template('carrito.html',list=list,total=total,name=name)
 
+def vaciarCarritoFun():
+    global carrito
+    carrito = Graph()
+    guardarGrafo(carrito)
+
+@app.route("/vaciarCarrito")
+def vaciarCarrito():
+    vaciarCarritoFun()
+    return redirect("/carrito")
+
+def enviarPedidoATienda(pedido):
+
+    obj = createAction(AgenteUsuario,'nuevoPedido')
+    pedido.add((obj, RDF.type, agn.UsuarioNuevoPedido))
+    msg = build_message(pedido,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteReceptor_ns.type)
 
 
 @app.route("/checkout")
 def checkout():
-    pass
+    global pedidos
+    prioridad = request.args['prioridad']
+    direccion = request.args['direccion']
+    cp = request.args['cp']
 
+    pedido = Graph()
+    pedido_id = str(random.getrandbits(64))
+    pedido.add((pedidos_ns[pedido_id],RDF.type,pedidos_ns.type))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Id,Literal(pedido_id)))
+
+    node =  pedidos_ns[pedido_id + '-listaProductos']
+
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Contiene,node))
+
+    c = Collection(pedido,node)
+
+    for p in carrito.subjects(predicate=RDF.type,object=productos_ns.type):
+        for i in range(int(carrito.value(p,productos_ns.Cantidad))):
+            c.append(p)
+    
+
+
+    add_localizacion_node(pedido,pedidos_ns[pedido_id],direcciones_ns.Tienedirecciondeentrega,direccion,cp)
+
+    #Enviar mensaje a la tienda
+    enviarPedidoATienda(pedido)
+    #vaciarCarritoFun()
+    pedidos += pedido
+    guardarGrafo(pedidos)
+
+    return redirect("/")
 
 @app.route("/anadirProductoCarrito")
 def anadirProductoCarrito():
     dict = request.args
     ref = dict['ref']
+    print(ref)
     id = dict['id']
     importe = dict['importe']
     nombre = dict['nombre']
 
     try:
-
-        
         carrito.triples((productos_ns[id],None,None)).next()
         value = carrito.value(productos_ns[id],productos_ns.Cantidad)
         carrito.set((productos_ns[id],productos_ns.Cantidad,Literal(int(value)+1)))
@@ -170,6 +203,7 @@ def anadirProductoCarrito():
     except ValueError:
         return "Error en el formato de los numeros"
 
+    print(ref)
     return redirect("/" + ref)
 @app.route("/recomendaciones")
 def verRecomendaciones():
@@ -181,8 +215,8 @@ def verRecomendaciones():
     for s in g.subjects(predicate=RDF.type,object=productos_ns.type):
         # Anadimos los atributos que queremos renderizar a la vista
         dic = {}
-        dic['nom'] = g.value(subject = s,predicate = productos_ns.Nombre)
-        dic['preu'] = g.value(subject = s,predicate = productos_ns.Importe)
+        dic['nombre'] = g.value(subject = s,predicate = productos_ns.Nombre)
+        dic['importe'] = g.value(subject = s,predicate = productos_ns.Importe)
         dic['id'] = g.value(subject = s,predicate = productos_ns.Id)
         l = l + [dic]
 
@@ -263,10 +297,17 @@ def crearOpinion(id):
     puntuacion = request.args['puntuacion']
     descripcion = request.args['descripcion']
     g = Graph()
-    g.add((opiniones_ns[name+id], productos_ns.Id, Literal(id)))
+    # Id de la opinion
+    g.add((opiniones_ns[name+id], opiniones_ns.Id, Literal(name+id)))
+    g.add((opiniones_ns[name+id], RDF.type, opiniones_ns.type))
+
+    #Usuario que opina y producto opinados
+    g.add((opiniones_ns[name+id], productos_ns.Essobre, productos_ns[id]))
+    g.add((opiniones_ns[name+id], opiniones_ns.Escritapor, agenteUsuario_ns[name]))
+    
     g.add((opiniones_ns[name+id], opiniones_ns.Puntuacion, Literal(puntuacion)))
     g.add((opiniones_ns[name+id], opiniones_ns.Descripcion, Literal(descripcion)))
-    g.add((opiniones_ns[name+id], RDF.type, opiniones_ns.type))
+   
     obj = createAction(AgenteUsuario,'darOpinion')
 
     g.add((obj, RDF.type, agn.DarOpinion))
@@ -277,6 +318,9 @@ def crearOpinion(id):
 
     # Enviamos el mensaje a cualquier agente opinador
     send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteOpinador_ns.type)
+
+    borrarNodoRec(productos_a_opinar,productos_ns[id])
+    guardarGrafo(productos_a_opinar)
 
     return redirect("/opinar")
 
@@ -297,7 +341,7 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-    if not msgdic or msgdic['performative'] != ACL.request:
+    if not msgdic:
         # Si no es, respondemos que no hemos entendido el mensaje
         gr = create_notUnderstood(AgenteUsuario,None)
     else:
@@ -352,7 +396,7 @@ def buscarProductos():
 def rebreRecomanacions(graph):
     global recomendaciones
     save = Graph()
-    for r in graph.subjects(predicate=RDF.type,object=recomendaciones_ns.type):
+    for r in graph.subjects(predicate=RDF.type,object=productos_ns.type):
         save+=expandirGrafoRec(graph,r)
 
     recomendaciones += save

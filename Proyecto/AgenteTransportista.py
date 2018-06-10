@@ -23,7 +23,7 @@ app = Flask(__name__,template_folder="AgenteTransportista/templates")
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 6000
+port = 8009
 nombre = 'transportista'
 
 directorio_host = 'localhost'

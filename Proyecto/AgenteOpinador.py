@@ -15,29 +15,12 @@ Asume que el agente de registro esta en el puerto 9000
 @author: alejandro
 """
 
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-
-from Util.Namespaces import *
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
-from random import randint
+from imports import *
 
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8026
-
+port = 8007
 
 directorio_host = 'localhost'
 directorio_port = 9000
@@ -70,12 +53,15 @@ def cargarGrafos():
     opiniones = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
-    elif os.path.isfile(productos_db):
+    if os.path.isfile(productos_db):
         productos.parse(productos_db,format="turtle")
     
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
+
+def guardarGrafoOpiniones():
+    guardarGrafo(opiniones,opiniones_db)
 
 @app.route("/")
 def main():
@@ -85,54 +71,46 @@ def main():
 def altaOpinion():
     return 'ruta no definida'
 
-def aleatorios(cantidad, min, max):
-    numeros = []
-    while len(numeros) < cantidad:
-        numero = randint(min,max)
 
-        if not numero in numeros:
-            numeros.append(numero)
-    return numeros
-
-def generarRecomendacion():
-    global productos
+def getProductosRecomendadosUsuario(user_uri):
     p = list(productos.subjects(predicate=RDF.type,object=productos_ns.type))
+    try:
+        p = random.sample(p,5)
+    except ValueError:
+        #la lista de productos sera la lista completa
+        pass
 
-    # generar 5 ids aleatorios de 0 a el maximo.
-    #numeros = []
-    numeros = aleatorios(1, 0, len(p)-1)
-    listRes = []
-    res = Graph()
+    g = Graph()
+    for prod in p:
+        g+=expandirGrafoRec(productos,prod)
 
-    for numero in numeros:
-        listRes += [p[numero]]
-        #productos.objects(subject=p[numero],predicate=productos.precio);
-    for li in listRes:
-        ids = productos.triples((li, productos_ns.Id, None))
-        for id in ids:
-            res.add(id)
-        names = productos.triples((li, productos_ns.Nombre, None))  
-        for name in names:     
-            res.add(name)
-        importes = productos.triples((li, productos_ns.Importe, None))
-        for importe in importes:
-            res.add(importe)
-        tipus = productos.triples((li, RDF.type, None))  
-        for tip in tipus:
-            res.add(tip)
+    return g
+
+def enviarProductosRecomendadosUsuario(res,user_uri):
+
     obj = createAction(AgenteOpinador,'rebreRecomanacions')
 
     res.add((obj, RDF.type, agn.RecomendarProductos))
     
     msg = build_message(res,
-        perf=ACL.request,
+        perf=ACL.inform,
         sender=AgenteOpinador.uri,
         content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+    msg.serialize('test.turtle',format="turtle")
+    send_message_uri(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type,user_uri)
+
+@app.route("/enviarRecomendaciones")
+def generarRecomendacion():
+    usuarios = get_all_uris(AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+    for user in usuarios:
+        prods = getProductosRecomendadosUsuario(user)
+        enviarProductosRecomendadosUsuario(prods,user)
+    return redirect("/")
+
 
 def getProductosAOpinarUsuario(usuario):
+    #Buscar de opiniones y borrar los productos ya comprados de este
     g = Graph()
     g.add((productos_ns["999"],RDF.type,productos_ns.type))
     g.add((productos_ns["999"],productos_ns.Nombre,Literal('producto1aOpinar')))
@@ -173,11 +151,13 @@ def pedirOpinion():
 def nuevaOpinion(graph):
     global opiniones
     p = graph.subjects(predicate=RDF.type,object=opiniones_ns.type)
-    for pe in p:
-        for a,b,c in graph.triples((pe,None,None)):
-            opiniones.add((a,b,c))
 
-    guardarGrafo(opiniones,opiniones_db)
+    add = Graph()
+    for pe in p:
+        add += expandirGrafoRec(graph,pe)
+
+    opiniones+=add
+    guardarGrafoOpiniones()
     return create_confirm(AgenteOpinador,None)
 
 
@@ -191,7 +171,7 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-    if not msgdic or msgdic['performative'] != ACL.request:
+    if not msgdic:
         # Si no es, respondemos que no hemos entendido el mensaje
         gr = create_notUnderstood(AgenteOpinador,None)
     else:

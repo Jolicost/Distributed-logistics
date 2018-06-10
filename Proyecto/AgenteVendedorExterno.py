@@ -31,7 +31,7 @@ nombre = '324'
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 8000
+port = 8010
 
 #Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'
@@ -195,6 +195,24 @@ def enviarPedido():
 	Representa el envio de un pedido que era responsabilidad del vendedor externo.	
 	Se accede a esta accion normalmente a traves de la vista de pedidos 
 	"""
+	id = request.args['id']
+	vendedor = pedidos.value(subject=pedidos_ns[id],predicate=pedidos_ns.VendedorResponsable)
+
+	g = Graph()
+	obj = createAction(AgenteVendedorExterno,'envioRealizado')
+	#anadimos la informacion al mensaje
+	g.add((obj,RDF.type,agn.VendedorEnvioRealizado))
+	g.add(pedidos_ns[id],RDF.type,pedidos_ns.type)
+	g.add(pedidos_ns[id],pedidos_ns.Id,Literal(id))
+	g.add(pedidos_ns[id],pedidos_ns.VendedorResponsable,vendedor)
+	#Indicamos si el receptor es el responsable o no del pedido
+	msg = build_message(pedido,
+		perf=ACL.inform,
+		sender=AgenteReceptor.uri,
+		content=obj)
+
+	send_message_any(msg,AgenteReceptor,DirectorioAgentes,agenteMonetario_ns.type)
+
 
 @app.route("/anadir")
 def nuevoProducto():
