@@ -2,7 +2,7 @@
 from imports import *
 
 
-argumentos = getArguments(my_port=8004)
+argumentos = getArguments(my_port=8010)
 #Direcciones hardcodeadas (propia)
 host = argumentos['host']
 port = argumentos['port']

@@ -4,7 +4,7 @@ app = Flask(__name__,template_folder="AgenteEnviador/templates")
 
 #Direcciones hardcodeadas (propia)
 
-argumentos = getArguments(my_port=8004,name="enviador")
+argumentos = getArguments(my_port=8005,name="enviador")
 #Direcciones hardcodeadas (propia)
 host = argumentos['host']
 port = argumentos['port']

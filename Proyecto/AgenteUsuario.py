@@ -2,7 +2,7 @@ from imports import *
 
 __author__ = 'alejandro'
 
-argumentos = getArguments(my_port=8004)
+argumentos = getArguments(my_port=8000)
 #Direcciones hardcodeadas (propia)
 host = argumentos['host']
 port = argumentos['port']
