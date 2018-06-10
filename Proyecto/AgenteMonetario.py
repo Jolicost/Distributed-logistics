@@ -24,9 +24,8 @@ __author__ = 'adrian'
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 host = 'localhost'
-port = 8002
-pago_host = 'localhost'
-pago_port = 8003
+port = 8006
+
 #Espacio de nombres para los productos y los agentes
 agn = getAgentNamespace()
 monetario = getNamespace('AgenteMonetario')

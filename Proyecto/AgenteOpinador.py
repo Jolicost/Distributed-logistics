@@ -20,7 +20,7 @@ from imports import *
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8026
+port = 8007
 
 directorio_host = 'localhost'
 directorio_port = 9000

@@ -38,7 +38,7 @@ import difflib
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8045
+port = 8002
 
 
 directorio_host = 'localhost'

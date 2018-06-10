@@ -1,0 +1,10 @@
+python DirectorioAgentes.py &
+python AgenteAdmisor.py &
+python AgenteBuscador.py &
+python AgenteEmpaquetador.py &
+python AgenteEnviador.py &
+python AgenteOpinador.py &
+python AgenteReceptor.py &
+python AgenteUsuario.py &
+python AgenteVendedorExterno.py &
+python editorCentrosLogisticos.py &

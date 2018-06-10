@@ -3,7 +3,7 @@ from imports import *
 __author__ = 'alejandro'
 
 host = 'localhost'
-port = 8034
+port = 8000
 
 
 directorio_host = 'localhost'

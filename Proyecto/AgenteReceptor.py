@@ -23,7 +23,7 @@ __author__ = 'joan'
 # Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 
 # Para contactar con los vendedores externos
 host = 'localhost'
-port = 8003
+port = 8008
 
 #Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'
@@ -261,6 +261,25 @@ def decidirResponsabilidad(pedido):
 	}
 	return ret
 
+def calcularImportePedido(graph,pedido):
+
+
+	total = graph + productos
+	suma = 0
+	node = total.value(pedido,pedidos_ns.Contiene)
+
+	c = Collection(total,node)
+
+	for p in c:
+		try:
+			suma += int(total.value(subject=p,predicate=productos_ns.Importe))
+		except ValueError:
+			#Si hay un importe mal formado ignoramos
+			pass
+
+	return suma
+	
+
 def registrarPedido(graph,pedido):
 	''' registra un pedido en la base de datos de pedidos de la tienda '''
 	''' hay que anadir los atributos extra al pedido '''
@@ -270,6 +289,7 @@ def registrarPedido(graph,pedido):
 	#estado = 'idle'
 
 	graph.add((pedido,pedidos_ns.Fecharealizacion,Literal(fechaPedido)))
+	graph.add((pedido,pedidos_ns.Importetotal,Literal(calcularImportePedido(graph,pedido))))
 	#No necesitamos el estado
 	#graph.add((pedido,pedidos_ns.Estadodelpedido,Literal(estado)))
 
@@ -287,8 +307,8 @@ def resolverEnvio(graph):
 	pedidos = graph.subjects(predicate=RDF.type,object=pedidos_ns.type)
 	for p in pedidos:
 		pedido = registrarPedido(expandirGrafoRec(graph,p),p)
-		decidirResponsabilidadEnvio(pedido)
-		organizarPedido(pedido)
+		'''decidirResponsabilidadEnvio(pedido)
+		organizarPedido(pedido)'''
 	
 	return create_confirm(AgenteReceptor)
 

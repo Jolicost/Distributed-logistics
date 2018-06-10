@@ -24,7 +24,7 @@ app = Flask(__name__,template_folder="AgenteEmpaquetador/templates")
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 8010
+port = 8004
 
 centroLogistico = 'vallecas'
 

@@ -26,7 +26,7 @@ from rdflib.namespace import FOAF, RDF
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 8050
+port = 8020
 
 #Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
 directorio_host = 'localhost'

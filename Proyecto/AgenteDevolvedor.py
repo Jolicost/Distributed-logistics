@@ -25,7 +25,7 @@ from random import randint
 __author__ = 'adrian'
 
 host = 'localhost'
-port = 8017
+port = 8003
 
 directorio_host = 'localhost'
 directorio_port = 9000

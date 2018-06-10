@@ -23,7 +23,7 @@ app = Flask(__name__,template_folder="AgenteEnviador/templates")
 
 #Direcciones hardcodeadas (propia)
 host = 'localhost'
-port = 5000
+port = 8005
 nombre = 'enviador'
 
 directorio_host = 'localhost'
