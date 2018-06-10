@@ -21,14 +21,10 @@ agn = getAgentNamespace()
 
 
 ServicioPago = Agent('AgenteServicioPago',agenteServicioPago_ns['generic'],formatDir(host,port) + '/comm',None)
-
-#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
-directorio_host = 'localhost'
-directorio_port = 9000
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 pagos = Graph()
-pagos_db = 'Datos/pagos.turtle'
+pagos_db = 'AgenteServicioPago/pagos.turtle'
 
 def init_agent():
     register_message(ServicioPago,DirectorioAgentes,agenteServicioPago_ns.type)
@@ -40,25 +36,28 @@ def cargarGrafo():
     if os.path.isfile(pagos_db):
         pagos.parse(pagos_db,format="turtle")
 
+
+def guardarGrafo(g,file):
+    g.serialize(file,format="turtle")   
+
+def guardarGrafoPagos():
+    guardarGrafo(pagos,pagos_db)
+
+
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
 actions = {}
 
 @app.route("/comm")
 def comunicacion():
-    print("ServicioPago recibe el mensaje")
-    global actions
-    global ServicioPago
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()
     gm.parse(data=message)
-    gm.serialize('test.turtle',format='turtle')
     msgdic = get_message_properties(gm)
 
-    print(message)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-    if not msgdic or msgdic['performative'] != ACL.request:
+    if not msgdic:
         # Si no es, respondemos que no hemos entendido el mensaje
         gr = create_notUnderstood(ServicioPago,None)
     else:
@@ -75,46 +74,25 @@ def comunicacion():
     return gr.serialize(format='xml')
 
 def pedirPago(graph):
-
     global pagos
-    global pagos_db
-    #ontologias
-    ont = Namespace('Ontologias/root-ontology.owl')
-    persona = importe = None
-    for p, o in graph[ont.Pago]:
-        if p == ont.Persona:
-            persona = o
-        elif p == ont.Importe:
-            importe = o
+    cargarGrafo()
+    add = Graph()
+    for pago in graph.subjects(RDF.type,transacciones_ns.type):
+        add+=expandirGrafoRec(graph,pago)
 
-    random = str(randint(0,50))
-    tienda = getNamespace('Pagos')
-    pagos.add((tienda[persona+importe+random], tienda.Persona, persona))
-    pagos.add((tienda[persona+importe+random], tienda.Importe, importe))
-    guardarGrafo(pagos, pagos_db)
+    pagos+=add
+    guardarGrafoPagos()
 
     return create_confirm(ServicioPago)
 
-def guardarGrafo(g,file):
-    g.serialize(file,format="turtle")  
-
-@app.route("/Pagos")
+@app.route("/")
 def getPagos():
-    global pagos
+   
+    list = []
+    for p in pagos.subjects(predicate=RDF.type,object=transacciones_ns.type):
+        list+=[transaccion_a_dict(pagos,p)]
 
-    idUsuario = request.args['id']
-    tienda = getNamespace('Pagos')
-
-    array = []
-    #g = Graph()
-    for s,p,o in pagos.triples((None, tienda.Persona, Literal(idUsuario))):
-        for ss,pp,oo in pagos.triples((s,tienda.Importe,None)):
-            #g.add((ss,pp,oo))
-            array.append(int(oo))
-
-    #g.serialize('test.turtle',format='turtle')
-
-    return render_template('lista_pagos.html', a = array, u = idUsuario)
+    return render_template('lista_pagos.html',list=list)
 
 
 @app.route("/Stop")

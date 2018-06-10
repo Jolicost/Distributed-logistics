@@ -52,7 +52,8 @@ ns_bases = {
 	'Peticiones':tienda_prefix + 'Peticiones', #de busqueda
 	'Centros':tienda_prefix + 'Centros', #Centros logisticos
 	'Direcciones':tienda_prefix + 'Direcciones', #Direcciones de entrega o de centros
-	'Recomendaciones':tienda_prefix + 'Recomendaciones' #Recomendaciones de productos
+	'Recomendaciones':tienda_prefix + 'Recomendaciones', #Recomendaciones de productos
+	'Transacciones':tienda_prefix + 'Transacciones'
 }
 
 def createAction(Agent,actionName):
@@ -83,21 +84,22 @@ agenteEmpaquetador_ns = getNamespace('AgenteEmpaquetador')
 agenteOpinador_ns = getNamespace('AgenteOpinador')
 
 productos_ns = getNamespace('Productos')
-vendedores_ns = getNamespace('Vendedores')
-usuarios_ns = getNamespace('Usuarios')
+vendedores_ns = getNamespace('AgenteVendedorExterno')
+usuarios_ns = getNamespace('AgenteUsuario')
 pedidos_ns = getNamespace('Pedidos')
 pesos_ns = getNamespace('Pesos')
 envios_ns = getNamespace('Envios')
 lotes_ns = getNamespace('Lotes')
 pagos_ns = getNamespace('Pagos')
 devoluciones_ns = getNamespace('Devoluciones')
-transportistas_ns = getNamespace('Transportistas')
+transportistas_ns = getNamespace('AgenteTransportista')
 opiniones_ns = getNamespace('Opiniones')
 ofertas_ns = getNamespace('Ofertas')
 peticiones_ns = getNamespace('Peticiones')
 centros_ns = getNamespace('Centros')
 direcciones_ns = getNamespace('Direcciones')
 recomendaciones_ns = getNamespace('Recomendaciones')
+transacciones_ns = getNamespace('Transacciones')
 
 if __name__ == "__main__":
 	pass
