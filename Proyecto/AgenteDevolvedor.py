@@ -1,40 +1,17 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message, create_confirm
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-from Util.ModelParser import *
-import datetime
-
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import getNamespace,getAgentNamespace,createAction
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
-from random import randint
+from imports import *
 
 __author__ = 'adrian'
 
-host = 'localhost'
-port = 8003
+argumentos = getArguments(my_port=8003)
+#Direcciones hardcodeadas (propia)
+host = argumentos['host']
+port = argumentos['port']
 
-directorio_host = 'localhost'
-directorio_port = 9000
+centroLogistico = argumentos['name']
 
-monetario_host = 'localhost'
-monetario_port = 8002
-
-usuario_host = 'localhost'
-usuario_port = 8034
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 ont = Namespace('Ontologias/root-ontology.owl')
 agn = getAgentNamespace()

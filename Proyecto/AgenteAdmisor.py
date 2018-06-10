@@ -89,7 +89,6 @@ def altaProducto():
 def nuevoProducto(graph):
 	#TODO hay que generar una lista de centros logisticos que tienen este producto (lo generamos aleatoreamente?)
 	global productos
-	graph.serialize("test.turlte",format="turtle")
 	p = graph.subjects(predicate=RDF.type,object=productos_ns.type)
 	for pe in p:
 		add = expandirGrafoRec(graph,pe)

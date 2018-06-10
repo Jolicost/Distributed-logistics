@@ -271,6 +271,7 @@ def calcularImportePedido(graph,pedido):
 	c = Collection(total,node)
 
 	for p in c:
+		print(p)
 		try:
 			suma += int(total.value(subject=p,predicate=productos_ns.Importe))
 		except ValueError:
@@ -304,11 +305,12 @@ def decidirResponsabilidadEnvio(pedido):
 
 def resolverEnvio(graph):
 
+	cargarGrafos()
 	pedidos = graph.subjects(predicate=RDF.type,object=pedidos_ns.type)
 	for p in pedidos:
 		pedido = registrarPedido(expandirGrafoRec(graph,p),p)
-		'''decidirResponsabilidadEnvio(pedido)
-		organizarPedido(pedido)'''
+		decidirResponsabilidadEnvio(pedido)
+		organizarPedido(pedido)
 	
 	return create_confirm(AgenteReceptor)
 
@@ -324,8 +326,11 @@ def centroMasCercano(pedido,producto):
 
 	#Obtenemos la direccion de entrega del pedido
 	loc = g.value(pedido,pedidos_ns.Tienedirecciondeentrega)
+	print(pedido)
 	dir = g.value(loc,direcciones_ns.Direccion)
 	cp = g.value(loc,direcciones_ns.Codigopostal)
+
+	g.serialize("test.turtle",format='turtle')
 
 	nodoLista = g.value(producto,productos_ns.CentrosLogisticos)
 
@@ -337,6 +342,8 @@ def centroMasCercano(pedido,producto):
 	for c in col:
 		loc = g.value(c,getNamespace('Centros').Ubicadoen)
 		centro_cp = g.value(loc,getNamespace('Direcciones').Codigopostal)
+		print("hola")
+		print(cp,centro_cp)
 		try:
 			res[c] = abs(int(cp) - int(centro_cp))
 		except Exception:
@@ -358,7 +365,7 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 
 	centro_id = centros.value(centro,centros_ns.Id)
 
-	empaquetador_uri = empaquetador_ns[centro_id]
+	empaquetador_uri = agenteEmpaquetador_ns[centro_id]
 
 
 	obj = createAction(AgenteReceptor,'nuevoEnvio')
@@ -371,7 +378,7 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 
 	print(empaquetador_uri)
 	# Enviamos el mensaje a cualquier agente admisor
-	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,empaquetador_ns.type,empaquetador_uri)
+	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,agenteEmpaquetador_ns.type,empaquetador_uri)
 
 def organizarPedido(pedido):
 	'''Busca que centros logisticos pueden resolver la peticion de envio '''

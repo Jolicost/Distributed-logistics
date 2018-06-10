@@ -91,6 +91,7 @@ def hola():
 
 def buscarProductos(graph):
     global productos
+    cargarGrafos()
     g = Graph()
     nuevaPeticion(graph)
 

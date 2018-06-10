@@ -76,6 +76,8 @@ g = cargarGrafo(graphFile)
 def init_agent():
 	register_message(AgenteVendedorExterno,DirectorioAgentes,vendedor.type)
 
+def getNombreVendedor():
+	return nombre
 
 def registrarResponsabilidadEnvio(graph):
 	global g
@@ -300,7 +302,7 @@ def crearProducto(attrs):
 	g.add((productos[id],productos.Id,Literal(id)))
 	g.add((productos[id],productos.enVenta,Literal(False)))
 	g.add((productos[id],RDF.type,productos.type))
-	g.add((productos[id],productos.Esvendidopor,vendedor[nombre]))
+	g.add((productos[id],productos.Esvendidopor,agenteVendedor_ns[getNombreVendedor()]))
 
 
 	guardarGrafo()

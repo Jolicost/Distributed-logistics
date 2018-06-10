@@ -79,7 +79,7 @@ agenteEnviador_ns = getNamespace('AgenteEnviador')
 agenteMonetario_ns = getNamespace('AgenteMonetario')
 agenteReceptor_ns = getNamespace('AgenteReceptor')
 agenteBuscador_ns = getNamespace('AgenteBuscador')
-agenteEmpaquetador = getNamespace('AgenteEmpaquetador')
+agenteEmpaquetador_ns = getNamespace('AgenteEmpaquetador')
 agenteOpinador_ns = getNamespace('AgenteOpinador')
 
 productos_ns = getNamespace('Productos')

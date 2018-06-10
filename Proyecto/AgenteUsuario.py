@@ -156,6 +156,8 @@ def checkout():
     pedido_id = str(random.getrandbits(64))
     pedido.add((pedidos_ns[pedido_id],RDF.type,pedidos_ns.type))
     pedido.add((pedidos_ns[pedido_id],pedidos_ns.Id,Literal(pedido_id)))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Hechopor,agenteUsuario_ns[name]))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Prioridad,Literal(prioridad)))
 
     node =  pedidos_ns[pedido_id + '-listaProductos']
 
@@ -169,7 +171,7 @@ def checkout():
     
 
 
-    add_localizacion_node(pedido,pedidos_ns[pedido_id],direcciones_ns.Tienedirecciondeentrega,direccion,cp)
+    add_localizacion_node(pedido,pedidos_ns[pedido_id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
 
     #Enviar mensaje a la tienda
     enviarPedidoATienda(pedido)

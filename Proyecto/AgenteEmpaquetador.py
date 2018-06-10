@@ -1,35 +1,17 @@
-from __future__ import print_function
-from multiprocessing import Process
-import os.path
-#Clase agente
-from Util.Agente import Agent
-#Renders del flask
-from flask import Flask, request, render_template,redirect
-from time import sleep
-#Funciones para recuperar las direcciones de los agentes
-from Util.GestorDirecciones import formatDir
-from Util.ACLMessages import build_message, get_message_properties, send_message
-from Util.OntoNamespaces import ACL, DSO
-from Util.Directorio import *
-#Diccionario con los espacios de nombres de la tienda
-from Util.Namespaces import *
-#Utilidades de RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.namespace import FOAF, RDF
-from Util.GraphUtil import *
-from rdflib.collection import Collection
-import random
+from imports import *
+# Definimos los parametros de la linea de comandos
 
 app = Flask(__name__,template_folder="AgenteEmpaquetador/templates")
 
+argumentos = getArguments(my_port=8004)
 #Direcciones hardcodeadas (propia)
-host = 'localhost'
-port = 8004
+host = argumentos['host']
+port = argumentos['port']
 
-centroLogistico = 'vallecas'
+centroLogistico = argumentos['name']
 
-directorio_host = 'localhost'
-directorio_port = 9000
+directorio_host = argumentos['dir_host']
+directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 
@@ -213,9 +195,8 @@ def main_page():
 
 
 def start_server():
-	empaquetador_ns = getNamespace('AgenteEmpaquetador')
 	cargarGrafos(centroLogistico)
-	register_message(AgenteEmpaquetador,DirectorioAgentes,empaquetador_ns.type)
+	register_message(AgenteEmpaquetador,DirectorioAgentes,agenteEmpaquetador_ns.type)
 	registerActions()
 	app.run(host=host,port=port,debug=True)
 
