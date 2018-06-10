@@ -6,15 +6,24 @@
 
 <http://www.tienda.org/Lotes#11> a ns1:type ;
     ns1:Ciudad "Bcn" ;
-    ns1:Estadodellote "Enviado" ;
+    ns1:Estadodellote "Enviado",
+        "Idle" ;
     ns1:Id 11 ;
     ns1:Peso 40 .
 
 <http://www.tienda.org/Lotes#15> a ns1:type ;
     ns1:Ciudad "Cancun" ;
-    ns1:Estadodellote "Idle" ;
+    ns1:Estadodellote "Enviado" ;
     ns1:Id 15 ;
     ns1:Peso 99 .
+
+[] rdf:rest () .
+
+[] rdf:rest () .
+
+[] rdf:rest () .
+
+[] rdf:rest () .
 
 [] rdf:rest () .
 
