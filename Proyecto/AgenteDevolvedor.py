@@ -141,6 +141,8 @@ def comprobar15Dias(graph):
             daysTo30 = abs(day - 30)
             if (dayToday + daysTo30) > 15:
                 aceptado = False
+        else:
+            aceptado = False
     else:
         aceptado = False
 
@@ -360,15 +362,39 @@ def registerActions():
 
 @app.route("/test1")
 def test1():
+    # test que hace una devolucion del usuario "adrian" del producto "productoprueba1"
+    # del pedido "pedidoprueba1" por el motivo "Defectuoso"
     global ont
     obj = createAction(AgenteDevolvedor,'nuevaDevolucion')
     gcom = Graph()
     gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
     
-    gcom.add((ont.Devolucion, ont.Pedido, Literal("2")))    #el objeto debera ser el identificador del pedido
-    gcom.add((ont.Devolucion, ont.Producto, Literal("sdf")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Pedido, Literal("pedidoprueba1")))    #el objeto debera ser el identificador del pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("productoprueba1")))    #el objeto debera ser el identificador del producto en un pedido
     gcom.add((ont.Devolucion, ont.Usuario, Literal("adrian")))
     gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("Defectuoso")))
+
+    msg = build_message(gcom,
+        perf=ACL.request,
+        sender=AgenteDevolvedor.uri,
+        content=obj)
+    send_message_any(msg,AgenteDevolvedor,DirectorioAgentes,devolvedor.type)
+
+    return 'Exit'
+
+@app.route("/test2")
+def test2():
+    # test que hace una devolucion del usuario "alex" del producto "productoprueba2"
+    # del pedido "pedidoprueba2" por el motivo "NoSatisface"
+    global ont
+    obj = createAction(AgenteDevolvedor,'nuevaDevolucion')
+    gcom = Graph()
+    gcom.add((obj,RDF.type,agn.DevolvedorPedirDevolucion))
+    
+    gcom.add((ont.Devolucion, ont.Pedido, Literal("pedidoprueba2")))    #el objeto debera ser el identificador del pedido
+    gcom.add((ont.Devolucion, ont.Producto, Literal("productoprueba2")))    #el objeto debera ser el identificador del producto en un pedido
+    gcom.add((ont.Devolucion, ont.Usuario, Literal("alex")))
+    gcom.add((ont.Devolucion, ont.RazonDevolucion, Literal("NoSatisface")))
 
     msg = build_message(gcom,
         perf=ACL.request,
