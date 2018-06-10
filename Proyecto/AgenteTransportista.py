@@ -1,4 +1,4 @@
-from imports import * 
+from imports import *
 
 app = Flask(__name__,template_folder="AgenteTransportista/templates")
 
@@ -76,15 +76,15 @@ def comunicacion():
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
 def peticionOferta(graph):
 	print("Recibida peticion de oferta de transporte")
-
-	obj = createAction(AgenteTransportista,'respuestaOferta')
-	gcom = Graph()
-
 	# Dummy
 	precio = random.randint(1, 10)
 
+	obj = createAction(AgenteTransportista,'respuestaOferta')
+
+	gcom = Graph()
+
 	gcom.add((obj,RDF.type,agn.EnviadorOfertaTransporte))
-	gcom.add((obj,ofertas_ns.Oferta,Literal(precio)))
+	gcom.add((ofertas_ns['0'],ofertas_ns.Oferta,Literal(precio)))
 
 	msg = build_message(gcom,
 		perf=ACL.inform,

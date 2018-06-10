@@ -9,7 +9,7 @@ argumentos = getArguments(my_port=8005,name="enviador")
 host = argumentos['host']
 port = argumentos['port']
 
-#Nombre del vendedor externo. Servira para generar una URI de recurso 
+#Nombre del vendedor externo. Servira para generar una URI de recurso
 #Aun asi es probable que solo utilitzemos 1 vendedor
 nombre = argumentos['name']
 
@@ -88,9 +88,7 @@ def verLotes():
 		list += [d]
 	return render_template('listaLotes.html',list=list)
 
-@app.route("/enviarLote")
-def enviarLote(id=None):
-	id = request.args['id']
+def enviarLote(id):
 	lote = grafoADict(g, lotes_ns[id])
 	lote['envios'] = [] # Temporal, porque si esta vacio peta
 	print("Lote:", lote)
@@ -106,6 +104,7 @@ def enviarLote(id=None):
 
 @app.route("/pedirOferta")
 def pedirOferta():
+	id = request.args['id']
 	obj = createAction(AgenteEnviador,'peticionOferta')
 	gcom = Graph()
 
@@ -118,8 +117,9 @@ def pedirOferta():
 
 	# Enviamos el mensaje a cualquier agente enviador
 	print("Envio mensaje oferta")
-	send_message_any(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
+	graph = send_message_any(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
 
+	ofertaTransporte(graph, id)
 	return redirect("/")
 
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
@@ -127,11 +127,13 @@ def callbackTest(graph):
 	print("Callback working!")
 	return create_confirm(AgenteEnviador)
 
-def ofertaTransporte(graph):
+def ofertaTransporte(graph, id):
 	print("Recibida oferta transporte")
-	precio = graph.value(subject=None, predicate=ofertas_ns.Oferta)
-	print("Precio: ", precio)
-	return create_confirm(AgenteEnviador, AgenteTransportista)
+	print(graph.serialize(format='turtle'))
+	precio = graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)
+	print("Precio: ", int(precio))
+	enviarLote(id)
+	#return create_confirm(AgenteEnviador, AgenteTransportista)
 
 def createFakeLote():
 	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
