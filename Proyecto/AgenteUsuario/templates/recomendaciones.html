@@ -33,7 +33,7 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 						<td>
-							<a href="/anadirCarrito?id={{ elem['id'] }}&ref='recomendaciones'"><button>Anadir al carrito</button></a>
+							<a href="/anadirProductoCarrito?id={{elem['id']}}&importe={{elem['importe']}}&nombre={{elem['nombre']}}&ref=recomendaciones"><button>Anadir al carrito</button></a>
 						</td>
 				</tr>
 				{% endfor %}

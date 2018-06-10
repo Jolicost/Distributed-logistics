@@ -35,7 +35,7 @@ from rdflib.namespace import RDF
 from rdflib import Graph, Namespace, Literal,BNode
 from rdflib.collection import Collection
 
-__author__ = 'javier'
+__author__ = 'joan'
 
 
 # Configuration stuff. En principio hay que imaginar que mecanismo se utilizara 

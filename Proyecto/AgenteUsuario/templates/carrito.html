@@ -39,11 +39,24 @@ th, td {
 				</tr>
 				{% endfor %}
 				<tr>
+					<td>Total</td>
+					<td></td>
+					<td></td>
 					<td>{{ total }}</td>
 				</tr>
 			</tbody>
 		</table>
-		<a href="/checkout"><button>Confirmar Compra</button></a>
+		<form action="/checkout" method="GET">
+			<p>Prioridad: </p>
+			<input type="text" name="prioridad"/>
+			<p>Direccion de entrega: </p>
+			<input type="text" name="direccion"/>
+			<p>Codigo postal: </p>
+			<input type="number" max=99999 name="cp"/>
+			<button type="submit">Confirmar Compra</button>
+		</form>
+		<br>
+		<a href="/vaciarCarrito"><button>Vaciar Carrito</button></a>
 	{% else %}
 		<h2>No hay elementos en la lista<h2>
 	{% endif %}

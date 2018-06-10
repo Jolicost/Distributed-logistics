@@ -6,7 +6,21 @@ from rdflib.collection import Collection
 from GraphUtil import *
 import random
 
+def add_localizacion_node(graph,node,predicate,dir,cp):
+	loc = generate_localizacion(dir,cp)
+	parent = loc.subjects(RDF.type,direcciones_ns.type).next()
+	graph+=loc
+	graph.add((node,predicate,parent))
 
+def generate_localizacion(dir,cp):
+	ret = Graph()
+	dir = dir.replace(' ','_')
+	localizacion = direcciones_ns[str(dir)+str(cp)]
+	ret.add((localizacion,RDF.type,direcciones_ns.type))
+	ret.add((localizacion,direcciones_ns.Direccion,Literal(dir)))
+	ret.add((localizacion,direcciones_ns.Codigopostal,Literal(cp)))
+
+	return ret
 
 def pedido_a_dict(graph,pedido):
 	''' devuelve un diccionario con todos los atributos de producto '''
@@ -62,11 +76,7 @@ def dict_a_pedido(dict):
 	ret.add((pedidos_ns[id],pedidos_ns.id,Literal(id)))
 
 	#Anadimos el nodo de la direccion con su tipo y todo
-	ret.add((direcciones_ns[direccion_id],RDF.type,direcciones_ns.type))
-	ret.add((direcciones_ns[direccion_id],direcciones_ns.Direccion,Literal(direccion)))
-	ret.add((direcciones_ns[direccion_id],direcciones_ns.Codigopostal,Literal(cp)))
-	#Enlazamos la direccion con el pedido
-	ret.add((pedidos_ns[id],pedidos_ns.Tienedirecciondeentrega,direcciones_ns[direccion_id]))
+	add_localizacion_node(ret,pedidos_ns[id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
 
 	ret.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
 	ret.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
@@ -125,13 +135,7 @@ def dict_a_centro(dict):
 	g.add((centro,centros_ns.Id,Literal(id)))
 	g.add((centro,RDF.type,centros_ns.type))
 
-	localizacion = direcciones_ns[dir+cp]
-
-	g.add((localizacion,RDF.type,direcciones_ns.type))
-	g.add((localizacion,direcciones_ns.Direccion,Literal(dir)))
-	g.add((localizacion,direcciones_ns.Codigopostal,Literal(cp)))
-
-	g.add((centro,centros_ns.Ubicadoen,localizacion))
+	add_localizacion_node(g,centro,centros_ns.Ubicadoen,dir,cp)
 
 	return g
 
