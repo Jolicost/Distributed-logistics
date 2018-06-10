@@ -12,6 +12,15 @@ def expandirGrafoRec(grafo,nodo):
 		g+= expandirGrafoRec(grafo,o)
 	return g
 
+def borrarNodoRec(grafo,nodo):
+	toDelete = []
+	for (s,p,o) in grafo.triples((nodo,None,None)):
+		borrarNodoRec(grafo,o)
+		toDelete += [s]
+
+	for d in toDelete:
+		grafo.remove((d,None,None))
+
 	
 ''' recorre el grafo a partir del nodo y transforma toda su estructura de manera recursiva en un diccionario '''
 def grafoADict(grafo,nodo):

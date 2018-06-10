@@ -132,6 +132,18 @@ def vaciarCarrito():
     vaciarCarritoFun()
     return redirect("/carrito")
 
+def enviarPedidoATienda(pedido):
+
+    obj = createAction(AgenteUsuario,'nuevoPedido')
+    pedido.add((obj, RDF.type, agn.UsuarioNuevoPedido))
+    msg = build_message(pedido,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteReceptor_ns.type)
+
 
 @app.route("/checkout")
 def checkout():
@@ -160,6 +172,7 @@ def checkout():
     add_localizacion_node(pedido,pedidos_ns[pedido_id],direcciones_ns.Tienedirecciondeentrega,direccion,cp)
 
     #Enviar mensaje a la tienda
+    enviarPedidoATienda(pedido)
     #vaciarCarritoFun()
     pedidos += pedido
     guardarGrafo(pedidos)
@@ -284,10 +297,17 @@ def crearOpinion(id):
     puntuacion = request.args['puntuacion']
     descripcion = request.args['descripcion']
     g = Graph()
-    g.add((opiniones_ns[name+id], productos_ns.Id, Literal(id)))
+    # Id de la opinion
+    g.add((opiniones_ns[name+id], opiniones_ns.Id, Literal(name+id)))
+    g.add((opiniones_ns[name+id], RDF.type, opiniones_ns.type))
+
+    #Usuario que opina y producto opinados
+    g.add((opiniones_ns[name+id], productos_ns.Essobre, productos_ns[id]))
+    g.add((opiniones_ns[name+id], opiniones_ns.Escritapor, agenteUsuario_ns[name]))
+    
     g.add((opiniones_ns[name+id], opiniones_ns.Puntuacion, Literal(puntuacion)))
     g.add((opiniones_ns[name+id], opiniones_ns.Descripcion, Literal(descripcion)))
-    g.add((opiniones_ns[name+id], RDF.type, opiniones_ns.type))
+   
     obj = createAction(AgenteUsuario,'darOpinion')
 
     g.add((obj, RDF.type, agn.DarOpinion))
@@ -298,6 +318,9 @@ def crearOpinion(id):
 
     # Enviamos el mensaje a cualquier agente opinador
     send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteOpinador_ns.type)
+
+    borrarNodoRec(productos_a_opinar,productos_ns[id])
+    guardarGrafo(productos_a_opinar)
 
     return redirect("/opinar")
 

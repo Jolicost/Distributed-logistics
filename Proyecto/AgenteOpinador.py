@@ -15,30 +15,12 @@ Asume que el agente de registro esta en el puerto 9000
 @author: alejandro
 """
 
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-from Util.GraphUtil import * 
-from Util.Namespaces import *
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
-from random import randint
-import random
+from imports import *
 
 __author__ = 'alejandro'
 
 host = 'localhost'
 port = 8026
-
 
 directorio_host = 'localhost'
 directorio_port = 9000
@@ -77,6 +59,9 @@ def cargarGrafos():
 
 def guardarGrafo(g,file):
     g.serialize(file,format="turtle")   
+
+def guardarGrafoOpiniones():
+    guardarGrafo(opiniones,opiniones_db)
 
 @app.route("/")
 def main():
@@ -125,6 +110,7 @@ def generarRecomendacion():
 
 
 def getProductosAOpinarUsuario(usuario):
+    #Buscar de opiniones y borrar los productos ya comprados de este
     g = Graph()
     g.add((productos_ns["999"],RDF.type,productos_ns.type))
     g.add((productos_ns["999"],productos_ns.Nombre,Literal('producto1aOpinar')))
@@ -165,11 +151,13 @@ def pedirOpinion():
 def nuevaOpinion(graph):
     global opiniones
     p = graph.subjects(predicate=RDF.type,object=opiniones_ns.type)
-    for pe in p:
-        for a,b,c in graph.triples((pe,None,None)):
-            opiniones.add((a,b,c))
 
-    guardarGrafo(opiniones,opiniones_db)
+    add = Graph()
+    for pe in p:
+        add += expandirGrafoRec(graph,pe)
+
+    opiniones+=add
+    guardarGrafoOpiniones()
     return create_confirm(AgenteOpinador,None)
 
 
@@ -183,7 +171,7 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-    if not msgdic or msgdic['performative'] != ACL.request:
+    if not msgdic:
         # Si no es, respondemos que no hemos entendido el mensaje
         gr = create_notUnderstood(AgenteOpinador,None)
     else:

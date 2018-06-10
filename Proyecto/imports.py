@@ -22,4 +22,6 @@ from rdflib.namespace import FOAF, RDF
 from rdflib.collection import Collection
 from Util.GraphUtil import *
 from Util.ModelParser import *
+from Util.General import *
+import datetime
 import random

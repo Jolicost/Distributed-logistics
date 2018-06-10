@@ -15,25 +15,7 @@ Asume que el agente de registro esta en el puerto 9000
 @author: javier
 """
 
-from __future__ import print_function
-from multiprocessing import Process, Queue
-import socket
-import os.path
-
-from rdflib import Namespace, Graph
-from flask import Flask, request, render_template,redirect
-from Util.ACLMessages import *
-from Util.OntoNamespaces import ACL, DSO
-from Util.FlaskServer import shutdown_server
-from Util.Agente import Agent
-from Util.Directorio import *
-from Util.Namespaces import *
-from Util.GraphUtil import *
-from Util.ModelParser import *
-from Util.GestorDirecciones import formatDir
-from rdflib.namespace import RDF
-from rdflib import Graph, Namespace, Literal,BNode
-from rdflib.collection import Collection
+from imports import *
 
 __author__ = 'joan'
 
@@ -47,21 +29,12 @@ port = 8003
 directorio_host = 'localhost'
 directorio_port = 9000
 
-#Hardcoding de los empaquetadores
-empaquetador = getNamespace('AgenteEmpaquetador')
-
 agn = getAgentNamespace()
 
-receptor = getNamespace('AgenteReceptor')
 #Objetos agente
-AgenteReceptor = Agent('AgenteReceptor',receptor['generic'],formatDir(host,port) + '/comm',None)
+AgenteReceptor = Agent('AgenteReceptor',agenteReceptor_ns['generic'],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
-productos_ns = getNamespace('Productos')
-pedidos_ns = getNamespace('Pedidos')
-vendedores_ns = getNamespace('AgenteVendedorExterno')
-usuarios_ns = getNamespace('AgenteUsuario')
-centros_ns = getNamespace('Centros')
 
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
@@ -73,8 +46,6 @@ centros_db = 'Datos/centros.turtle'
 centros = Graph()
 
 
-direcciones_ns = getNamespace('Direcciones')
-
 cola1 = Queue()
 
 # Flask stuff
@@ -85,7 +56,7 @@ app = Flask(__name__,template_folder="AgenteReceptor/templates")
 actions = {}
 
 def initAgent():
-	register_message(AgenteReceptor,DirectorioAgentes,receptor.type)
+	register_message(AgenteReceptor,DirectorioAgentes,agenteReceptor_ns.type)
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
 	global productos
@@ -290,11 +261,20 @@ def decidirResponsabilidad(pedido):
 	}
 	return ret
 
-def registrarPedido(graph):
+def registrarPedido(graph,pedido):
 	''' registra un pedido en la base de datos de pedidos de la tienda '''
+	''' hay que anadir los atributos extra al pedido '''
 	global pedidos
-	pedido = graph.subjects(predicate=RDF.type,object=pedidos_ns.type).next()
-	pedidos += pedido
+
+	fechaPedido = getCurrentDateTime()
+	#estado = 'idle'
+
+	graph.add((pedido,pedidos_ns.Fecharealizacion,Literal(fechaPedido)))
+	#No necesitamos el estado
+	#graph.add((pedido,pedidos_ns.Estadodelpedido,Literal(estado)))
+
+	pedidos += graph
+	guardarGrafoPedidos()
 	return pedido
 
 def decidirResponsabilidadEnvio(pedido):
@@ -303,10 +283,14 @@ def decidirResponsabilidadEnvio(pedido):
 
 
 def resolverEnvio(graph):
-	pedido = registrarPedido(graph)
-	decidirResponsabilidadEnvio(pedido)
-	organizarPedido(pedido)
 
+	pedidos = graph.subjects(predicate=RDF.type,object=pedidos_ns.type)
+	for p in pedidos:
+		pedido = registrarPedido(expandirGrafoRec(graph,p),p)
+		decidirResponsabilidadEnvio(pedido)
+		organizarPedido(pedido)
+	
+	return create_confirm(AgenteReceptor)
 
 def centroMasCercano(pedido,producto):
 	''' Atencion, localizacion y centros logisticos son 2 nodos de los grafos pedidos y productos '''
@@ -353,8 +337,6 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 	envio = pedido_a_envio(graph,pedido,listaProductos)
 
 	centro_id = centros.value(centro,centros_ns.Id)
-
-	empaquetador_ns = getNamespace('AgenteEmpaquetador')
 
 	empaquetador_uri = empaquetador_ns[centro_id]
 
