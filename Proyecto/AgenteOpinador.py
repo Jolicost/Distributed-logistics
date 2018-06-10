@@ -27,11 +27,12 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 from Util.Directorio import *
-
+from Util.GraphUtil import * 
 from Util.Namespaces import *
 from Util.GestorDirecciones import formatDir
 from rdflib.namespace import RDF
 from random import randint
+import random
 
 __author__ = 'alejandro'
 
@@ -70,7 +71,7 @@ def cargarGrafos():
     opiniones = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
-    elif os.path.isfile(productos_db):
+    if os.path.isfile(productos_db):
         productos.parse(productos_db,format="turtle")
     
 
@@ -85,52 +86,43 @@ def main():
 def altaOpinion():
     return 'ruta no definida'
 
-def aleatorios(cantidad, min, max):
-    numeros = []
-    while len(numeros) < cantidad:
-        numero = randint(min,max)
 
-        if not numero in numeros:
-            numeros.append(numero)
-    return numeros
-
-def generarRecomendacion():
-    global productos
+def getProductosRecomendadosUsuario(user_uri):
     p = list(productos.subjects(predicate=RDF.type,object=productos_ns.type))
+    try:
+        p = random.sample(p,5)
+    except ValueError:
+        #la lista de productos sera la lista completa
+        pass
 
-    # generar 5 ids aleatorios de 0 a el maximo.
-    #numeros = []
-    numeros = aleatorios(1, 0, len(p)-1)
-    listRes = []
-    res = Graph()
+    g = Graph()
+    for prod in p:
+        g+=expandirGrafoRec(productos,prod)
 
-    for numero in numeros:
-        listRes += [p[numero]]
-        #productos.objects(subject=p[numero],predicate=productos.precio);
-    for li in listRes:
-        ids = productos.triples((li, productos_ns.Id, None))
-        for id in ids:
-            res.add(id)
-        names = productos.triples((li, productos_ns.Nombre, None))  
-        for name in names:     
-            res.add(name)
-        importes = productos.triples((li, productos_ns.Importe, None))
-        for importe in importes:
-            res.add(importe)
-        tipus = productos.triples((li, RDF.type, None))  
-        for tip in tipus:
-            res.add(tip)
+    return g
+
+def enviarProductosRecomendadosUsuario(res,user_uri):
+
     obj = createAction(AgenteOpinador,'rebreRecomanacions')
 
     res.add((obj, RDF.type, agn.RecomendarProductos))
     
     msg = build_message(res,
-        perf=ACL.request,
+        perf=ACL.inform,
         sender=AgenteOpinador.uri,
         content=obj)
 
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_all(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+    msg.serialize('test.turtle',format="turtle")
+    send_message_uri(msg,AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type,user_uri)
+
+@app.route("/enviarRecomendaciones")
+def generarRecomendacion():
+    usuarios = get_all_uris(AgenteOpinador,DirectorioAgentes,agenteUsuario_ns.type)
+    for user in usuarios:
+        prods = getProductosRecomendadosUsuario(user)
+        enviarProductosRecomendadosUsuario(prods,user)
+    return redirect("/")
+
 
 def getProductosAOpinarUsuario(usuario):
     g = Graph()

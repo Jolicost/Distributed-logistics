@@ -297,7 +297,7 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-    if not msgdic or msgdic['performative'] != ACL.request:
+    if not msgdic:
         # Si no es, respondemos que no hemos entendido el mensaje
         gr = create_notUnderstood(AgenteUsuario,None)
     else:
@@ -352,7 +352,7 @@ def buscarProductos():
 def rebreRecomanacions(graph):
     global recomendaciones
     save = Graph()
-    for r in graph.subjects(predicate=RDF.type,object=recomendaciones_ns.type):
+    for r in graph.subjects(predicate=RDF.type,object=productos_ns.type):
         save+=expandirGrafoRec(graph,r)
 
     recomendaciones += save
