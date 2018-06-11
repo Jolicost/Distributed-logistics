@@ -74,7 +74,6 @@ def decidirDevolucion(graph):   #decidir si se acepta o no la devolucion (RazonD
         if str(o) == "NoSatisface": #TODO si hace mas de 15 dias desde la recepcion rechazarlo, si no aceptarlo
             comprobar15Dias(graph)
         elif str(o) == "Defectuoso":
-            print("entro aqui")
             elegirEmpresaMensajeria(graph, "Defectuoso")
         elif str(o) == "Equivocado":
             elegirEmpresaMensajeria(graph, "Equivocado")
@@ -92,20 +91,13 @@ def comprobar15Dias(graph):
         if p == ont.Producto:
             idProducto = str(o)    
     fecha = None
-    ''' 1a forma (no va)
-    dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
-    print(str(dict))
-    for item in dict['productos']:
-        if item['id'] == idProducto:
-            fecha = item['fechaEntrega']'''
 
-    # 2a forma (no he podido probarla)
     container = pedidos.value(subject=pedidos_ns[idPedido], predicate=pedidos_ns.Contiene)
     c = Collection(pedidos, container)
     for item in c:
-        if item == pedidos_ns[idProducto]:
-            fecha = str(graph.value(subject=pedidos_ns[idProducto], predicate=productos_ns.Fechaenvio))
-
+        if item == productos_ns[idProducto]:
+            # falta coger bien la fecha entrega ya que ahora esta hardcodeada en productos
+            fecha = str(productos.value(subject=productos_ns[idProducto], predicate=productos_ns.Fechaenvio))
     year,month,day = fecha.split("-")
     year = int(year)
     month = int(month)
@@ -139,10 +131,10 @@ def comprobar15Dias(graph):
     if aceptado:
         elegirEmpresaMensajeria(graph, "NoSatisface")
     else:
-        comunicarRespuesta(graph, False, None, None)
+        comunicarRespuesta(graph, False, None, None, None)
 
 def elegirEmpresaMensajeria(graph, razon): #elegir la empresa de mensajeria
-    rand = randint(0,3)
+    rand = random.randint(0,3)
     mensajeria = None
     direccion = None
     if rand == 0:
@@ -217,7 +209,7 @@ def crearDevolucion(graph, mensajeria, direccion, razon, persona, importe, produ
         estado = "Denegado"
 
 
-    rand = randint(0, 50)
+    rand = random.randint(0, 50)
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Persona, Literal(persona)))
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Producto, Literal(producto)))
     devoluciones.add((devoluciones_ns[rand], devoluciones_ns.Importe, Literal(importe)))
@@ -250,9 +242,11 @@ def pedirReembolso(persona, importe):      #pedir al agente monetario el reembol
 
     gcom = Graph()
     #ontologias
-    gcom.add((ont.Pago,ont.Persona,Literal(persona)))
-    gcom.add((ont.Pago,ont.Importe,Literal(importe)))
+    id = random.getrandbits(64)
+    tr = transacciones_ns[str(id)]
     gcom.add((obj,RDF.type,agn.MonetarioPedirDevolucion))
+    gcom.add((tr, pagos_ns.SeDevuelveAlUsuario, Literal(persona)))
+    gcom.add((tr, pagos_ns.Importe, Literal(importe)))
 
     msg = build_message(gcom,
         perf=ACL.request,
