@@ -55,6 +55,10 @@ def cargarGrafos():
 	if os.path.isfile(enviosFile):
 		envios.parse(enviosFile,format="turtle")
 
+def guardarGrafos():
+	global g,envios
+	g.serialize(graphFile,format='turtle')
+	envios.serialize(enviosFile,format='turtle')
 
 @app.route("/comm")
 def comunicacion():
@@ -95,19 +99,81 @@ def getPesoLote(id):
 	peso = int(g.value(lotes_ns[id],lotes_ns.Peso))
 	return peso
 
-def enviarLote(id):
-	lote = grafoADict(g, lotes_ns[id])
-	lote['envios'] = [] # Temporal, porque si esta vacio peta
-	print("Lote:", lote)
-	# Marcar pedidos como enviados
-	g.set((lotes_ns[id], lotes_ns.Estadodellote, Literal("Enviado")))
-	for s in lote['envios']:	# lote['envios'] contiene los ids de los envios
-		g.set((s, envios_ns.Estadodelenvio, Literal("Enviado")))
-	guardarGrafo()
 
-	# TODO: Enviar factura al usuario
+def calcularImporteTotalEnvio(envio,lote,importeEnvioLote):
+	importeBase = float(envios.value(envio,envios_ns.Importetotal))
+	pesoEnvio = envios.value(envio,envios_ns.Peso)
+	pesoLote = g.value(lote,lotes_ns.Peso)
+	importeEnvio = float(importeEnvioLote) * float(str(pesoLote)) / float(str(pesoEnvio))
+	return math.ceil(importeEnvio)
 
-	return "Envio en curso"
+def cobrarEnvio(envio,importe):
+	gcom = Graph()
+
+	obj = createAction(AgenteEnviador,'cobrarPedido')
+
+	uri_user = envios.value(envio,envios_ns.Hechopor)
+
+	gcom.add((obj, RDF.type, agn.MonetarioPedirPagoPedido))
+	gcom.add((obj, pagos_ns.SeHaceA, uri_user))
+	gcom.add((obj, pagos_ns.Importe,Literal(importe)))
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(gcom,
+		perf=ACL.inform,
+		sender=AgenteEnviador.uri,
+		content=obj)
+
+	# Enviamos el mensaje a cualquier agente monetario
+	send_message_any(msg,AgenteEnviador,DirectorioAgentes,agenteMonetario_ns.type)
+
+def obtenerEnviosDeLote(lote):
+	ret = []
+	node = g.value(subject=lote,predicate=lotes_ns.TieneEnvios)
+	c = Collection(g,node)
+	for pedido in c:
+		ret+=[pedido]
+	return ret
+
+
+
+def enviarConfirmacionTienda(envio,importe,transportista):
+	gcom = Graph()
+
+	obj = createAction(AgenteEnviador,'confirmarCompra')
+
+	gcom.add((obj, RDF.type, agn.EnviadorConfirmarEnvio))
+	gcom.add((obj, pedidos_ns.ImporteEnvio,Literal(importe)))
+	gcom.add((obj, pedidos_ns.LoTransporta,transportista))
+	gcom.add((obj, pedidos_ns.CentroResponsable,centros_ns[nombre]))
+	#Ponemos el envio que hemos realizado
+	gcom += expandirGrafoRec(envios,envio)
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(gcom,
+		perf=ACL.inform,
+		sender=AgenteEnviador.uri,
+		content=obj)
+
+	# Enviamos el mensaje a cualquier agente monetario
+	send_message_any(msg,AgenteEnviador,DirectorioAgentes,agenteReceptor_ns.type)
+
+def registrarLoteEnviado(lote,envios_realizados):
+	g.set((lote,lotes_ns.Estadodellote,Literal('Enviado')))
+	for e in envios_realizados:
+		envios.set((e,envios_ns.EstadoEnvio,Literal('Enviado')))
+
+	guardarGrafos()
+
+
+def aceptarOferta(transportista,precio,lote):
+	#Sumar el importe proporcional a los envios que estaban dentro de lote
+	envios = obtenerEnviosDeLote(lote)
+	for e in envios:
+		importe = calcularImporteTotalEnvio(e,lote,precio)
+		cobrarEnvio(e,importe)
+		enviarConfirmacionTienda(e,importe,transportista)
+		
+	registrarLoteEnviado(lote,envios)
+
 
 @app.route("/pedirOferta")
 def pedirOferta():
@@ -137,36 +203,14 @@ def pedirOferta():
 
 	ganador = min(ofertas, key=ofertas.get)
 
-	print(ganador)
-		
+	aceptarOferta(ganador,ofertas[ganador],lotes_ns[id])
 	#ofertaTransporte(graph_min, id)
 	return redirect("/verLotes")
 
-def ofertaTransporte(graph, id):
-	print("Recibida oferta transporte")
-	print(graph.serialize(format='turtle'))
-	precio = graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)
-	print("Precio: ", int(precio))
-	enviarLote(id)
-
-def createFakeLote():
-	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
-	g.add((lotes_ns['11'],lotes_ns.Id,Literal(11)))
-	g.add((lotes_ns['11'],lotes_ns.Estadodellote,Literal("Idle")))
-	g.add((lotes_ns['11'],lotes_ns.Peso,Literal(40)))
-	g.add((lotes_ns['11'],lotes_ns.Ciudad,Literal("Bcn")))
-
-	g.add((lotes_ns['15'],RDF.type,lotes_ns.type))
-	g.add((lotes_ns['15'],lotes_ns.Id,Literal(15)))
-	g.add((lotes_ns['15'],lotes_ns.Estadodellote,Literal("Idle")))
-	g.add((lotes_ns['15'],lotes_ns.Peso,Literal(99)))
-	g.add((lotes_ns['15'],lotes_ns.Ciudad,Literal("Cancun")))
-	print("Created fakes")
-	print(g.serialize(format='turtle'))
 
 def registerActions():
 	global actions
-	actions[agn.EnviadorOfertaTransporte] = ofertaTransporte
+	#actions[agn.EnviadorOfertaTransporte] = ofertaTransporte
 
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")

@@ -220,7 +220,7 @@ def lote_a_dict(graph,lote):
 	#ret['cp'] = graph.value(loc,direcciones_ns.Codigopostal)
 
 	envs = []
-	container = graph.value(subject=lote,predicate=lotes_ns.Contiene)
+	container = graph.value(subject=lote,predicate=lotes_ns.TieneEnvios)
 
 	c = Collection(graph,container)
 
