@@ -105,8 +105,8 @@ def comprobar15Dias(graph):
             fecha = str( pedidos.value((o, productospedido_ns.FechaEnvio)) )
             break           
 
-    #metodo 2 si me pasan el id del productopedido
-    fecha = str( pedidos.value((productospedido_ns[idProducto], productospedido_ns.FechaEnvio)) )'''
+    #metodo 2 si me pasan el id del productopedido'''
+    fecha = str( pedidos.value((productospedido_ns[idProducto], productospedido_ns.FechaEnvio)) )
 
     year,month,day = fecha.split("-")
     year = int(year)
