@@ -290,19 +290,26 @@ def verProductosEnvio(id):
     container = g.value(subject=envios_ns[id],predicate=envios_ns.Contiene)
     c = Collection(g,container)
     dic['idEnvio'] = id
-    dic['idPedido'] = g.value(subject=envios_ns[id],predicate=envios_ns.Llevaacabo)
+    idPedidoCompleto = g.value(subject=envios_ns[id],predicate=envios_ns.Llevaacabo)
+    noVale, idPedido = idPedidoCompleto.split("#")
+    dic['idPedido'] = idPedido
     for item in c:
         dic['idProducto'] = g.value(subject=item, predicate=productos_ns.Id)
     l = l + [dic]
     
     return render_template('productosEnvios', list=l)
 
-@app.route("/productosDevolver/<id>/crearDevolucion", methods=['GET'])        
-def crearPeticionDevolucion(id):
+@app.route("/envios/<idEnvio>/productos/<idPedido>/<idProducto>", methods=['GET'])
+def crearDevolucion(idEnvio, idPedido, idProducto):
+    return render_template('crearPeticionDevolucion.html',idEnvio=idEnvio, idPedido=idPedido, idProducto=idProducto)
+
+
+@app.route("/envios/<idEnvio>/productos/<idPedido>/<idProducto>/devolver", methods=['GET'])        
+def crearPeticionDevolucion(idEnvio, idPedido, idProducto):
     razon = request.args['razon']
     g = Graph()
-    g.add((ont.Devolucion, ont.Pedido, Literal("PedidoPrueba1")))
-    g.add((ont.Devolucion, ont.Producto, Literal("Manzanas1Pedido1")))
+    g.add((ont.Devolucion, ont.Pedido, Literal(idPedido)))
+    g.add((ont.Devolucion, ont.Producto, Literal(idProducto)))
     g.add((ont.Devolucion, ont.Usuario, Literal(name)))
     g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
 
@@ -317,7 +324,7 @@ def crearPeticionDevolucion(id):
     # Enviamos el mensaje a cualquier agente admisor
     send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
 
-    return redirect("/devolver")
+    return redirect("/")
 
 @app.route("/opinar")
 def verProductosaOpinar():
