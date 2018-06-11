@@ -91,14 +91,7 @@ def comprobar15Dias(graph):
         if p == ont.Producto:
             idProducto = str(o)    
     fecha = None
-    ''' 1a forma (no va)
-    dict = pedido_a_dict(pedidos,pedidos_ns[idPedido])
-    print(str(dict))
-    for item in dict['productos']:
-        if item['id'] == idProducto:
-            fecha = item['fechaEntrega']'''
 
-    # 2a forma (no he podido probarla)
     container = pedidos.value(subject=pedidos_ns[idPedido], predicate=pedidos_ns.Contiene)
     c = Collection(pedidos, container)
     for item in c:
