@@ -89,6 +89,7 @@ def comunicacion():
 
 @app.route("/verLotes")
 def verLotes():
+	cargarGrafos()
 	lotes = g.subjects(predicate=RDF.type,object=lotes_ns.type)
 	list = []
 	for l in lotes:

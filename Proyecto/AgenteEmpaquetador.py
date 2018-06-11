@@ -122,6 +122,8 @@ def crearLote(envio):
 	#Anadimos el peso del lote
 	lotes.add((lote,lotes_ns.Peso,Literal(peso)))
 
+	envioGraph = Graph()
+
 	node = lotes.value(subject=lote,predicate=lotes_ns.TieneEnvios) or lotes_ns[lote_id + '-listaEnvios']
 
 	lotes.add((lote,lotes_ns.TieneEnvios,node))

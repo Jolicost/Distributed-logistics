@@ -257,7 +257,8 @@ def verPedidos():
         c = Collection(g,container)
         for item in c:
             dict = {}
-            dict['ID'] = g.value(subject=item,predicate=productosPedido_ns.Id)
+            n = g.value(subject=item,predicate=productosPedido_ns.AsociadoAlProducto)
+            dict['ID'] = n
             prods += [dict]
         dic['Productos'] = prods
         l = l + [dic]

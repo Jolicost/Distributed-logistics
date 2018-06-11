@@ -225,8 +225,7 @@ def lote_a_dict(graph,lote):
 	c = Collection(graph,container)
 
 	for item in c:
-		id = graph.value(subject=item,predicate=envios_ns.Id)
-		envs += [id]
+		envs += [item]
 
 	ret['envios'] = envs
 	return ret

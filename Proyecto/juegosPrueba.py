@@ -96,7 +96,7 @@ def crearPedido(id,user_id,prioridad,fecha,importe,direccion,cp,productos):
 	g.add((pedidos_ns[id],pedidos_ns.Hechopor,usuarios_ns[user_id]))
 	g.add((pedidos_ns[id],pedidos_ns.Prioridad,Literal(prioridad)))
 	g.add((pedidos_ns[id],pedidos_ns.Fecharealizacion,Literal(fecha)))
-	g.add((pedidos_ns[id],pedidos_ns.Importe,Literal(importe)))
+	g.add((pedidos_ns[id],pedidos_ns.Importetotal,Literal(importe)))
 
 	add_localizacion_node(g,pedidos_ns[id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
 

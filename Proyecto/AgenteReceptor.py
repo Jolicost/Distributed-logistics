@@ -417,6 +417,7 @@ def organizarPedido(pedido):
 		else:
 			decision[masCercano] = [producto]
 
+	print(decision)
 
 	for c in decision:
 		registrarDecisionCentro(c,pedido,decision[c])
@@ -500,7 +501,7 @@ def registrarProductosEnviados(graph,pedido,envio,centro):
 
 
 def registrarImporteFinal(pedido,importeEnvio):
-	importe = pedidos.value(pedido,pedidos_ns.Importe)
+	importe = pedidos.value(pedido,pedidos_ns.Importetotal)
 	importeFinal = float(importe) + float(importeEnvio)
 	pedidos.set((pedido,pedidos_ns.ImporteFinal,Literal(importeFinal)))
 
