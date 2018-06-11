@@ -244,8 +244,15 @@ def crearEnviosPrueba0():
 	envio0.serialize('Datos/Envios/Igualada.turtle',format='turtle')
 	envio1.serialize('Datos/Envios/Capellades.turtle',format='turtle')
 
-	envio1.serialize('AgenteUsuario/Envios/Alex.turtle',format='turtle')
+def crearEnviosPrueba1():
 
+	productos = []
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+
+	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Alta')
+
+	envio0.serialize('AgenteUsuario/Envios/Alex.turtle',format="turtle")
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
 def crearLotesPrueba0():
 	envios = []
@@ -265,6 +272,7 @@ def crearLotesPrueba0():
 #Envio ya realizado por el centro. Servira para probar la devolucion
 def generarInformacionCentros():
 	crearEnviosPrueba0()
+	crearEnviosPrueba1()
 	crearLotesPrueba0()
 
 def anadirProductoCarrito(id,importe,nombre,cantidad):
