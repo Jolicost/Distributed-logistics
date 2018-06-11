@@ -244,6 +244,8 @@ def crearEnviosPrueba0():
 	envio0.serialize('Datos/Envios/Igualada.turtle',format='turtle')
 	envio1.serialize('Datos/Envios/Capellades.turtle',format='turtle')
 
+	envio1.serialize('AgenteUsuario/Envios/Alex.turtle',format='turtle')
+
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
 def crearLotesPrueba0():
 	envios = []
@@ -264,6 +266,24 @@ def crearLotesPrueba0():
 def generarInformacionCentros():
 	crearEnviosPrueba0()
 	crearLotesPrueba0()
+
+def anadirProductoCarrito(id,importe,nombre,cantidad):
+	g = Graph()
+	g.add((productos_ns[id], productos_ns.Id,Literal(id)))
+	g.add((productos_ns[id], productos_ns.Importe,Literal(importe)))
+	g.add((productos_ns[id], productos_ns.Nombre,Literal(nombre)))
+	g.add((productos_ns[id], productos_ns.Cantidad,Literal(cantidad)))
+	g.add((productos_ns[id], RDF.type, productos_ns.type))
+	return g
+
+def generarCarritoAlex():
+	g = Graph()
+
+	g+=anadirProductoCarrito('Peras',30,'Peras',5)
+	g+=anadirProductoCarrito('Manzanas',20,'Manzanas',10)
+	g+=anadirProductoCarrito('Zanahorias',10,'Zanahorias',1)
+
+	g.serialize('AgenteUsuario/Carritos/Alex.turtle',format='turtle')
 
 def generarPedidos():
 	g = Graph()
@@ -321,6 +341,7 @@ def generarJuegos():
 	generarPedidos()
 	generarProductos()
 	generarInformacionCentros()
+	generarCarritoAlex()
 
 if __name__ == '__main__':
 	generarJuegos()
