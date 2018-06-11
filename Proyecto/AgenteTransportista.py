@@ -77,7 +77,13 @@ def comunicacion():
 def peticionOferta(graph):
 	print("Recibida peticion de oferta de transporte")
 	# Dummy
-	precio = random.randint(1, 10)
+
+	node = graph.subjects(RDF.type,agn.EnviadorPeticionOferta).next()
+	peso = int(graph.value(node,ofertas_ns.Peso))
+
+
+	precio_por_unidad_peso = random.random()
+	precio = precio_por_unidad_peso * peso
 
 	obj = createAction(AgenteTransportista,'respuestaOferta')
 

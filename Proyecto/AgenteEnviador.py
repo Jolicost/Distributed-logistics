@@ -29,13 +29,15 @@ agn = getAgentNamespace()
 
 g = Graph()
 
+envios = Graph()
+
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
 AgenteEnviador = Agent('AgenteEnviador',enviador[nombre],formatDir(host,port) + '/comm',None)
 AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
-graphFile = 'AgenteEnviador/' + nombre + '.turtle'
-
+graphFile = 'Datos/Lotes/' + nombre + '.turtle'
+enviosFile = 'Datos/Envios/' + nombre + '.turtle'
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente
 # cuando llega un mensaje
 actions = {}
@@ -45,10 +47,14 @@ def cargarGrafo():
 	global g
 	if os.path.isfile(graphFile):
 		g.parse(graphFile,format="turtle")
-	return g
 
-#cargamos el grafo
-g = cargarGrafo()
+def cargarGrafos():
+	global g,envios
+	if os.path.isfile(graphFile):
+		g.parse(graphFile,format="turtle")
+	if os.path.isfile(enviosFile):
+		envios.parse(enviosFile,format="turtle")
+
 
 @app.route("/comm")
 def comunicacion():
@@ -79,14 +85,15 @@ def comunicacion():
 @app.route("/verLotes")
 def verLotes():
 	lotes = g.subjects(predicate=RDF.type,object=lotes_ns.type)
-	print(lotes)
 	list = []
 	for l in lotes:
-		print("Lote:")
-		print(l)
 		d = lote_a_dict(g,l)
 		list += [d]
 	return render_template('listaLotes.html',list=list)
+
+def getPesoLote(id):
+	peso = int(g.value(lotes_ns[id],lotes_ns.Peso))
+	return peso
 
 def enviarLote(id):
 	lote = grafoADict(g, lotes_ns[id])
@@ -109,29 +116,31 @@ def pedirOferta():
 	gcom = Graph()
 
 	gcom.add((obj,RDF.type,agn.EnviadorPeticionOferta))
+	gcom.add((obj,ofertas_ns.Peso,Literal(getPesoLote(id))))
 
 	msg = build_message(gcom,
 		perf=ACL.inform,
 		sender=AgenteEnviador.uri,
 		content=obj)
 
-	# Enviamos el mensaje a cualquier agente enviador
-	print("Envio mensaje oferta")
-	graphs = send_message_all(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
-	print("Graphs: ", graphs)
-	precio_min = 100000	# infinite
-	graph_min = Graph()
-	for item in graphs:
-		graph = item['msg']
-		precio = graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)
-		precio = int(precio)
-		print("Precio: ", precio)
-		if precio < precio_min:
-			precio_min = precio
-			graph_min = graph
+	responses = send_message_all(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
+	
+	ofertas = {}
 
-	ofertaTransporte(graph_min, id)
-	return redirect("/")
+	for item in responses:
+		graph = item['msg']
+		uri = item['uri']
+		precio = math.ceil(float(graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)))
+		ofertas[uri] = precio
+
+	if len(ofertas) == 0: raise Exception('No hay ningun transportista disponible')
+
+	ganador = min(ofertas, key=ofertas.get)
+
+	print(ganador)
+		
+	#ofertaTransporte(graph_min, id)
+	return redirect("/verLotes")
 
 def ofertaTransporte(graph, id):
 	print("Recibida oferta transporte")
@@ -175,7 +184,8 @@ def main_page():
 def start_server():
 	register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
 	registerActions()
-	createFakeLote()	# Borrar quan tot funcioni
+	cargarGrafos()
+	#createFakeLote()	# Borrar quan tot funcioni
 	app.run(host=host,port=port,debug=True)
 
 if __name__ == "__main__":

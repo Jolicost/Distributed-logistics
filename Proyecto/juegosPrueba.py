@@ -69,7 +69,7 @@ def crearProductoPedido(idProductoPedido,idProducto,estado,fechaEnvio,centro):
 	g = Graph()
 	g.add((productosPedido_ns[id],RDF.type,productos_ns.type))
 	g.add((productosPedido_ns[id],productosPedido_ns.Id,Literal(id)))
-	g.add((productosPedido_ns[id],productosPedido_ns.AsociadoAlProduto,productos_ns[idProducto]))
+	g.add((productosPedido_ns[id],productosPedido_ns.AsociadoAlProducto,productos_ns[idProducto]))
 	if estado is not None: g.add((productosPedido_ns[id],productosPedido_ns.Estado,Literal(estado)))
 	if fechaEnvio is not None: g.add((productosPedido_ns[id],productosPedido_ns.FechaEnvio,Literal(fechaEnvio)))
 	if centro is not None: g.add((productosPedido_ns[id],productosPedido_ns.CentroAsignado,centros_ns[centro]))
@@ -164,6 +164,7 @@ def crearLote(id,estado,ciudad,peso,envios):
 	g.add((lotes_ns[id],lotes_ns.Id,Literal(id)))
 	g.add((lotes_ns[id],lotes_ns.Peso,Literal(peso)))
 	g.add((lotes_ns[id],lotes_ns.Ciudad,Literal(ciudad)))
+	g.add((lotes_ns[id],lotes_ns.Estadodellote,Literal(estado)))
 
 	lista = lotes_ns[id + '-ListaEnvios']
 	g.add((lotes_ns[id],lotes_ns.Contiene,lista))

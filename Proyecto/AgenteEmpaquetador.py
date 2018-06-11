@@ -3,6 +3,8 @@ from imports import *
 
 app = Flask(__name__,template_folder="AgenteEmpaquetador/templates")
 
+__author__ = 'joan'
+
 argumentos = getArguments(my_port=8004)
 #Direcciones hardcodeadas (propia)
 host = argumentos['host']

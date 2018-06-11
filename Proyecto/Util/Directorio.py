@@ -181,6 +181,7 @@ def send_message_all(msg,agentSender,directoryAgent,type):
 		]
 	return responses
 
+
 def send_message_set(msg,agentSender,directoryAgent,type,uris):
 	''' 
 	msg: grafo 

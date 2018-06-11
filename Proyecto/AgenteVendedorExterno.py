@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from imports import *
 
+__author__ = 'joan'
 
 argumentos = getArguments(my_port=8010)
 #Direcciones hardcodeadas (propia)

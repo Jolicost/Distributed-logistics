@@ -19,5 +19,6 @@ python AgenteVendedorExterno.py --name VendedorA &
 python AgenteTransportista.py --name TransportistaA &
 python AgenteMonetario.py &
 python ServicioPago.py &
-
+python AgenteEnviador.py --name Capellades --port 8060 &
+python AgenteEnviador.py --name Igualada --port 8061 &
 wait
