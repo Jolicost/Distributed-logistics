@@ -117,6 +117,11 @@ def crearLote(envio):
 
 	lotes.add((lote,RDF.type,lotes_ns.type))
 	lotes.add((lote,lotes_ns.Id,Literal(lote_id)))
+
+	loc = envios.value(envio,envios_ns.Tienedirecciondeentrega)
+	cp = envios.value(loc,direcciones_ns.Codigopostal)
+
+	lotes.add((lote,lotes_ns.Ciudad,cp))
 	#Hacemos que el lote este en reposo inicialmente
 	lotes.add((lote,lotes_ns.Estadodellote,Literal("Idle")))
 	#Anadimos el peso del lote
