@@ -482,10 +482,17 @@ def resultadoDevolucion(graph):
         l = l + [dic]
     return render_template('devoluciones.html',list=l)
 """
+
+def registrarFacturaEnvio(graph):
+    graph.serialize('test.turtle',format='turtle')
+
+    return create_confirm(AgenteUsuario)
+
 def registerActions():
     global actions
     actions[agn.RecomendarProductos] = rebreRecomanacions
     actions[agn.PedirOpiniones] = recibirProductosaOpinar
+    actions[agn.FacturaEnvio] = registrarFacturaEnvio
     #actions[agn.resultadoBusqueda] = mostrarResultadoBusqueda
 
 def init_agent():

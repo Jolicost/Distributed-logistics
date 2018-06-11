@@ -28,21 +28,12 @@ g = Graph()
 AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
-graphFile = 'AgenteTransportista/' + nombre + '.turtle'
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente
 # cuando llega un mensaje
 actions = {}
 
-#Carga el grafo rdf del fichero graphFile
-def cargarGrafo():
-	global g
-	if os.path.isfile(graphFile):
-		g.parse(graphFile,format="turtle")
-	return g
 
-#cargamos el grafo
-g = cargarGrafo()
 
 @app.route("/comm")
 def comunicacion():
@@ -72,6 +63,9 @@ def comunicacion():
 
 	return "Envio en curso"
 
+def confirmarOferta(graph):
+	#Nada amigo
+	pass
 
 ''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
 def peticionOferta(graph):
@@ -102,9 +96,8 @@ def peticionOferta(graph):
 def registerActions():
 	global actions
 	actions[agn.EnviadorPeticionOferta] = peticionOferta
+	actions[agn.EnviadorConfirmacionOferta] = confirmarOferta
 
-def guardarGrafo():
-	g.serialize(graphFile,format="turtle")
 
 @app.route("/")
 def main_page():

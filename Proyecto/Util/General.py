@@ -35,7 +35,7 @@ def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default')
 	else:
 	    ret['port'] = args.port
 
-	if args.open is None:
+	if args.open:
 	    ret['host'] = '0.0.0.0'
 	else:
 	    ret['host'] = 'localhost'

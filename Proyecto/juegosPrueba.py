@@ -111,7 +111,7 @@ def crearPedido(id,user_id,prioridad,fecha,importe,direccion,cp,productos):
 
 	return g
 
-def crearEnvio(id,user_id,pedido_id,fecha,direccion,cp,productos,importeTotal,estado,prioridad):
+def crearEnvio(id,user_id,pedido_id,fecha,direccion,cp,productos,importeTotal,estado,prioridad,peso):
 	g = Graph()
 
 	#Generamos un id aleatorio
@@ -153,6 +153,8 @@ def crearEnvio(id,user_id,pedido_id,fecha,direccion,cp,productos,importeTotal,es
 
 	g.add((envios_ns[envio_id],envios_ns.EstadoEnvio,Literal(estado)))
 
+	g.add((envios_ns[envio_id],envios_ns.Peso,Literal(peso)))
+
 	return g
 
 def crearLote(id,estado,ciudad,peso,envios):
@@ -167,7 +169,7 @@ def crearLote(id,estado,ciudad,peso,envios):
 	g.add((lotes_ns[id],lotes_ns.Estadodellote,Literal(estado)))
 
 	lista = lotes_ns[id + '-ListaEnvios']
-	g.add((lotes_ns[id],lotes_ns.Contiene,lista))
+	g.add((lotes_ns[id],lotes_ns.TieneEnvios,lista))
 	c = Collection(g,lista)
 
 	for e in envios:
@@ -211,8 +213,8 @@ def generarProductos():
 #Pedido de prueba sin enviar. Solo por el lote
 def crearPedidoPrueba0():
 	productos = []
-	productos += [crearProductoPedido('Zanahorias0Pedido0','Zanahorias','asignado',None,'Igualada')]
-	productos += [crearProductoPedido('Peras0Pedido0','Peras','asignado',None,'Capellades')]
+	productos += [crearProductoPedido('Zanahorias0Pedido0','Zanahorias','Asignado',None,'Igualada')]
+	productos += [crearProductoPedido('Peras0Pedido0','Peras','Asignado',None,'Capellades')]
 
 	pedido = crearPedido('PedidoPrueba0','Adrian','Alta','1995-06-06',40,'Calle Falsa 0','08710',productos)
 
@@ -221,24 +223,38 @@ def crearPedidoPrueba0():
 #Pedido de prueba ya enviado por la tienda externa
 def crearPedidoPrueba1():
 	productos = []
-	productos += [crearProductoPedido('Manzanas0Pedido1','Manzanas','enviado','1995-04-04',None)]
-	productos += [crearProductoPedido('Manzanas1Pedido1','Manzanas','enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas0Pedido1','Manzanas','Enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas1Pedido1','Manzanas','Enviado','1995-04-04',None)]
 
 	pedido = crearPedido('PedidoPrueba1','Alex','Baja','1995-04-02',40,'Calle Alex 1','08100',productos)
 
 	return pedido
+
+#Pedido de prueba ya enviado por la tienda externa
+def crearPedidoPrueba2():
+	productos = []
+	productos += [crearProductoPedido('Cacahuetes0Pedido2','Cacahuetes','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas0Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas1Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas2Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas3Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+
+	pedido = crearPedido('PedidoPrueba2','Joan','Baja','1995-04-02',90,'Av Balmes','08700',productos)
+
+	return pedido
+
 
 #Envio de prueba no enviado, solo tenemos sus lotes creados a la espera
 def crearEnviosPrueba0():
 	productos = []
 	productos += [crearProductoEnvio('Zanahorias')]
 
-	envio0 = crearEnvio('EnvioPrueba0.0','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,10,'EnLote','Alta')
+	envio0 = crearEnvio('EnvioPrueba0.0','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,10,'EnLote','Alta',50)
 
 	productos = []
 	productos += [crearProductoEnvio('Peras')]
 
-	envio1 = crearEnvio('EnvioPrueba0.1','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,30,'EnLote','Alta')
+	envio1 = crearEnvio('EnvioPrueba0.1','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,30,'EnLote','Alta',100)
 
 	#envio0 = Igualada
 	#envio1 = Capellades
@@ -252,9 +268,22 @@ def crearEnviosPrueba1():
 	productos += [crearProductoEnvio('Manzanas')]
 	productos += [crearProductoEnvio('Manzanas')]
 
-	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Alta')
+	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Alta',150)
 
 	envio0.serialize('AgenteUsuario/Envios/Alex.turtle',format="turtle")
+
+def crearEnviosPrueba2():
+
+	productos = []
+	productos += [crearProductoEnvio('Cacahuetes')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+
+	envio2 = crearEnvio('EnvioPrueba2.0','Joan','PedidoPrueba2','1994-05-03','Av Balmes','08700',productos,90,'EnLote','Alta',500)
+
+	envio2.serialize('Datos/Envios/Montserrat.turtle',format="turtle")
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
 def crearLotesPrueba0():
 	envios = []
@@ -271,11 +300,22 @@ def crearLotesPrueba0():
 	lote0.serialize('Datos/Lotes/Igualada.turtle',format='turtle')
 	lote1.serialize('Datos/Lotes/Capellades.turtle',format='turtle')
 
+def crearLotesPrueba2():
+	envios = []
+	envios += [crearEnvioLote('EnvioPrueba2.0')]
+
+	#Lote de igualada
+	lote2 = crearLote('LotePrueba2.0','idle','08700',800,envios)
+
+	lote2.serialize('Datos/Lotes/Montserrat.turtle',format='turtle')
+
 #Envio ya realizado por el centro. Servira para probar la devolucion
 def generarInformacionCentros():
 	crearEnviosPrueba0()
 	crearEnviosPrueba1()
+	crearEnviosPrueba2()
 	crearLotesPrueba0()
+	crearLotesPrueba2()
 
 def anadirProductoCarrito(id,importe,nombre,cantidad):
 	g = Graph()
@@ -306,9 +346,11 @@ def generarPedidos():
 	g = Graph()
 	pedidoAlex = crearPedidoPrueba1()
 	pedidoAdrian = crearPedidoPrueba0()
+	pedidoJoan = crearPedidoPrueba2()
 
 	g+=pedidoAlex
 	g+=pedidoAdrian
+	g+=pedidoJoan
 
 	g.serialize('Datos/pedidos.turtle',format='turtle')
 
@@ -319,6 +361,7 @@ def generarCentros():
 	centros = Graph()
 	centros += crearCentro('Igualada','Avennida Pastor 30','08700')
 	centros += crearCentro('Capellades','Abric Romani 1', '08711')
+	centros += crearCentro('Montserrat','En el pico','07342')
 
 	pesos = []
 	pesos += [crearPeso('Zanahorias',50)]
@@ -331,20 +374,23 @@ def generarCentros():
 	pesos = []
 	pesos += [crearPeso('Manzanas',200)]
 	pesos += [crearPeso('Peras',100)]
-	pesos += [crearPeso('Cacahuetes',15)]
+	pesos += [crearPeso('Cacahuetes',25)]
 
 	#Centro de capellades
 	capellades = crearPesosCentro('Capellades',pesos)
+	montserrat = crearPesosCentro('Montserrat',pesos)
 
 
 	centros.serialize('Datos/centros.turtle',format='turtle')
 	igualada.serialize('Datos/Pesos/Igualada.turtle',format='turtle')
 	capellades.serialize('Datos/Pesos/Capellades.turtle',format='turtle')
+	montserrat.serialize('Datos/Pesos/Montserrat.turtle', format='turtle')
 
 def generarPersonas():
 	g = Graph()
 	g+= crearUsuario('Alex','TarjetaVISAAlex')
 	g+= crearUsuario('Adrian','TarjetaMasterCardAdrian')
+	g+= crearUsuario('Joan','Efectivo')
 
 	g+=crearTransportista('TransportistaA','Transportes Jose')
 	g+=crearTransportista('TransportistaB','Transvisa')

@@ -147,9 +147,12 @@ def anadirEnvioLote(lote,envio):
 
 	guardarGrafoLotes(centroLogistico)
 
-def registrarEnvio(graph):
+def registrarEnvio(graph,envio):
 	global envios
 	envios += graph
+	peso = calcularPesoEnvio(envio)
+	#Anadimos el peso total del envio
+	envios.add(envio,envios_ns.Peso,Literal(peso))
 	guardarGrafoEnvios(centroLogistico)
 
 def combinarLotes(envio):
@@ -174,7 +177,7 @@ def nuevoEnvio(graph):
 	#Obtenemos solo la informacion que nos interesa
 	graph = expandirGrafoRec(graph,envio)
 
-	registrarEnvio(graph)
+	registrarEnvio(graph,envio)
 	combinarLotes(envio)
 
 	return create_confirm(AgenteEmpaquetador)

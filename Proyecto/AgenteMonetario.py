@@ -56,6 +56,9 @@ def comunicacion():
     gm = Graph()
     gm.parse(data=message)
 
+
+    print("MONETARIO")
+
     msgdic = get_message_properties(gm)
 
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta

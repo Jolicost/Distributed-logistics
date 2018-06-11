@@ -87,9 +87,9 @@ def comunicacion():
 	msgdic = get_message_properties(gm)
 
 	# Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
-	if not msgdic or msgdic['performative'] != ACL.request:
+	if not msgdic:
 		# Si no es, respondemos que no hemos entendido el mensaje
-		gr = create_notUnderstood(AgenteAdmisor,None)
+		gr = create_notUnderstood(AgenteReceptor,None)
 	else:
 		content = msgdic['content']
 		# Averiguamos el tipo de la accion
@@ -99,7 +99,7 @@ def comunicacion():
 		if accion in actions:
 			gr = actions[accion](gm)
 		else:
-			gr = create_notUnderstood(AgenteAdmisor,None)
+			gr = create_notUnderstood(AgenteReceptor,None)
 
 	return gr.serialize(format='xml')
 
@@ -298,6 +298,7 @@ def calcularImportePedido(graph,pedido):
 			pass
 
 	return suma
+
 	
 
 def registrarPedido(graph,pedido):
@@ -389,6 +390,15 @@ def informarCentroLogisticoEnvio(centro,pedido,listaProductos):
 	# Enviamos el mensaje a cualquier agente admisor
 	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,agenteEmpaquetador_ns.type,empaquetador_uri)
 
+def registrarDecisionCentro(centro,pedido,listaProductos):
+	node = pedidos.value(pedido,pedidos_ns.Contiene)
+	c = Collection(pedidos,node)
+	for prod in c:
+		pedidos.set((prod,productosPedido_ns.CentroAsignado,centro))
+		pedidos.set((prod,productosPedido_ns.Estado,Literal('Asignado')))
+
+	guardarGrafoPedidos()
+
 def organizarPedido(pedido):
 	'''Busca que centros logisticos pueden resolver la peticion de envio '''
 	nodo = pedidos.value(pedido,pedidos_ns.Contiene)
@@ -407,6 +417,7 @@ def organizarPedido(pedido):
 
 
 	for c in decision:
+		registrarDecisionCentro(c,pedido,decision[c])
 		informarCentroLogisticoEnvio(c,pedido,decision[c])
 
 
@@ -418,8 +429,120 @@ def simulacionOrganizar():
 	return redirect("/")
 
 
+def getTransportistaName(transportista):
+	tr = Graph()
+	tr.parse('Datos/personas.turtle',format="turtle")
+	return tr.value(subject=transportista,predicate=transportistas_ns.NombreEmpresa)
 
 
+def getListaProductosEnviados(graph,envio):
+	nodo = graph.value(subject=envio,predicate=envios_ns.Contiene)
+	c = Collection(graph,nodo)
+	ret = []
+	for p in c:
+		ret += [p]
+
+	return ret
+
+def comprobarPagoVendedorExterno(vendedores,producto):
+	# devuelve un importe
+	vendedor = productos.value(producto,productos_ns.Esvendidopor)
+	if vendedor is not None:
+		if vendedor in vendedores: vendedores[vendedor] += float(productos.value(producto,productos_ns.Importe))
+		else: vendedores[vendedor] = float(productos.value(producto,productos_ns.Importe))
+	#Por si acaso es immutable
+	return vendedores
+
+def pagarVendedores(vendedores):
+	for vendedor in vendedores:
+		importe = vendedores[vendedor]
+
+		gcom = Graph()
+
+		obj = createAction(AgenteReceptor,'pagarProducto')
+
+		gcom.add((obj, RDF.type, agn.MonetarioPedirPagoTiendaExterna))
+		gcom.add((obj, pagos_ns.SePagaALaTienda, vendedor))
+		gcom.add((obj, pagos_ns.Importe,Literal(importe)))
+		# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+		msg = build_message(gcom,
+			perf=ACL.inform,
+			sender=AgenteReceptor.uri,
+			content=obj)
+
+		# Enviamos el mensaje a cualquier agente monetario
+		send_message_any(msg,AgenteReceptor,DirectorioAgentes,agenteMonetario_ns.type)
+
+
+def registrarProductosEnviados(graph,pedido,envio,centro):
+	global pedidos
+	#Registra los productos del grafo de envio como ya enviados en el pedido y de paso informa al
+	# monetario de que pague a la tienda externa en los casos indicados
+	fechaEnvio = getCurrentDate()
+	lista = getListaProductosEnviados(graph,envio)
+	node = pedidos.value(pedido,pedidos_ns.Contiene)
+	vendedores = {}
+	c = Collection(pedidos,node)
+
+	for productoPedido in c:
+		producto = pedidos.value(subject=productoPedido,predicate=productosPedido_ns.AsociadoAlProducto)
+		centro_producto = pedidos.value(subject=productoPedido,predicate=productosPedido_ns.CentroAsignado)
+		if producto in lista and centro_producto == centro:
+			pedidos.set((productoPedido,productosPedido_ns.Estado,Literal('Enviado')))
+			pedidos.set((productoPedido,productosPedido_ns.FechaEnvio,Literal(fechaEnvio)))
+			vendedores = comprobarPagoVendedorExterno(vendedores,producto)
+			lista.remove(producto)
+
+	pagarVendedores(vendedores)
+	guardarGrafoPedidos()
+
+
+def registrarImporteFinal(pedido,importeEnvio):
+	importe = pedidos.value(pedido,pedidos_ns.Importe)
+	importeFinal = float(importe) + float(importeEnvio)
+	pedidos.set((pedido,pedidos_ns.ImporteFinal,Literal(importeFinal)))
+
+def enviarFacturaUsuario(graph,envio,importeEnvio):
+	graph.set((envio,envios_ns.ImporteEnvio,importeEnvio))
+
+	gcom = Graph()
+
+	obj = createAction(AgenteReceptor,'registrarFactura')
+
+	#Direccion del usuario
+	uri = graph.value(envio,envios_ns.Hechopor)
+
+	gcom.add((obj, RDF.type, agn.FacturaEnvio))
+	#Ponemos el envio que hemos realizado
+	gcom += graph
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(gcom,
+		perf=ACL.inform,
+		sender=AgenteReceptor.uri,
+		content=obj)
+
+	# Enviamos el mensaje a cualquier agente monetario
+	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,agenteUsuario_ns.type,uri)
+
+def confirmarEnvio(graph):
+	#Registrar los productos del pedido como enviados
+	#Generar un envio metiendole el importe final
+	#Actualizar todos los productos de un pedido para que sus estados y mierdas correspondan (usar el centro)
+	#Informar al servicio de pago de los productos que fuesen externos
+	parent = graph.subjects(RDF.type, agn.EnviadorConfirmarEnvio).next()
+	envio = graph.subjects(RDF.type, envios_ns.type).next()
+	envioGraph = expandirGrafoRec(graph,envio)
+	pedido = envioGraph.value(envio,envios_ns.Llevaacabo)
+	importeEnvio = graph.value(parent,pedidos_ns.ImporteEnvio)
+	transportista = graph.value(parent,pedidos_ns.LoTransporta)
+	centro = graph.value(parent,pedidos_ns.CentroResponsable)
+
+	registrarProductosEnviados(graph,pedido,envio,centro)
+	registrarImporteFinal(pedido,importeEnvio)
+	enviarFacturaUsuario(graph,envio,importeEnvio)
+	
+	guardarGrafoPedidos()
+	return create_confirm(AgenteReceptor)
 
 @app.route("/Stop")
 def stop():
@@ -454,6 +577,7 @@ def registerActions():
 	global actions
 	#Procesado de peticiones del usuario de compra
 	actions[agn.UsuarioNuevoPedido] = resolverEnvio
+	actions[agn.EnviadorConfirmarEnvio] = confirmarEnvio
 
 '''Percepciones'''
 def peticionDeCompra(graph):
