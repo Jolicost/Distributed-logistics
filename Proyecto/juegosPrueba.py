@@ -223,12 +223,26 @@ def crearPedidoPrueba0():
 #Pedido de prueba ya enviado por la tienda externa
 def crearPedidoPrueba1():
 	productos = []
-	productos += [crearProductoPedido('Manzanas0Pedido1','Manzanas','enviado','1995-04-04',None)]
-	productos += [crearProductoPedido('Manzanas1Pedido1','Manzanas','enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas0Pedido1','Manzanas','Enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas1Pedido1','Manzanas','Enviado','1995-04-04',None)]
 
 	pedido = crearPedido('PedidoPrueba1','Alex','Baja','1995-04-02',40,'Calle Alex 1','08100',productos)
 
 	return pedido
+
+#Pedido de prueba ya enviado por la tienda externa
+def crearPedidoPrueba2():
+	productos = []
+	productos += [crearProductoPedido('Cacahuetes0Pedido2','Cacahuetes','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas0Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas1Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas2Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+	productos += [crearProductoPedido('Manzanas3Pedido2','Manzanas','Asignado','1995-04-04','Montserrat')]
+
+	pedido = crearPedido('PedidoPrueba2','Joan','Baja','1995-04-02',90,'Av Balmes','08700',productos)
+
+	return pedido
+
 
 #Envio de prueba no enviado, solo tenemos sus lotes creados a la espera
 def crearEnviosPrueba0():
@@ -257,6 +271,19 @@ def crearEnviosPrueba1():
 	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Alta',150)
 
 	envio0.serialize('AgenteUsuario/Envios/Alex.turtle',format="turtle")
+
+def crearEnviosPrueba2():
+
+	productos = []
+	productos += [crearProductoEnvio('Cacahuetes')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+	productos += [crearProductoEnvio('Manzanas')]
+
+	envio2 = crearEnvio('EnvioPrueba2.0','Joan','PedidoPrueba2','1994-05-03','Av Balmes','08700',productos,90,'EnLote','Alta',500)
+
+	envio2.serialize('Datos/Envios/Montserrat.turtle',format="turtle")
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
 def crearLotesPrueba0():
 	envios = []
@@ -273,11 +300,22 @@ def crearLotesPrueba0():
 	lote0.serialize('Datos/Lotes/Igualada.turtle',format='turtle')
 	lote1.serialize('Datos/Lotes/Capellades.turtle',format='turtle')
 
+def crearLotesPrueba2():
+	envios = []
+	envios += [crearEnvioLote('EnvioPrueba2.0')]
+
+	#Lote de igualada
+	lote2 = crearLote('LotePrueba2.0','idle','08700',800,envios)
+
+	lote2.serialize('Datos/Lotes/Montserrat.turtle',format='turtle')
+
 #Envio ya realizado por el centro. Servira para probar la devolucion
 def generarInformacionCentros():
 	crearEnviosPrueba0()
 	crearEnviosPrueba1()
+	crearEnviosPrueba2()
 	crearLotesPrueba0()
+	crearLotesPrueba2()
 
 def anadirProductoCarrito(id,importe,nombre,cantidad):
 	g = Graph()
@@ -308,9 +346,11 @@ def generarPedidos():
 	g = Graph()
 	pedidoAlex = crearPedidoPrueba1()
 	pedidoAdrian = crearPedidoPrueba0()
+	pedidoJoan = crearPedidoPrueba2()
 
 	g+=pedidoAlex
 	g+=pedidoAdrian
+	g+=pedidoJoan
 
 	g.serialize('Datos/pedidos.turtle',format='turtle')
 
@@ -321,6 +361,7 @@ def generarCentros():
 	centros = Graph()
 	centros += crearCentro('Igualada','Avennida Pastor 30','08700')
 	centros += crearCentro('Capellades','Abric Romani 1', '08711')
+	centros += crearCentro('Montserrat','En el pico','07342')
 
 	pesos = []
 	pesos += [crearPeso('Zanahorias',50)]
@@ -337,16 +378,19 @@ def generarCentros():
 
 	#Centro de capellades
 	capellades = crearPesosCentro('Capellades',pesos)
+	montserrat = crearPesosCentro('Montserrat',pesos)
 
 
 	centros.serialize('Datos/centros.turtle',format='turtle')
 	igualada.serialize('Datos/Pesos/Igualada.turtle',format='turtle')
 	capellades.serialize('Datos/Pesos/Capellades.turtle',format='turtle')
+	montserrat.serialize('Datos/Pesos/Montserrat.turtle', format='turtle')
 
 def generarPersonas():
 	g = Graph()
 	g+= crearUsuario('Alex','TarjetaVISAAlex')
 	g+= crearUsuario('Adrian','TarjetaMasterCardAdrian')
+	g+= crearUsuario('Joan','Efectivo')
 
 	g+=crearTransportista('TransportistaA','Transportes Jose')
 	g+=crearTransportista('TransportistaB','Transvisa')
