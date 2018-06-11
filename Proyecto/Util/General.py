@@ -6,7 +6,9 @@ import socket
 def getCurrentDateTime():
 	return strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-
+def getCurrentDate():
+	return strftime("%Y-%m-%d",gmtime())
+	
 def stringToDateTime(string):
 	return parse(string)
 

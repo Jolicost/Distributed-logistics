@@ -161,6 +161,8 @@ def checkout():
     pedido.add((pedidos_ns[pedido_id],pedidos_ns.Id,Literal(pedido_id)))
     pedido.add((pedidos_ns[pedido_id],pedidos_ns.Hechopor,agenteUsuario_ns[name]))
     pedido.add((pedidos_ns[pedido_id],pedidos_ns.Prioridad,Literal(prioridad)))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Importetotal,Literal(calcularTotalCarrito())))
+    pedido.add((pedidos_ns[pedido_id], pedidos_ns.Fecharealizacion,Literal(getCurrentDate())))
 
     node =  pedidos_ns[pedido_id + '-listaProductos']
 

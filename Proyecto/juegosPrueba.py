@@ -2,6 +2,7 @@
 from imports import *
 #Generador de juegos de prueba
 
+
 def crearUsuario(id,tarjeta):
 	g = Graph()
 	g.add((usuarios_ns[id],RDF.type,usuarios_ns.type))
@@ -63,13 +64,15 @@ def crearPesosCentro(id,pesos):
 
 	return g
 
-def crearProductoPedido(id,estado,fechaEnvio,centro):
+def crearProductoPedido(idProductoPedido,idProducto,estado,fechaEnvio,centro):
+	id = idProductoPedido
 	g = Graph()
-	g.add((productos_ns[id],RDF.type,productos_ns.type))
-	g.add((productos_ns[id],productos_ns.Id,Literal(id)))
-	g.add((productos_ns[id],productos_ns.Estado,Literal(estado)))
-	if fechaEnvio is not None: g.add((productos_ns[id],productos_ns.FechaEnvio,Literal(fechaEnvio)))
-	if centro is not None: g.add((productos_ns[id],productos_ns.CentroAsignado,centros_ns[centro]))
+	g.add((productosPedido_ns[id],RDF.type,productos_ns.type))
+	g.add((productosPedido_ns[id],productosPedido_ns.Id,Literal(id)))
+	g.add((productosPedido_ns[id],productosPedido_ns.AsociadoAlProduto,productos_ns[idProducto]))
+	if estado is not None: g.add((productosPedido_ns[id],productosPedido_ns.Estado,Literal(estado)))
+	if fechaEnvio is not None: g.add((productosPedido_ns[id],productosPedido_ns.FechaEnvio,Literal(fechaEnvio)))
+	if centro is not None: g.add((productosPedido_ns[id],productosPedido_ns.CentroAsignado,centros_ns[centro]))
 	return g
 
 def crearProductoEnvio(id):
@@ -209,8 +212,8 @@ def generarProductos():
 #Pedido de prueba sin enviar. Solo por el lote
 def crearPedidoPrueba0():
 	productos = []
-	productos += [crearProductoPedido('Zanahorias','asignado',None,'Igualada')]
-	productos += [crearProductoPedido('Peras','asignado',None,'Capellades')]
+	productos += [crearProductoPedido('Zanahorias0Pedido0','Zanahorias','asignado',None,'Igualada')]
+	productos += [crearProductoPedido('Peras0Pedido0','Peras','asignado',None,'Capellades')]
 
 	pedido = crearPedido('PedidoPrueba0','Adrian','Alta','1995-06-06',40,'Calle Falsa 0','08710',productos)
 
@@ -219,8 +222,8 @@ def crearPedidoPrueba0():
 #Pedido de prueba ya enviado por la tienda externa
 def crearPedidoPrueba1():
 	productos = []
-	productos += [crearProductoPedido('Manzanas','enviado','1995-04-04',None)]
-	productos += [crearProductoPedido('Manzanas','enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas0Pedido1','Manzanas','enviado','1995-04-04',None)]
+	productos += [crearProductoPedido('Manzanas1Pedido1','Manzanas','enviado','1995-04-04',None)]
 
 	pedido = crearPedido('PedidoPrueba1','Alex','Baja','1995-04-02',40,'Calle Alex 1','08100',productos)
 
@@ -265,8 +268,17 @@ def crearEnvioPrueba1():
 	pass
 
 def generarPedidos():
-	pass
+	g = Graph()
+	pedidoAlex = crearPedidoPrueba1()
+	pedidoAdrian = crearPedidoPrueba0()
 
+	g+=pedidoAlex
+	g+=pedidoAdrian
+
+	g.serialize('Datos/pedidos.turtle',format='turtle')
+
+	pedidoAlex.serialize('AgenteUsuario/Pedidos/Alex.turtle')
+	pedidoAdrian.serialize('AgenteUsuario/Pedidos/Adrian.turtle')
 
 def generarCentros():
 	centros = Graph()
@@ -308,6 +320,7 @@ def generarPersonas():
 def generarJuegos():
 	generarCentros()
 	generarPersonas()
+	generarPedidos()
 
 if __name__ == '__main__':
 	generarJuegos()
