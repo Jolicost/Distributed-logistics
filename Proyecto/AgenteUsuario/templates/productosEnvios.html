@@ -23,6 +23,9 @@ th, td {
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
 				{% endfor %}
+					<th>
+						Devolver
+					</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -31,9 +34,11 @@ th, td {
 					{% for key,value in elem.items() %}
 						<td>{{ value }}</td>
 					{% endfor %}
-						<th>
+						<td>
+							{% if not elem['devolverA'] %}
 							<a href="/envios/{{ elem['idEnvio'] }}/productos/{{ elem['idPedido'] }}/{{ elem['idProducto'] }}"><button>Devolver producto</button></a>
-						</th>
+							{%endif%}
+						</td>
 				</tr>
 				{% endfor %}
 			</tbody>

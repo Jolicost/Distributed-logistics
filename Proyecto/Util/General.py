@@ -1,6 +1,7 @@
 import datetime
 import argparse
 from time import gmtime, strftime
+from datetime import datetime
 import socket
 
 def getCurrentDateTime():
@@ -12,6 +13,8 @@ def getCurrentDate():
 def stringToDateTime(string):
 	return parse(string)
 
+def stringToDate(string):
+	return datetime.strptime(string, '%Y-%m-%d')
 
 
 def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default'):

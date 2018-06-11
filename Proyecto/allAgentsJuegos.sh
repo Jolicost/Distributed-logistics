@@ -35,4 +35,6 @@ python AgenteTransportista.py --name TransportistaA --port 8040 &
 python AgenteTransportista.py --name TransportistaB --port 8041 &
 python AgenteTransportista.py --name TransportistaC --port 8042 &
 
+python AgenteDevolvedor.py --port 8070 &
+
 wait

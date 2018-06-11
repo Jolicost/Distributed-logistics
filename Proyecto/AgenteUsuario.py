@@ -276,8 +276,8 @@ def verEnvios():
         dic['Fecha de realizacion del envio'] = g.value(subject = s, predicate= envios_ns.Fecharealizacion)
         dic['Direccion de entrega'] = g.value(subject = s, predicate= envios_ns.Tienedirecciondeentrega)
         dic['idPedido'] = g.value(subject = s, predicate = envios_ns.Llevaacabo)
-
-    l = l + [dic]
+        l = l + [dic]
+        
     return render_template('envios.html', list=l)
 
 @app.route("/envios/<id>/productos", methods=['GET']) 
@@ -295,9 +295,9 @@ def verProductosEnvio(id):
     dic['idPedido'] = idPedido
     for item in c:
         dic['idProducto'] = g.value(subject=item, predicate=productos_ns.Id)
-    l = l + [dic]
+        l = l + [dic]
     
-    return render_template('productosEnvios', list=l)
+    return render_template('productosEnvios.html', list=l)
 
 @app.route("/envios/<idEnvio>/productos/<idPedido>/<idProducto>", methods=['GET'])
 def crearDevolucion(idEnvio, idPedido, idProducto):
@@ -306,12 +306,17 @@ def crearDevolucion(idEnvio, idPedido, idProducto):
 
 @app.route("/envios/<idEnvio>/productos/<idPedido>/<idProducto>/devolver", methods=['GET'])        
 def crearPeticionDevolucion(idEnvio, idPedido, idProducto):
+    global envios
     razon = request.args['razon']
+    id = str(random.getrandbits(64))
+    devolucion = devoluciones_ns[id]
     g = Graph()
-    g.add((ont.Devolucion, ont.Pedido, Literal(idPedido)))
-    g.add((ont.Devolucion, ont.Producto, Literal(idProducto)))
-    g.add((ont.Devolucion, ont.Usuario, Literal(name)))
-    g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
+    g.add((devolucion,RDF.type, devoluciones_ns.type))
+    g.add((devolucion,devoluciones_ns.Id, Literal(id)))
+    g.add((devolucion,devoluciones_ns.TienePedido,pedidos_ns[idPedido]))
+    g.add((devolucion,devoluciones_ns.TieneProducto,productos_ns[idProducto]))
+    g.add((devolucion,devoluciones_ns.DevolucionEsDelUsuario,usuarios_ns[name]))
+    g.add((devolucion,devoluciones_ns.RazonDevolucion, Literal(razon)))
 
     obj = createAction(AgenteUsuario,'crearDevolucion')
 
@@ -322,9 +327,24 @@ def crearPeticionDevolucion(idEnvio, idPedido, idProducto):
         content=obj)
 
     # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
+    res = send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
+    msg = 'No Aceptada'
+    acceptada = res.value(devolucion,devoluciones_ns.Acceptada)
+    if acceptada:
+        empresa = res.value(devolucion,devoluciones_ns.EmpresaMensajeria)
+        lugar = res.value(devolucion,devoluciones_ns.DireccionRetorno)
+        msg = 'Devolver mediante: ' + empresa + ' al lugar: ' + lugar
 
-    return redirect("/")
+        container = envios.value(subject=envios_ns[idEnvio],predicate=envios_ns.Contiene)
+        c = Collection(envios,container)
+        if len(c) == 1: c.clear()
+        else: 
+            toDelete = productos_ns[idProducto]
+            del c[c.index(toDelete)]
+
+    guardarGrafo(envios)
+
+    return msg
 
 @app.route("/opinar")
 def verProductosaOpinar():
