@@ -302,31 +302,7 @@ def registrarPedido(graph,pedido):
 	''' registra un pedido en la base de datos de pedidos de la tienda '''
 	''' hay que anadir los atributos extra al pedido '''
 	global pedidos
-	return pedido
-	nuevoPedido = Graph()
-	nuevoPedido.add((pedidos_ns[pedido_id],RDF.type,pedidos_ns.type))
-    nuevoPedido.add((pedidos_ns[pedido_id],pedidos_ns.Id,Literal(pedido_id)))
-    nuevoPedido.add((pedidos_ns[pedido_id],pedidos_ns.Hechopor,agenteUsuario_ns[name]))
-    nuevoPedido.add((pedidos_ns[pedido_id],pedidos_ns.Prioridad,Literal(prioridad)))
-    nuevoPedido.add((pedidos_ns[pedido_id],pedidos_ns.Importetotal,Literal(calcularTotalCarrito())))
-    nuevoPedido.add((pedidos_ns[pedido_id], pedidos_ns.Fecharealizacion,Literal(getCurrentDate())))
 
-	nuevoPedido.add((pedido,pedidos_ns.Id))
-
-	fechaPedido = getCurrentDateTime()
-	#estado = 'idle'
-
-	nodo = graph.value(pedido,pedidos_ns.Contiene)
-    c = Collection(graph,node)
-
-    for prod in c:
-
-    for p in carrito.subjects(predicate=RDF.type,object=productos_ns.type):
-        for i in range(int(carrito.value(p,productos_ns.Cantidad))):
-            c.append(p)
-    
-	prod_id = graph.value()
-	graph.add((pedido,pedidos_ns.Fecharealizacion,Literal(fechaPedido)))
 	graph.add((pedido,pedidos_ns.Importetotal,Literal(calcularImportePedido(graph,pedido))))
 	#No necesitamos el estado
 	#graph.add((pedido,pedidos_ns.Estadodelpedido,Literal(estado)))

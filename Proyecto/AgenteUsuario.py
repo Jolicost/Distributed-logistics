@@ -172,14 +172,24 @@ def checkout():
 
     for p in carrito.subjects(predicate=RDF.type,object=productos_ns.type):
         for i in range(int(carrito.value(p,productos_ns.Cantidad))):
-            c.append(p)
+            idProd = carrito.value(p,productos_ns.Id)
+            prodGraph = Graph()
+            idProductoPedido = str(random.getrandbits(64))
+            productoPedido = productosPedido_ns[idProductoPedido]
+
+            prodGraph.add((productoPedido,RDF.type,productosPedido_ns.type))
+            prodGraph.add((productoPedido,productosPedido_ns.Id,Literal(idProductoPedido)))
+            prodGraph.add((productoPedido,productosPedido_ns.AsociadoAlProducto,productos_ns[idProd]))
+
+            pedido += prodGraph
+            c.append(productoPedido)
     
 
 
     add_localizacion_node(pedido,pedidos_ns[pedido_id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
 
     #Enviar mensaje a la tienda
-    enviarPedidoATienda(pedido)
+    #enviarPedidoATienda(pedido)
     #vaciarCarritoFun()
     pedidos += pedido
     guardarGrafo(pedidos)

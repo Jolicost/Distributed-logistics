@@ -199,15 +199,12 @@ def crearProducto(id,nombre,importe,centros):
 	return g
 
 
-def generarCentros():
-	pass
-
 def generarProductos():
 	g = Graph()
 	g+=crearProducto('Zanahorias','Zanahorias',10,['Igualada'])
 	g+=crearProducto('Manzanas','Manzanas',20,['Igualada','Capellades'])
 	g+=crearProducto('Peras','Peras',30,['Capellades'])
-	#g.serialize('test.turtle',format='turtle')
+	g.serialize('Datos/productos.turtle',format='turtle')
 
 #Pedido de prueba sin enviar. Solo por el lote
 def crearPedidoPrueba0():
@@ -277,8 +274,8 @@ def generarPedidos():
 
 	g.serialize('Datos/pedidos.turtle',format='turtle')
 
-	pedidoAlex.serialize('AgenteUsuario/Pedidos/Alex.turtle')
-	pedidoAdrian.serialize('AgenteUsuario/Pedidos/Adrian.turtle')
+	pedidoAlex.serialize('AgenteUsuario/Pedidos/Alex.turtle',format='turtle')
+	pedidoAdrian.serialize('AgenteUsuario/Pedidos/Adrian.turtle',format='turtle')
 
 def generarCentros():
 	centros = Graph()
@@ -321,6 +318,7 @@ def generarJuegos():
 	generarCentros()
 	generarPersonas()
 	generarPedidos()
+	generarProductos()
 
 if __name__ == '__main__':
 	generarJuegos()
