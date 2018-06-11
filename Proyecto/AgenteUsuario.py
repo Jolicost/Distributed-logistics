@@ -244,22 +244,80 @@ def verRecomendaciones():
 @app.route("/pedidos")
 def verPedidos():
     l = []
-    g = Graph()
-    if os.path.isfile(pedidos_db):
-        g.parse(pedidos_db,format="turtle")
-
-    print(str(g.serialize(format='turtle')))
+    g = pedidos
     for s in g.subjects(predicate=RDF.type,object=pedidos_ns.type):
         # Anadimos los atributos que queremos renderizar a la vista
         dic = {}
-        dic['id'] = g.value(subject = s,predicate = pedidos_ns.Id)
-        dic['direccionEntrega'] = g.value(subject = s,predicate = pedidos_ns.Tienedirecciondeentrega)
-        for m in s.subjects(predicate=RDF.type, object=productos_ns.type):
-            dic['prod'] += s.value(subject=m, predicate= productos_ns.Nombre)
+        dic['ID'] = g.value(subject = s,predicate = pedidos_ns.Id)
+        dic['Direccion Entrega'] = g.value(subject = s,predicate = pedidos_ns.Tienedirecciondeentrega)
+        dic['Fecha Realizacion'] = g.value(subject = s, predicate = pedidos_ns.Fecharealizacion)
+
+        prods = []
+        container = g.value(subject=s,predicate=pedidos_ns.Contiene)
+        c = Collection(g,container)
+        for item in c:
+            dict = {}
+            dict['ID'] = g.value(subject=item,predicate=productosPedido_ns.Id)
+            prods += [dict]
+        dic['Productos'] = prods
         l = l + [dic]
 
     #Renderizamos la vista
     return render_template('pedidos.html',list=l)
+
+@app.route("/envios")
+def verEnvios():
+    l = []
+    g = envios
+    for s in g.subjects(predicate=RDF.type, object=envios_ns.type):
+        dic = {}
+        dic['idEnvio'] = g.value(subject = s, predicate= envios_ns.Id)
+        dic['Estado del envio'] = g.value(subject = s, predicate= envios_ns.EstadoEnvio)
+        dic['Fecha de realizacion del envio'] = g.value(subject = s, predicate= envios_ns.Fecharealizacion)
+        dic['Direccion de entrega'] = g.value(subject = s, predicate= envios_ns.Tienedirecciondeentrega)
+        dic['idPedido'] = g.value(subject = s, predicate = envios_ns.Llevaacabo)
+
+    l = l + [dic]
+    return render_template('envios.html', list=l)
+
+@app.route("/envios/<id>/productos", methods=['GET']) 
+def verProductosEnvio(id):
+    l = []
+    g = envios
+    dic = {}
+        # Anadimos los atributos que queremos renderizar a la vista
+    prods = []
+    container = g.value(subject=envios_ns[id],predicate=envios_ns.Contiene)
+    c = Collection(g,container)
+    dic['idEnvio'] = id
+    dic['idPedido'] = g.value(subject=envios_ns[id],predicate=envios_ns.Llevaacabo)
+    for item in c:
+        dic['idProducto'] = g.value(subject=item, predicate=productos_ns.Id)
+    l = l + [dic]
+    
+    return render_template('productosEnvios', list=l)
+
+@app.route("/productosDevolver/<id>/crearDevolucion", methods=['GET'])        
+def crearPeticionDevolucion(id):
+    razon = request.args['razon']
+    g = Graph()
+    g.add((ont.Devolucion, ont.Pedido, Literal("PedidoPrueba1")))
+    g.add((ont.Devolucion, ont.Producto, Literal("Manzanas1Pedido1")))
+    g.add((ont.Devolucion, ont.Usuario, Literal(name)))
+    g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
+
+    obj = createAction(AgenteUsuario,'crearDevolucion')
+
+    g.add((obj, RDF.type, agn.DevolvedorPedirDevolucion))
+    msg = build_message(g,
+        perf=ACL.request,
+        sender=AgenteUsuario.uri,
+        content=obj)
+
+    # Enviamos el mensaje a cualquier agente admisor
+    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
+
+    return redirect("/devolver")
 
 @app.route("/opinar")
 def verProductosaOpinar():
@@ -281,52 +339,6 @@ def verProductosaOpinar():
 @app.route("/productosaOpinar/<id>/opinar", methods=['GET'])
 def darOpinion(id):
     return render_template('darOpinion.html',id=id)
-
-@app.route("/devolver")
-def verProductosaDevolver():
-    g = Graph()
-    if os.path.isfile(productos_db):
-        g.parse(productos_db,format="turtle")
-    l = []
-    #Todos los productos tienen el predicado "type" a productos.type.
-    #De esta forma los obtenemos con mas facilidad y sin consulta sparql
-    #La funcoin subjects retorna los sujetos con tal predicado y objeto
-    for s in g.subjects(predicate=RDF.type,object=productos_ns.type):
-        # Anadimos los atributos que queremos renderizar a la vista
-        dic = {}
-        dic['nom'] = g.value(subject = s,predicate = productos_ns.Nombre)
-        dic['id'] = g.value(subject = s,predicate = productos_ns.Id)
-        l = l + [dic]
-
-    #Renderizamos la vista
-    return render_template('listaProductosDevolver.html',list=l)
-
-@app.route("/productosDevolver/<id>/devolver", methods=['GET'])
-def crearDevolucion(id):
-    return render_template('crearPeticionDevolucion.html',id=id)
-
-
-@app.route("/productosDevolver/<id>/crearDevolucion", methods=['GET'])        
-def crearPeticionDevolucion(id):
-    razon = request.args['razon']
-    g = Graph()
-    g.add((ont.Devolucion, ont.Pedido, Literal("2")))
-    g.add((ont.Devolucion, ont.Producto, Literal("sdf")))
-    g.add((ont.Devolucion, ont.Usuario, Literal(name)))
-    g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
-
-    obj = createAction(AgenteUsuario,'crearDevolucion')
-
-    g.add((obj, RDF.type, agn.DevolvedorPedirDevolucion))
-    msg = build_message(g,
-        perf=ACL.request,
-        sender=AgenteUsuario.uri,
-        content=obj)
-
-    # Enviamos el mensaje a cualquier agente admisor
-    send_message_any(msg,AgenteUsuario,DirectorioAgentes,agenteDevolvedor_ns.type)
-
-    return redirect("/devolver")
 
 @app.route("/productosaOpinar/<id>/crearOpinion", methods=['GET'])
 def crearOpinion(id):

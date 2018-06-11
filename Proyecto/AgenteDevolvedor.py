@@ -35,6 +35,8 @@ productos_ns = getNamespace('Productos')
 productos_db = 'Datos/productos.turtle'
 productos = Graph()
 
+productospedido_ns = getNamespace('ProductosPedido')
+
 # Flask stuff
 app = Flask(__name__,template_folder="AgenteDevolvedor/templates")
 
@@ -90,14 +92,21 @@ def comprobar15Dias(graph):
             idPedido = str(o)
         if p == ont.Producto:
             idProducto = str(o)    
+    
     fecha = None
+    
+    #metodo 1 si me pasan el id del producto y el id del pedido
+    id_lista = str( pedidos.value((pedidos_ns[idPedido], pedidos_ns.Contiene)) )
 
-    container = pedidos.value(subject=pedidos_ns[idPedido], predicate=pedidos_ns.Contiene)
-    c = Collection(pedidos, container)
-    for item in c:
-        if item == productos_ns[idProducto]:
-            # falta coger bien la fecha entrega ya que ahora esta hardcodeada en productos
-            fecha = str(productos.value(subject=productos_ns[idProducto], predicate=productos_ns.Fechaenvio))
+    for s,p,o in pedidos.triples((pedidos_ns[id_lista], None, None)):
+        if pedidos.value((o, productospedido_ns.AsociadoAlProducto)) == productos_ns[idProducto]:
+            fecha = str( pedidos.value((o, productospedido_ns.FechaEnvio)) )
+            break           
+
+    '''
+    #metodo 2 si me pasan el id del productopedido
+    fecha = str( pedidos.value((productospedido_ns[idProducto], productospedido_ns.FechaEnvio)) )'''
+
     year,month,day = fecha.split("-")
     year = int(year)
     month = int(month)
