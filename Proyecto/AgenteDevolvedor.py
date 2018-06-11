@@ -94,19 +94,18 @@ def comprobar15Dias(graph):
             idProducto = str(o)    
     
     fecha = None
-    '''
+    
     #metodo 1 si me pasan el id del producto y el id del pedido
-    id_lista = None
-    for s,p,o in pedidos.triples((pedidos_ns[idPedido], pedidos_ns.Contiene, None)):
-        id_lista = str(o)
+    id_lista = str( pedidos.value((pedidos_ns[idPedido], pedidos_ns.Contiene)) )
 
     for s,p,o in pedidos.triples((pedidos_ns[id_lista], None, None)):
         if pedidos.value((o, productospedido_ns.AsociadoAlProducto)) == productos_ns[idProducto]:
             fecha = str( pedidos.value((o, productospedido_ns.FechaEnvio)) )
             break           
 
-    #metodo 2 si me pasan el id del productopedido'''
-    fecha = str( pedidos.value((productospedido_ns[idProducto], productospedido_ns.FechaEnvio)) )
+    '''
+    #metodo 2 si me pasan el id del productopedido
+    fecha = str( pedidos.value((productospedido_ns[idProducto], productospedido_ns.FechaEnvio)) )'''
 
     year,month,day = fecha.split("-")
     year = int(year)
