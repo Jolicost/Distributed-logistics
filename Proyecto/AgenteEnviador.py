@@ -117,15 +117,21 @@ def pedirOferta():
 
 	# Enviamos el mensaje a cualquier agente enviador
 	print("Envio mensaje oferta")
-	graph = send_message_any(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
+	graphs = send_message_all(msg,AgenteEnviador,DirectorioAgentes,transportista_ns.type)
+	print("Graphs: ", graphs)
+	precio_min = 100000	# infinite
+	graph_min = Graph()
+	for item in graphs:
+		graph = item['msg']
+		precio = graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)
+		precio = int(precio)
+		print("Precio: ", precio)
+		if precio < precio_min:
+			precio_min = precio
+			graph_min = graph
 
-	ofertaTransporte(graph, id)
+	ofertaTransporte(graph_min, id)
 	return redirect("/")
-
-''' Sempre s'ha de ficar el graf de la comunicacio com a parametre en un callback d'accio '''
-def callbackTest(graph):
-	print("Callback working!")
-	return create_confirm(AgenteEnviador)
 
 def ofertaTransporte(graph, id):
 	print("Recibida oferta transporte")
@@ -133,7 +139,6 @@ def ofertaTransporte(graph, id):
 	precio = graph.value(subject=ofertas_ns['0'], predicate=ofertas_ns.Oferta)
 	print("Precio: ", int(precio))
 	enviarLote(id)
-	#return create_confirm(AgenteEnviador, AgenteTransportista)
 
 def createFakeLote():
 	g.add((lotes_ns['11'],RDF.type,lotes_ns.type))
@@ -157,6 +162,7 @@ def registerActions():
 def guardarGrafo():
 	g.serialize(graphFile,format="turtle")
 
+
 @app.route("/")
 def main_page():
 	"""
@@ -166,11 +172,10 @@ def main_page():
 	return render_template('main.html')
 
 
-
 def start_server():
 	register_message(AgenteEnviador,DirectorioAgentes,enviador.type)
 	registerActions()
-	createFakeLote()
+	createFakeLote()	# Borrar quan tot funcioni
 	app.run(host=host,port=port,debug=True)
 
 if __name__ == "__main__":
