@@ -6,6 +6,7 @@ python juegosPrueba.py
 python editorCentrosLogisticos.py &
 python editorPersonas.py &
 python AgenteUsuario.py --name Alex &
+python AgenteUsuario.py --name Adrian --port 8030 &
 python AgenteAdmisor.py &
 python AgenteBuscador.py &
 python AgenteEmpaquetador.py --port 8050 --name Capellades &
@@ -16,5 +17,7 @@ python AgenteVendedorExterno.py --name VendedorA &
 #python AgenteEnviador.py --name Capellades --port 8061 &
 #python AgenteEnviador.py --name Igualada --port 8060 &
 python AgenteTransportista.py --name TransportistaA &
+python AgenteMonetario.py &
+python ServicioPago.py &
 
 wait

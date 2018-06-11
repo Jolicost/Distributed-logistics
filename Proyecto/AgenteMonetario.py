@@ -102,11 +102,11 @@ def crearGrafoTransaccion(origen,destinatario,formaOrigen,formaDestinatario,impo
     gcom.add((tr, transacciones_ns.FormaDestino,Literal(formaDestinatario)))
     gcom.add((tr, transacciones_ns.Importe,Literal(importe)))
 
-    gcom.serialize('test.turtle',format='turtle')
     return build_message(gcom,perf=ACL.request,sender=AgenteMonetario.uri,content=obj)
 
 def pedirPagoTiendaExterna(graph):
     #Miramos el vendedor que nos ocupa
+    cargarGrafos()
     parent = graph.subjects(RDF.type,agn.MonetarioPedirPagoTiendaExterna).next()
 
     vendedor = graph.value(parent,pagos_ns.SePagaALaTienda)
@@ -126,6 +126,7 @@ def pedirPagoTiendaExterna(graph):
 
 def pedirDevolucion(graph):
     #Miramos el vendedor que nos ocupa
+    cargarGrafos()
     parent = graph.subjects(RDF.type,agn.MonetarioPedirDevolucion).next()
 
     usuario = graph.value(parent,pagos_ns.SeDevuelveAlUsuario)
@@ -144,6 +145,7 @@ def pedirDevolucion(graph):
     return create_confirm(AgenteMonetario,None)
 
 def pedirPagoPedido(graph):
+    cargarGrafos()
     #Miramos el vendedor que nos ocupa
     parent = graph.subjects(RDF.type,agn.MonetarioPedirPagoPedido).next()
 

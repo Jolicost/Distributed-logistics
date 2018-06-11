@@ -211,11 +211,11 @@ def enviarPagoVendedorExterno(pedido):
 
 	g = Graph()
 	obj = createAction(AgenteReceptor,'pagoExterno')
-	g.add((obj, RDF.type, agn.pedirPagoTiendaExterna))
-	g.add((obj, pagos_ns.SePagaALaTienda, Literal(vendedorId)))
+	g.add((obj, RDF.type, agn.MonetarioPedirPagoTiendaExterna))
+	g.add((obj, pagos_ns.SePagaALaTienda, vendedorId))
 	g.add((obj, pagos_ns.Importe,Literal(importe)))
 	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
-	msg = build_message(envio,
+	msg = build_message(g,
 		perf=ACL.inform,
 		sender=AgenteReceptor.uri,
 		content=obj)

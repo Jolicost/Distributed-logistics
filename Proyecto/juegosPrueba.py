@@ -204,6 +204,7 @@ def generarProductos():
 	g+=crearProducto('Zanahorias','Zanahorias',10,['Igualada'])
 	g+=crearProducto('Manzanas','Manzanas',20,['Igualada','Capellades'])
 	g+=crearProducto('Peras','Peras',30,['Capellades'])
+	g+=crearProductoExterno('Cacahuetes','Cacahuetes',50,['Igualada','Capellades'],'VendedorA')
 	g.serialize('Datos/productos.turtle',format='turtle')
 
 #Pedido de prueba sin enviar. Solo por el lote
@@ -293,6 +294,13 @@ def generarCarritoAlex():
 
 	g.serialize('AgenteUsuario/Carritos/Alex.turtle',format='turtle')
 
+def generarCarritoAdrian():
+	g = Graph()
+
+	g+=anadirProductoCarrito('Cacahuetes',50,'Cacahuetes',3)
+
+	g.serialize('AgenteUsuario/Carritos/Adrian.turtle',format='turtle')
+
 def generarPedidos():
 	g = Graph()
 	pedidoAlex = crearPedidoPrueba1()
@@ -314,6 +322,7 @@ def generarCentros():
 	pesos = []
 	pesos += [crearPeso('Zanahorias',50)]
 	pesos += [crearPeso('Manzanas',200)]
+	pesos += [crearPeso('Cacahuetes',25)]
 
 	#Centro de igualada
 	igualada  = crearPesosCentro('Igualada',pesos)
@@ -321,6 +330,7 @@ def generarCentros():
 	pesos = []
 	pesos += [crearPeso('Manzanas',200)]
 	pesos += [crearPeso('Peras',100)]
+	pesos += [crearPeso('Cacahuetes',15)]
 
 	#Centro de capellades
 	capellades = crearPesosCentro('Capellades',pesos)
@@ -350,6 +360,7 @@ def generarJuegos():
 	generarProductos()
 	generarInformacionCentros()
 	generarCarritoAlex()
+	generarCarritoAdrian()
 
 if __name__ == '__main__':
 	generarJuegos()

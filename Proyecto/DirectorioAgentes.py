@@ -32,6 +32,7 @@ from Util.Logging import config_logger
 from Util.Namespaces import createAction
 from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.General import * 
+import random
 
 # Logging
 logger = config_logger(level=1)
@@ -124,8 +125,11 @@ def register():
 		rsearch = dsgraph.triples((None, DSO.AgentType, agn_type))
 		# Es mas simple evitar el hecho de que no hayan agentes en rsearch con la
 		# captura de excepciones. el rsearch.next()[0] lanzara StopIteration si no hay elementos
-		try:
-			agn_uri = rsearch.next()[0]
+		candidatos = list(rsearch)
+		if len(candidatos) > 0: 
+
+			agn_uri = random.choice(candidatos)[0]
+			#agn_uri = rsearch.next()[0]
 			agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
 			gr = Graph()
 			gr.bind('dso', DSO)
@@ -139,7 +143,7 @@ def register():
 								 msgcnt=mss_cnt,
 								 receiver=agn_uri,
 								 content=rsp_obj)
-		except StopIteration:
+		else:
 			# Si no encontramos nada retornamos un inform sin contenido
 			return build_message(Graph(),
 				ACL.failure,
