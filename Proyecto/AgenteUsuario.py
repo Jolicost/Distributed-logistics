@@ -25,6 +25,7 @@ DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio
 
 productos_a_opinar_db = 'AgenteUsuario/Opinar/%s.turtle'
 recomendaciones_db = 'AgenteUsuario/Recomendaciones/%s.turtle'
+productos_db = 'Datos/productos.turtle'
 carrito_db = 'AgenteUsuario/Carritos/%s.turtle'
 pedidos_db = 'AgenteUsuario/Pedidos/%s.turtle'
 envios_db = 'AgenteUsuario/Envios/%s.turtle'
@@ -271,7 +272,6 @@ def darOpinion(id):
 
 @app.route("/devolver")
 def verProductosaDevolver():
-    '''
     g = Graph()
     if os.path.isfile(productos_db):
         g.parse(productos_db,format="turtle")
@@ -288,8 +288,6 @@ def verProductosaDevolver():
 
     #Renderizamos la vista
     return render_template('listaProductosDevolver.html',list=l)
-    '''
-    return "Mantenimiento"
 
 @app.route("/productosDevolver/<id>/devolver", methods=['GET'])
 def crearDevolucion(id):
@@ -300,7 +298,7 @@ def crearDevolucion(id):
 def crearPeticionDevolucion(id):
     razon = request.args['razon']
     g = Graph()
-    g.add((ont.Devolucion, ont.Pedido, Literal(id)))
+    g.add((ont.Devolucion, ont.Pedido, Literal("2")))
     g.add((ont.Devolucion, ont.Producto, Literal("sdf")))
     g.add((ont.Devolucion, ont.Usuario, Literal(name)))
     g.add((ont.Devolucion, ont.RazonDevolucion, Literal(razon)))
