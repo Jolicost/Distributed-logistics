@@ -32,7 +32,7 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 						<th>
-							<a href="/envios/{{ elem['idEnvio'] }}/productos/{{ elem['idProducto'] }}"><button>Devolver producto</button></a>
+							<a href="/envios/{{ elem['idEnvio'] }}/productos/{{ elem['idPedido'] }}/{{ elem['idProducto'] }}"><button>Devolver producto</button></a>
 						</th>
 				</tr>
 				{% endfor %}
