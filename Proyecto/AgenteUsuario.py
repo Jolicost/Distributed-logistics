@@ -191,7 +191,7 @@ def checkout():
 
     #Enviar mensaje a la tienda
     enviarPedidoATienda(pedido)
-    #vaciarCarritoFun()
+    vaciarCarritoFun()
     pedidos += pedido
     guardarGrafo(pedidos)
 
@@ -410,6 +410,7 @@ def pag():
 @app.route("/comm")
 def comunicacion():
     # Extraemos el mensaje y creamos un grafo con el
+    cargarGrafos()
     message = request.args['content']
     gm = Graph()
     gm.parse(data=message)
@@ -504,8 +505,10 @@ def resultadoDevolucion(graph):
 """
 
 def registrarFacturaEnvio(graph):
-    graph.serialize('test.turtle',format='turtle')
-
+    global envios
+    envio = graph.subjects(predicate=RDF.type,object=envios_ns.type).next()
+    envios += expandirGrafoRec(graph,envio)
+    guardarGrafo(envios)
     return create_confirm(AgenteUsuario)
 
 def registerActions():

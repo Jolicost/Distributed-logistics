@@ -50,6 +50,7 @@ actions = {}
 
 @app.route("/comm")
 def comunicacion():
+    cargarGrafo()
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()

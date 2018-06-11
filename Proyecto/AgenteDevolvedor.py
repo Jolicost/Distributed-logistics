@@ -225,6 +225,8 @@ def comunicacion():
 	global actions
 	global AgenteDevolvedor
 	# Extraemos el mensaje y creamos un grafo con él
+	cargarGrafos()
+    
 	message = request.args['content']
 	gm = Graph()
 	gm.parse(data=message)

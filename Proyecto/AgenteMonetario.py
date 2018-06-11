@@ -51,6 +51,8 @@ def init_agent():
 def comunicacion():
     global actions
     global AgenteMonetario
+    cargarGrafos()
+    
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()

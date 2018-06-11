@@ -28,7 +28,7 @@ def pedido_a_dict(graph,pedido):
 	direcciones_ns = getNamespace('Direcciones')
 	productos_ns = getNamespace('Productos')
 	ret = {}
-	ret['id'] = graph.value(pedido,pedidos_ns.id)
+	ret['id'] = graph.value(pedido,pedidos_ns.Id)
 	ret['user_id'] = graph.value(pedido,pedidos_ns.Hechopor)
 	ret['date'] = graph.value(pedido,pedidos_ns.Fecharealizacion)
 	ret['prioridad'] = graph.value(pedido,pedidos_ns.Prioridad)

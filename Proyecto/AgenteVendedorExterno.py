@@ -41,7 +41,6 @@ DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio
 graphFile = 'AgenteVendedorExterno/' + nombre + '.turtle'
 #Espacio de nombres para el modelo de productos
 productos = getNamespace('Productos')
-pedidos = getNamespace('Pedidos')
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -169,29 +168,43 @@ def crearCentro(id):
 	guardarGrafo()
 	
 	return redirect('/verProductos')
+
+def cobrarEnvio(user,importe):
+	gcom = Graph()
+
+	obj = createAction(AgenteVendedorExterno,'cobrarPedido')
+
+	
+
+	gcom.add((obj, RDF.type, agn.MonetarioPedirPagoPedido))
+	gcom.add((obj, pagos_ns.SeHaceA, user))
+	gcom.add((obj, pagos_ns.Importe,Literal(importe)))
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(gcom,
+		perf=ACL.inform,
+		sender=AgenteVendedorExterno.uri,
+		content=obj)
+
+	# Enviamos el mensaje a cualquier agente monetario
+	send_message_any(msg,AgenteVendedorExterno,DirectorioAgentes,agenteMonetario_ns.type)
+
 @app.route("/enviarPedido")
 def enviarPedido():
 	""" 
 	Representa el envio de un pedido que era responsabilidad del vendedor externo.	
 	Se accede a esta accion normalmente a traves de la vista de pedidos 
 	"""
+	global g
 	id = request.args['id']
-	vendedor = pedidos.value(subject=pedidos_ns[id],predicate=pedidos_ns.VendedorResponsable)
+	vendedor = g.value(subject=pedidos_ns[id],predicate=pedidos_ns.VendedorResponsable)
+	user = g.value(subject=pedidos_ns[id],predicate=pedidos_ns.Hechopor)
+	importe = g.value(subject=pedidos_ns[id],predicate=pedidos_ns.Importetotal)
 
-	g = Graph()
-	obj = createAction(AgenteVendedorExterno,'envioRealizado')
-	#anadimos la informacion al mensaje
-	g.add((obj,RDF.type,agn.VendedorEnvioRealizado))
-	g.add(pedidos_ns[id],RDF.type,pedidos_ns.type)
-	g.add(pedidos_ns[id],pedidos_ns.Id,Literal(id))
-	g.add(pedidos_ns[id],pedidos_ns.VendedorResponsable,vendedor)
-	#Indicamos si el receptor es el responsable o no del pedido
-	msg = build_message(pedido,
-		perf=ACL.inform,
-		sender=AgenteReceptor.uri,
-		content=obj)
+	cobrarEnvio(user,importe)
 
-	send_message_any(msg,AgenteReceptor,DirectorioAgentes,agenteMonetario_ns.type)
+	g.remove((pedidos_ns[id],pedidos_ns.VendedorResponsable,None))
+	guardarGrafo()
+	return redirect("/")
 
 
 @app.route("/anadir")

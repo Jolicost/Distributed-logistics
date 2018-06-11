@@ -79,6 +79,8 @@ def guardarGrafoPedidos():
 @app.route("/comm")
 def comunicacion():
 
+	cargarGrafos()
+    
 	# Extraemos el mensaje y creamos un grafo con él
 	message = request.args['content']
 	gm = Graph()
@@ -514,13 +516,14 @@ def enviarFacturaUsuario(graph,envio,importeEnvio):
 
 	gcom.add((obj, RDF.type, agn.FacturaEnvio))
 	#Ponemos el envio que hemos realizado
-	gcom += graph
+	gcom += expandirGrafoRec(graph,envio)
 	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
 	msg = build_message(gcom,
 		perf=ACL.inform,
 		sender=AgenteReceptor.uri,
 		content=obj)
 
+	msg.serialize('test.turtle',format='turtle')
 	# Enviamos el mensaje a cualquier agente monetario
 	send_message_uri(msg,AgenteReceptor,DirectorioAgentes,agenteUsuario_ns.type,uri)
 

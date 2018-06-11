@@ -56,6 +56,8 @@ def guardarGrafoPesos(centro):
 @app.route("/comm")
 def comunicacion():
 	# Extraemos el mensaje y creamos un grafo con el
+	cargarGrafos(centroLogistico)
+    
 	message = request.args['content']
 	gm = Graph()
 	gm.parse(data=message)
@@ -152,7 +154,7 @@ def registrarEnvio(graph,envio):
 	envios += graph
 	peso = calcularPesoEnvio(envio)
 	#Anadimos el peso total del envio
-	envios.add(envio,envios_ns.Peso,Literal(peso))
+	envios.add((envio,envios_ns.Peso,Literal(peso)))
 	guardarGrafoEnvios(centroLogistico)
 
 def combinarLotes(envio):

@@ -63,6 +63,7 @@ def guardarGrafos():
 @app.route("/comm")
 def comunicacion():
 	# Extraemos el mensaje y creamos un grafo con el
+	cargarGrafos()
 	message = request.args['content']
 	gm = Graph()
 	gm.parse(data=message)

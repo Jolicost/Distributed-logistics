@@ -163,6 +163,8 @@ def nuevaOpinion(graph):
 @app.route("/comm")
 def comunicacion():
 
+    cargarGrafos()
+    
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()
