@@ -21,6 +21,7 @@ def cargarGrafo():
 def cargarGrafoPesosCentro(centro):
 	g = Graph()
 	file = 'Datos/Pesos/' + centro + '.turtle'
+	print(file)
 	if os.path.isfile(file):
 		g.parse(file,format="turtle")
 	return g
