@@ -45,9 +45,9 @@ def pedido_a_dict(graph,pedido):
 
 	for item in c:
 		dict = {}
-		dict['id'] = graph.value(subject=item,predicate=productos_ns.Id)
-		dict['estado'] = graph.value(subject=item,predicate=productos_ns.EstadoProducto)
-		dict['fechaEntrega'] = graph.value(subject=item,predicate=productos_ns.Fechaenvio)
+		dict['uri'] = graph.value(subject=item,predicate=productosPedido_ns.AsociadoAlProducto)
+		dict['estado'] = graph.value(subject=item,predicate=productosPedido_ns.EstadoProductoEnPedido)
+		dict['fechaEntrega'] = graph.value(subject=item,predicate=productosPedido_ns.FechaEnvio)
 		prods += [dict]
 
 	ret['productos'] = prods

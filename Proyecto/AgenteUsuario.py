@@ -190,7 +190,7 @@ def checkout():
     add_localizacion_node(pedido,pedidos_ns[pedido_id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
 
     #Enviar mensaje a la tienda
-    #enviarPedidoATienda(pedido)
+    enviarPedidoATienda(pedido)
     #vaciarCarritoFun()
     pedidos += pedido
     guardarGrafo(pedidos)

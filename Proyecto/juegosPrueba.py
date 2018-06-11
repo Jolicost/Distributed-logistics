@@ -241,8 +241,8 @@ def crearEnviosPrueba0():
 	#envio0 = Igualada
 	#envio1 = Capellades
 
-	envio0.serialize('envio0.turtle',format='turtle')
-	envio1.serialize('envio1.turtle',format='turtle')
+	envio0.serialize('Datos/Envios/Igualada.turtle',format='turtle')
+	envio1.serialize('Datos/Envios/Capellades.turtle',format='turtle')
 
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
 def crearLotesPrueba0():
@@ -257,12 +257,13 @@ def crearLotesPrueba0():
 	#Lote de capellades
 	lote1 = crearLote('LotePrueba0.1','idle','08710',100,envios)
 
-	lote0.serialize('lote0.turtle',format='turtle')
-	lote1.serialize('lote1.turtle',format='turtle')
+	lote0.serialize('Datos/Lotes/Igualada.turtle',format='turtle')
+	lote1.serialize('Datos/Lotes/Capellades.turtle',format='turtle')
 
 #Envio ya realizado por el centro. Servira para probar la devolucion
-def crearEnvioPrueba1():
-	pass
+def generarInformacionCentros():
+	crearEnviosPrueba0()
+	crearLotesPrueba0()
 
 def generarPedidos():
 	g = Graph()
@@ -319,6 +320,7 @@ def generarJuegos():
 	generarPersonas()
 	generarPedidos()
 	generarProductos()
+	generarInformacionCentros()
 
 if __name__ == '__main__':
 	generarJuegos()

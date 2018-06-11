@@ -176,7 +176,7 @@ def crearProductoPedido(id):
 
 	pedidos += g
 
-	node =  productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns[id + 'listaProductos']
+	node =  productos.value(subject=pedido,predicate=pedidos_ns.Contiene) or pedidos_ns[id + '-listaProductos']
 
 	#node = productos.objects(subject=pedido,predicate=pedidos_ns.Contiene).next() or BNode()
 	pedidos.add((pedido,pedidos_ns.Contiene,node))
@@ -262,7 +262,8 @@ def decidirResponsabilidad(pedido):
 	i = 0
 	for item in c:
 		#Iteramos los productos del pedido
-		vendedor = productoPerteneceTiendaExterna(item)
+		producto = pedidos.value(subject=item,predicate=productosPedido_ns.AsociadoAlProducto)
+		vendedor = productoPerteneceTiendaExterna(producto)
 		if (vendedor):
 			vendedores += [vendedor]
 			pertenecen += 1
@@ -290,7 +291,8 @@ def calcularImportePedido(graph,pedido):
 
 	for p in c:
 		try:
-			suma += int(total.value(subject=p,predicate=productos_ns.Importe))
+			producto = total.value(subject=p,predicate=productosPedido_ns.AsociadoAlProducto)
+			suma += int(total.value(subject=producto,predicate=productos_ns.Importe))
 		except ValueError:
 			#Si hay un importe mal formado ignoramos
 			pass
@@ -395,7 +397,8 @@ def organizarPedido(pedido):
 
 	decision = {}
 	#Itera los productos del pedido
-	for producto in col:
+	for c in col:
+		producto = pedidos.value(subject=c,predicate=productosPedido_ns.AsociadoAlProducto)
 		masCercano = centroMasCercano(pedido,producto)
 		if masCercano in decision:
 			decision[masCercano] += [producto]
