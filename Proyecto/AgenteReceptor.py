@@ -204,12 +204,32 @@ def simularPedido():
 	decidirResponsabilidadEnvio(pedido)
 	return redirect("/verPedidos")
 
+def enviarPagoVendedorExterno(pedido):
+	# cal enviar el id del vendedor i el import, res mes
+	vendedorId = pedidos.value(pedido,pedidos_ns.VendedorResponsable)
+	importe = pedidos.value(pedido,pedidos_ns.Importetotal)
+
+	g = Graph()
+	obj = createAction(AgenteReceptor,'pagoExterno')
+	g.add((obj, RDF.type, agn.pedirPagoTiendaExterna))
+	g.add((obj, pagos_ns.SePagaALaTienda, Literal(vendedorId)))
+	g.add((obj, pagos_ns.Importe,Literal(importe)))
+	# Lo metemos en un envoltorio FIPA-ACL y lo enviamos
+	msg = build_message(envio,
+		perf=ACL.inform,
+		sender=AgenteReceptor.uri,
+		content=obj)
+
+	# Enviamos el mensaje a cualquier agente admisor
+	send_message_any(msg,AgenteReceptor,DirectorioAgentes,agenteMonetario_ns.type)
+
 def procesarDecision(pedido,responsabilidad):
 	responsable = responsabilidad['responsabilidad']
 
 	if responsable:
 		#Hay que asignar el respnsable al pedido
 		pedidos.add((pedido,pedidos_ns.VendedorResponsable,responsabilidad['vendedores'][0]))
+		enviarPagoVendedorExterno(pedido)
 
 	#Preparamos el mensaje
 	pedido = expandirGrafoRec(pedidos,pedido)

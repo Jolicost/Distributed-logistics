@@ -231,3 +231,15 @@ def lote_a_dict(graph,lote):
 	ret['envios'] = envs
 	return ret
 
+def transaccion_a_dict(graph,tr):
+
+	ret = {}
+
+	ret['id'] = graph.value(subject=tr,predicate=transacciones_ns.Id)
+	ret['origen'] = graph.value(subject=tr,predicate=transacciones_ns.Origen)
+	ret['destinatario'] = graph.value(subject=tr,predicate=transacciones_ns.Destinatario)
+	ret['formaOrigen'] = graph.value(subject=tr,predicate=transacciones_ns.FormaOrigen)
+	ret['formaDestinatario'] = graph.value(subject=tr,predicate=transacciones_ns.FormaDestino)
+	ret['importe'] = graph.value(subject=tr,predicate=transacciones_ns.Importe)
+	
+	return ret

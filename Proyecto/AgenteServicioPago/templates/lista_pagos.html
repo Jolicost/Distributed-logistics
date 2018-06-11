@@ -14,23 +14,27 @@ th, td {
 }
 </style>
 <body>
-	<h1>Lista de pagos de {{ u }}</h1>
+	<h1>Lista de pagos</h1>
 		<table>
 			<thead>
 				<tr>
-					<th> Tipo </th>
+					<th> Id </th>
+					<th> Origen </th>
+					<th> Destinatario </th>
+					<th> Forma Origen </th>
+					<th> Forma Destinatario </th>
 					<th> Importe </th>
 				</tr>
 			</thead>
 			<tbody>
-				{% for elem in a %}
+				{% for elem in list %}
 				<tr>
-					{% if elem > 0 %}
-						<td> Pago </td>
-					{% else %}
-						<td> Reembolso </td>
-					{% endif %}
-						<td> {{ elem }} </td>
+					<td>{{ elem['id']}}</td>
+					<td>{{ elem['origen']}}</td>
+					<td>{{ elem['destinatario']}}</td>
+					<td>{{ elem['formaOrigen']}}</td>
+					<td>{{ elem['formaDestinatario']}}</td>
+					<td>{{ elem['importe']}}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
