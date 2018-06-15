@@ -22,6 +22,7 @@ th, td {
 				<tr>
 				{% for key,value in header.items() %}
 					<th>{{ key }}</th>
+
 				{% endfor %}
 					<th>Enviar lote</th>
 				</tr>
@@ -33,7 +34,9 @@ th, td {
 						<td>{{ value }}</td>
 					{% endfor %}
 					<td>
-            <a href="/pedirOferta?id={{ elem['Id'] }}"><button>Enviar</button></a>
+						{%if elem['Estadodellote'] == 'Idle'%}
+            <a href="/pedirOferta?id={{ elem['Id'] }}"><button>Enviar </button></a>
+           				{%endif%}
 					</td>
 				</tr>
 				{% endfor %}
@@ -41,5 +44,7 @@ th, td {
 		</table>
 	{% else %}
 		<h2>No hay elementos en la lista<h2>
+
 	{% endif %}
+
 </body>

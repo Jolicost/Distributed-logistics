@@ -290,12 +290,12 @@ def crearLotesPrueba0():
 	envios += [crearEnvioLote('EnvioPrueba0.0')]
 
 	#Lote de igualada
-	lote0 = crearLote('LotePrueba0.0','idle','08710',50,envios)
+	lote0 = crearLote('LotePrueba0.0','Idle','08710',50,envios)
 
 	envios = []
 	envios += [crearEnvioLote('EnvioPrueba0.1')]
 	#Lote de capellades
-	lote1 = crearLote('LotePrueba0.1','idle','08710',100,envios)
+	lote1 = crearLote('LotePrueba0.1','Idle','08710',100,envios)
 
 	lote0.serialize('Datos/Lotes/Igualada.turtle',format='turtle')
 	lote1.serialize('Datos/Lotes/Capellades.turtle',format='turtle')
@@ -305,7 +305,7 @@ def crearLotesPrueba2():
 	envios += [crearEnvioLote('EnvioPrueba2.0')]
 
 	#Lote de igualada
-	lote2 = crearLote('LotePrueba2.0','idle','08700',800,envios)
+	lote2 = crearLote('LotePrueba2.0','Idle','08700',800,envios)
 
 	lote2.serialize('Datos/Lotes/Montserrat.turtle',format='turtle')
 

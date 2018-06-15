@@ -94,6 +94,8 @@ def verLotes():
 	list = []
 	for l in lotes:
 		d = lote_a_dict(g,l)
+		#Preveimos el bug de enviar un lote ya enviado
+		d['Estadodellote'] = str(d['Estadodellote'])
 		list += [d]
 	return render_template('listaLotes.html',list=list)
 
@@ -169,12 +171,14 @@ def registrarLoteEnviado(lote,envios_realizados):
 def aceptarOferta(transportista,precio,lote):
 	#Sumar el importe proporcional a los envios que estaban dentro de lote
 	envios = obtenerEnviosDeLote(lote)
+	#Hacemos esto antes porque sino no se envia el estado correctamente al usuario
+	registrarLoteEnviado(lote,envios)
 	for e in envios:
 		importe = calcularImporteTotalEnvio(e,lote,precio)
 		cobrarEnvio(e,importe)
 		enviarConfirmacionTienda(e,importe,transportista)
 		
-	registrarLoteEnviado(lote,envios)
+	
 
 
 @app.route("/pedirOferta")
