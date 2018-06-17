@@ -9,6 +9,7 @@ argumentos = getArguments(my_port=8001)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
 
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
@@ -16,7 +17,7 @@ directorio_port = argumentos['dir_port']
 agn = getAgentNamespace()
 
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',agenteAdmisor_ns['generic'],formatDir(host,port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',agenteAdmisor_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 productos_db = 'Datos/productos.turtle'

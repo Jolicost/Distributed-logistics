@@ -14,10 +14,19 @@ python AgenteUsuario.py --name Adrian --port 8001 &
 python AgenteUsuario.py --name Joan --port 8002 &
 
 python AgenteAdmisor.py --port 8010 &
-python AgenteBuscador.py --port 8011 &
+
+python AgenteBuscador.py --port 8011 --name BuscadorA &
+python AgenteBuscador.py --port 8017 --name BuscadorB &
+python AgenteBuscador.py --port 8019 --name BuscadorC &
+python AgenteBuscador.py --port 8018 --name BuscadorD &
+
 
 python AgenteOpinador.py --port 8012 &
-python AgenteReceptor.py --port 8013 &
+
+python AgenteReceptor.py --port 8013 --name ReceptorA &
+python AgenteReceptor.py --port 8025 --name ReceptorB &
+python AgenteReceptor.py --port 8026 --name ReceptorC &
+
 python AgenteVendedorExterno.py --name VendedorA --port 8020 &
 
 python AgenteMonetario.py --port 8080 &

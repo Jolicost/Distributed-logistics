@@ -24,6 +24,7 @@ argumentos = getArguments(my_port=8008)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
 
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
@@ -31,7 +32,7 @@ directorio_port = argumentos['dir_port']
 agn = getAgentNamespace()
 
 #Objetos agente
-AgenteReceptor = Agent('AgenteReceptor',agenteReceptor_ns['generic'],formatDir(host,port) + '/comm',None)
+AgenteReceptor = Agent('AgenteReceptor',agenteReceptor_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 
@@ -417,7 +418,6 @@ def organizarPedido(pedido):
 		else:
 			decision[masCercano] = [producto]
 
-	print(decision)
 
 	for c in decision:
 		registrarDecisionCentro(c,pedido,decision[c])

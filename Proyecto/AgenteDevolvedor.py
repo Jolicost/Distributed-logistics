@@ -127,7 +127,6 @@ def comprobar15Dias(graph,devolucion):
 	current_date = getCurrentDate()
 	d1 = stringToDate(current_date)
 	d0 = stringToDate(getFechaEnvioProducto(graph,devolucion))
-	print(d1,d0)
 	delta = d1 - d0
 	return int(delta.days) < 15
 

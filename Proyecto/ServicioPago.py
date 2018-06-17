@@ -11,6 +11,7 @@ argumentos = getArguments(my_port=8011)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
 
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
@@ -20,7 +21,7 @@ directorio_port = argumentos['dir_port']
 agn = getAgentNamespace()
 
 
-ServicioPago = Agent('AgenteServicioPago',agenteServicioPago_ns['generic'],formatDir(host,port) + '/comm',None)
+ServicioPago = Agent('AgenteServicioPago',agenteServicioPago_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 pagos = Graph()

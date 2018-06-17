@@ -21,7 +21,7 @@ import socket
 import argparse
 
 from flask import Flask, request, render_template
-from rdflib import Graph, RDF, Namespace, RDFS
+from rdflib import Graph, RDF, Namespace, RDFS, Literal
 from rdflib.namespace import FOAF
 
 from Util.OntoNamespaces import ACL, DSO
@@ -45,6 +45,9 @@ port = argumentos['port']
 
 # Directory Service Graph
 dsgraph = Graph()
+
+#Grafo de estadisticas
+stats = Graph()
 
 # Vinculamos todos los espacios de nombre a utilizar
 dsgraph.bind('acl', ACL)
@@ -129,6 +132,7 @@ def register():
 		if len(candidatos) > 0: 
 
 			agn_uri = random.choice(candidatos)[0]
+			register_stat(agn_uri,agn_type)
 			#agn_uri = rsearch.next()[0]
 			agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
 			gr = Graph()
@@ -277,6 +281,9 @@ def register():
 	mss_cnt += 1
 	return gr.serialize(format='xml')
 
+@app.route('/')
+def main():
+	return render_template('main.html')
 
 @app.route('/Info')
 def info():
@@ -288,6 +295,30 @@ def info():
 
 	return render_template('info.html', nmess=mss_cnt, graph=dsgraph.serialize(format='turtle'))
 
+@app.route('/InfoStats')
+def infoStats():
+	return render_template('info.html', nmess=mss_cnt, graph=stats.serialize(format='turtle'))
+
+def register_stat(agn_uri,agn_type):
+	val = stats.value(agn_uri,DSO.nRequests) 
+	if val is None:
+		stats.add((agn_uri,RDF.type,DSO.Agent))
+		stats.add((agn_uri,DSO.agentType,agn_type))
+		stats.add((agn_uri,DSO.nRequests,Literal(1)))
+	else:
+		stats.set((agn_uri,DSO.nRequests,Literal(int(val) + 1)))
+
+@app.route('/verStats')
+def verStats():
+	list = []
+	for a in stats.subjects(predicate=RDF.type,object=DSO.Agent):
+		dict ={}
+		dict['URI'] = a
+		dict['Type'] = stats.value(a,DSO.agentType)
+		dict['Peticiones'] = stats.value(a,DSO.nRequests)
+		list += [dict]
+
+	return render_template('stats.html',list=list)
 
 @app.route("/Stop")
 def stop():

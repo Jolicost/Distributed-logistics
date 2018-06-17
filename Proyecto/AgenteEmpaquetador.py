@@ -37,6 +37,9 @@ actions = {}
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafos(centro):
 	global envios,lotes,pesos
+	envios = Graph()
+	lotes = Graph()
+	pesos = Graph()
 	if os.path.isfile(envios_db%centro):
 		envios.parse(envios_db%centro,format="turtle")
 	if os.path.isfile(lotes_db%centro):
@@ -141,7 +144,6 @@ def crearLote(envio):
 def anadirEnvioLote(lote,envio):
 	peso = calcularPesoEnvio(envio)
 
-	print(peso)
 	try:
 		peso += int(lotes.value(subject=lote,predicate=lotes_ns.Peso)) 
 	except ValueError:

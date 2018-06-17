@@ -38,7 +38,7 @@ carrito = Graph()
 pedidos = Graph()
 envios = Graph()
 
-
+carritoFalso = Graph()
 
 
 
@@ -73,6 +73,10 @@ def getDatos():
         }
     ]
     return datos
+def cargarCarritoFalso():
+    global carritoFalso
+    if os.path.isfile('AgenteUsuario/carritoFalso.turtle'):
+        carritoFalso.parse('AgenteUsuario/carritoFalso.turtle',format='turtle')
 
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafos():
@@ -82,8 +86,6 @@ def cargarGrafos():
         file = s['db']%name
         if os.path.isfile(file):
             s['graph'].parse(file,format="turtle")
-        else:
-            s['graph'] = Graph()
 
 def guardarGrafo(g):
     datos = getDatos()
@@ -201,7 +203,6 @@ def checkout():
 def anadirProductoCarrito():
     dict = request.args
     ref = dict['ref']
-    print(ref)
     id = dict['id']
     importe = dict['importe']
     nombre = dict['nombre']
@@ -221,7 +222,6 @@ def anadirProductoCarrito():
     except ValueError:
         return "Error en el formato de los numeros"
 
-    print(ref)
     return redirect("/" + ref)
 @app.route("/recomendaciones")
 def verRecomendaciones():
@@ -400,6 +400,65 @@ def crearOpinion(id):
 
     return redirect("/opinar")
 
+
+def enviarCarritoFalsoTienda():
+
+    prioridad = 'Indefinida'
+    direccion = 'Calle falsa 083'
+    cp = '00000'
+
+    pedido = Graph()
+    pedido_id = str(random.getrandbits(64))
+    pedido.add((pedidos_ns[pedido_id],RDF.type,pedidos_ns.type))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Id,Literal(pedido_id)))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Hechopor,agenteUsuario_ns[name]))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Prioridad,Literal(prioridad)))
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Importetotal,Literal(500)))
+    pedido.add((pedidos_ns[pedido_id], pedidos_ns.Fecharealizacion,Literal(getCurrentDate())))
+
+    node =  pedidos_ns[pedido_id + '-listaProductos']
+
+    pedido.add((pedidos_ns[pedido_id],pedidos_ns.Contiene,node))
+
+    c = Collection(pedido,node)
+
+
+    for p in carritoFalso.subjects(predicate=RDF.type,object=productos_ns.type):
+        for i in range(int(carritoFalso.value(p,productos_ns.Cantidad))):
+            idProd = carritoFalso.value(p,productos_ns.Id)
+            prodGraph = Graph()
+            idProductoPedido = str(random.getrandbits(64))
+            productoPedido = productosPedido_ns[idProductoPedido]
+
+            prodGraph.add((productoPedido,RDF.type,productosPedido_ns.type))
+            prodGraph.add((productoPedido,productosPedido_ns.Id,Literal(idProductoPedido)))
+            prodGraph.add((productoPedido,productosPedido_ns.AsociadoAlProducto,productos_ns[idProd]))
+
+            pedido += prodGraph
+            c.append(productoPedido)
+    
+
+
+    add_localizacion_node(pedido,pedidos_ns[pedido_id],pedidos_ns.Tienedirecciondeentrega,direccion,cp)
+
+    #Enviar mensaje a la tienda
+    enviarPedidoATienda(pedido)
+
+
+@app.route("/stressTest")
+def stressTest():
+    ''' manda montones de peticiones de compra a la tienda '''
+    j = 10
+    try:
+        j = request.args['n'] 
+    except KeyError:
+        pass
+
+    for i in range(j):
+        enviarCarritoFalsoTienda()
+
+    return "Prueba de estres finalizada"
+
 @app.route("/buscar")
 def pag():
     """
@@ -526,6 +585,7 @@ def start_server():
     init_agent()
     registerActions()
     cargarGrafos()
+    cargarCarritoFalso()
     app.run(host=host,port=port,debug=True)
 
 

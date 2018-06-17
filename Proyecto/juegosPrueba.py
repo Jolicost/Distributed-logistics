@@ -343,6 +343,15 @@ def generarCarritoAdrian():
 
 	g.serialize('AgenteUsuario/Carritos/Adrian.turtle',format='turtle')
 
+def generarCarritoFalso():
+	g = Graph()
+
+	g+=anadirProductoCarrito('Peras',30,'Peras',5)
+	g+=anadirProductoCarrito('Manzanas',20,'Manzanas',10)
+	g+=anadirProductoCarrito('Zanahorias',10,'Zanahorias',1)
+
+	g.serialize('AgenteUsuario/carritoFalso.turtle',format='turtle')
+
 def generarPedidos():
 	g = Graph()
 	pedidoAlex = crearPedidoPrueba1()
@@ -409,6 +418,7 @@ def generarJuegos():
 	generarInformacionCentros()
 	generarCarritoAlex()
 	generarCarritoAdrian()
+	generarCarritoFalso()
 
 if __name__ == '__main__':
 	generarJuegos()

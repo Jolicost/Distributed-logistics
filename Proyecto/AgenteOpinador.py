@@ -24,13 +24,15 @@ argumentos = getArguments(my_port=8007)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
+
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 
 #Objetos agente
-AgenteOpinador = Agent('AgenteOpinador',agenteOpinador_ns['generic'],formatDir(host,port) + '/comm',None)
+AgenteOpinador = Agent('AgenteOpinador',agenteOpinador_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 opiniones_db = 'Datos/opiniones.turtle'
@@ -51,6 +53,8 @@ actions = {}
 def cargarGrafos():
     global opiniones
     global productos
+    opiniones = Graph()
+    productos = Graph()
     if os.path.isfile(opiniones_db):
         opiniones.parse(opiniones_db,format="turtle")
     if os.path.isfile(productos_db):
@@ -169,7 +173,6 @@ def comunicacion():
     message = request.args['content']
     gm = Graph()
     gm.parse(data=message)
-    print(gm)
     msgdic = get_message_properties(gm)
     # Comprobamos que sea un mensaje FIPA ACL y que la performativa sea correcta
     if not msgdic:

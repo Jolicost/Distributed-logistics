@@ -11,13 +11,15 @@ argumentos = getArguments(my_port=8002)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
+
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
 agn = getAgentNamespace()
 
 #Objetos agente
-AgenteBuscador = Agent('AgenteBuscador',agenteBuscador_ns['generic'],formatDir(host,port) + '/comm',None)
+AgenteBuscador = Agent('AgenteBuscador',agenteBuscador_ns[name],formatDir(host,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 
@@ -39,6 +41,8 @@ actions = {}
 #Carga los grafoos rdf de los distintos ficheros
 def cargarGrafos():
     global productos
+    productos = Graph()
+    peticiones = Graph()
     if os.path.isfile(productos_db):
         productos.parse(productos_db,format="turtle")
     elif os.path.isfile(peticiones_db):

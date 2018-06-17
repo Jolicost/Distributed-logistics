@@ -9,6 +9,8 @@ argumentos = getArguments(my_port=8006)
 host = argumentos['host']
 port = argumentos['port']
 
+name = argumentos['name']
+
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
@@ -18,7 +20,7 @@ app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 #Espacio de nombres para los productos y los agentes
 agn = getAgentNamespace()
 
-AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns['generic'],formatDir(host,port) + '/comm',None)
+AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns[name],formatDir(host,port) + '/comm',None)
 
 actions = {}
 
@@ -32,6 +34,7 @@ personas_db = 'Datos/personas.turtle'
 
 def cargarGrafos():
     global personas
+    personas = Graph()
     if os.path.isfile(personas_db):
         personas.parse(personas_db,format="turtle")
 
@@ -57,9 +60,6 @@ def comunicacion():
     message = request.args['content']
     gm = Graph()
     gm.parse(data=message)
-
-
-    print("MONETARIO")
 
     msgdic = get_message_properties(gm)
 
