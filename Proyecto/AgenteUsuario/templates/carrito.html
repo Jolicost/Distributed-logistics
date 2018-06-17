@@ -48,7 +48,11 @@ th, td {
 		</table>
 		<form action="/checkout" method="GET">
 			<p>Prioridad: </p>
-			<input type="text" name="prioridad"/>
+			<select name="prioridad">
+				<option value="Indefinida">Indefinida</option>
+  				<option value="Inmediata">Inmediata</option>
+  				<option value="Normal">Normal</option>
+			</select>
 			<p>Direccion de entrega: </p>
 			<input type="text" name="direccion"/>
 			<p>Codigo postal: </p>

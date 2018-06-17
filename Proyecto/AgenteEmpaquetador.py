@@ -88,11 +88,7 @@ def calcularPesoEnvio(envio):
 	# Juntamos los pesos para mas rapido acceso
 	graph = envios + pesos
 
-	#Miramos el id del envio
-	envio_id = graph.value(envio,envios_ns.Id)
-
-	#Obtenemos la colecion del grafo que representa sus productos
-	lista = envios_ns[envio_id + '-ListaProductos']
+	lista = graph.value(envio,envios_ns.Contiene)
 
 	productos  = Collection(graph,lista)
 
@@ -105,10 +101,11 @@ def calcularPesoEnvio(envio):
 			# Sumamos 0 al peso total
 			pass
 
-	return peso
+	return int(peso)
 
 def crearLote(envio):
 	peso = calcularPesoEnvio(envio)
+	prioridad = envios.value(envio,envios_ns.Prioridad)
 
 	#Generamos un id aleatorio
 	lote_id = str(random.getrandbits(64))
@@ -126,6 +123,8 @@ def crearLote(envio):
 	lotes.add((lote,lotes_ns.Estadodellote,Literal("Idle")))
 	#Anadimos el peso del lote
 	lotes.add((lote,lotes_ns.Peso,Literal(peso)))
+	#Prioridad del lote
+	lotes.add((lote,lotes_ns.Prioridad,Literal(prioridad)))
 
 	envioGraph = Graph()
 
@@ -142,12 +141,15 @@ def crearLote(envio):
 def anadirEnvioLote(lote,envio):
 	peso = calcularPesoEnvio(envio)
 
+	print(peso)
 	try:
 		peso += int(lotes.value(subject=lote,predicate=lotes_ns.Peso)) 
-	except NumerError:
+	except ValueError:
 		#No sumar ningun peso. Esto no deberia ocurrir en situaciones normales
 		pass
-
+	#Sumamos el peso
+	lotes.set((lote,lotes_ns.Peso,Literal(peso)))
+	lotes.serialize('test.turtle',format='turtle')
 	node = lotes.value(subject=lote,predicate=lotes_ns.TieneEnvios) or lotes_ns[lote_id + '-listaEnvios']
 
 	c = Collection(lotes,node)
@@ -167,8 +169,13 @@ def registrarEnvio(graph,envio):
 def combinarLotes(envio):
 	loc = envios.value(envio,envios_ns.Tienedirecciondeentrega)
 	cp = envios.value(loc,getNamespace('Direcciones').Codigopostal)
+	prioridad = envios.value(envio,envios_ns.Prioridad)
 
-	lotesCandidatos = list(lotes.subjects(predicate=lotes_ns.Ciudad,object=cp))
+	lotesCandidatos = []
+	for l in lotes.subjects(predicate=lotes_ns.Ciudad,object=cp):
+		if (lotes.value(subject=l,predicate=lotes_ns.Prioridad) == prioridad):
+			lotesCandidatos += [l]
+
 
 	lote = None
 
@@ -176,7 +183,7 @@ def combinarLotes(envio):
 		lote = crearLote(envio)
 	else:
 		lote = random.choice(lotesCandidatos)
-		anadirEnvioLote(envio,lote)
+		anadirEnvioLote(lote,envio)
 
 
 def nuevoEnvio(graph):

@@ -45,11 +45,14 @@ actions = {}
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafo():
 	global g
+	g = Graph()
 	if os.path.isfile(graphFile):
 		g.parse(graphFile,format="turtle")
 
 def cargarGrafos():
 	global g,envios
+	g = Graph()
+	envios = Graph()
 	if os.path.isfile(graphFile):
 		g.parse(graphFile,format="turtle")
 	if os.path.isfile(enviosFile):
@@ -64,6 +67,7 @@ def guardarGrafos():
 def comunicacion():
 	# Extraemos el mensaje y creamos un grafo con el
 	cargarGrafos()
+	g.serialize('test.turtle',format='turtle')
 	message = request.args['content']
 	gm = Graph()
 	gm.parse(data=message)
@@ -90,12 +94,12 @@ def comunicacion():
 @app.route("/verLotes")
 def verLotes():
 	cargarGrafos()
+	g.serialize('test.turtle',format='turtle')
 	lotes = g.subjects(predicate=RDF.type,object=lotes_ns.type)
 	list = []
 	for l in lotes:
 		d = lote_a_dict(g,l)
 		#Preveimos el bug de enviar un lote ya enviado
-		d['Estadodellote'] = str(d['Estadodellote'])
 		list += [d]
 	return render_template('listaLotes.html',list=list)
 

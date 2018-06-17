@@ -157,7 +157,7 @@ def crearEnvio(id,user_id,pedido_id,fecha,direccion,cp,productos,importeTotal,es
 
 	return g
 
-def crearLote(id,estado,ciudad,peso,envios):
+def crearLote(id,estado,ciudad,peso,envios,prioridad):
 
 	g = Graph()
 
@@ -167,6 +167,7 @@ def crearLote(id,estado,ciudad,peso,envios):
 	g.add((lotes_ns[id],lotes_ns.Peso,Literal(peso)))
 	g.add((lotes_ns[id],lotes_ns.Ciudad,Literal(ciudad)))
 	g.add((lotes_ns[id],lotes_ns.Estadodellote,Literal(estado)))
+	g.add((lotes_ns[id],lotes_ns.Prioridad,Literal(prioridad)))
 
 	lista = lotes_ns[id + '-ListaEnvios']
 	g.add((lotes_ns[id],lotes_ns.TieneEnvios,lista))
@@ -249,12 +250,12 @@ def crearEnviosPrueba0():
 	productos = []
 	productos += [crearProductoEnvio('Zanahorias')]
 
-	envio0 = crearEnvio('EnvioPrueba0.0','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,10,'EnLote','Alta',50)
+	envio0 = crearEnvio('EnvioPrueba0.0','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,10,'EnLote','Inmediata',50)
 
 	productos = []
 	productos += [crearProductoEnvio('Peras')]
 
-	envio1 = crearEnvio('EnvioPrueba0.1','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,30,'EnLote','Alta',100)
+	envio1 = crearEnvio('EnvioPrueba0.1','Adrian','PedidoPrueba0','1995-05-06','Calle Falsa 0','08710',productos,30,'EnLote','Inmediata',100)
 
 	#envio0 = Igualada
 	#envio1 = Capellades
@@ -268,7 +269,7 @@ def crearEnviosPrueba1():
 	productos += [crearProductoEnvio('Manzanas')]
 	productos += [crearProductoEnvio('Manzanas')]
 
-	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Alta',150)
+	envio0 = crearEnvio('EnvioPrueba1.0','Alex','PedidoPrueba1','1994-05-03','Calle Alex 1','08100',productos,40,'Enviado','Indefinida',150)
 
 	envio0.serialize('AgenteUsuario/Envios/Alex.turtle',format="turtle")
 
@@ -281,7 +282,7 @@ def crearEnviosPrueba2():
 	productos += [crearProductoEnvio('Manzanas')]
 	productos += [crearProductoEnvio('Manzanas')]
 
-	envio2 = crearEnvio('EnvioPrueba2.0','Joan','PedidoPrueba2','1994-05-03','Av Balmes','08700',productos,90,'EnLote','Alta',500)
+	envio2 = crearEnvio('EnvioPrueba2.0','Joan','PedidoPrueba2','1994-05-03','Av Balmes','08700',productos,90,'EnLote','Normal',500)
 
 	envio2.serialize('Datos/Envios/Montserrat.turtle',format="turtle")
 # Crea los lotes del pedido de prueba 0 en los 2 centros distintos
@@ -290,12 +291,12 @@ def crearLotesPrueba0():
 	envios += [crearEnvioLote('EnvioPrueba0.0')]
 
 	#Lote de igualada
-	lote0 = crearLote('LotePrueba0.0','Idle','08710',50,envios)
+	lote0 = crearLote('LotePrueba0.0','Idle','08710',50,envios,'Inmediata')
 
 	envios = []
 	envios += [crearEnvioLote('EnvioPrueba0.1')]
 	#Lote de capellades
-	lote1 = crearLote('LotePrueba0.1','Idle','08710',100,envios)
+	lote1 = crearLote('LotePrueba0.1','Idle','08710',100,envios,'Inmediata')
 
 	lote0.serialize('Datos/Lotes/Igualada.turtle',format='turtle')
 	lote1.serialize('Datos/Lotes/Capellades.turtle',format='turtle')
@@ -305,7 +306,7 @@ def crearLotesPrueba2():
 	envios += [crearEnvioLote('EnvioPrueba2.0')]
 
 	#Lote de igualada
-	lote2 = crearLote('LotePrueba2.0','Idle','08700',800,envios)
+	lote2 = crearLote('LotePrueba2.0','Idle','08700',800,envios,'Normal')
 
 	lote2.serialize('Datos/Lotes/Montserrat.turtle',format='turtle')
 

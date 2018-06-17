@@ -211,9 +211,10 @@ def lote_a_dict(graph,lote):
 	envios_ns = getNamespace('Envios')
 	ret = {}
 	ret['Id'] = graph.value(lote,lotes_ns.Id)
-	ret['Estadodellote'] = graph.value(lote,lotes_ns.Estadodellote)
+	ret['Estadodellote'] = str(graph.value(lote,lotes_ns.Estadodellote))
 	ret['Ciudad'] = graph.value(lote,lotes_ns.Ciudad)
 	ret['Peso'] = graph.value(lote,lotes_ns.Peso)
+	ret['Prioridad'] = graph.value(lote,lotes_ns.Prioridad)
 
 	#loc = graph.value(lote,lotes_ns.Tienedirecciondeentrega)
 	#ret['direccion'] = graph.value(loc,direcciones_ns.Direccion)
