@@ -6,6 +6,6 @@ trap "kill 0" EXIT
 
 echo "$usuarios" 
 
-python AgenteUsuario.py --name Adrian --dhost $directorio --port 8001 --host $usuarios &
+python AgenteUsuario.py --name Adrian --dhost $directorio --port 8001 &
 
 wait

@@ -4,11 +4,11 @@ trap "kill 0" EXIT
 
 . directorio.config
 
-python AgenteAdmisor.py --dhost $directorio --host $directorio &
-python AgenteBuscador.py --dhost $directorio --host $directorio &
-python AgenteDevolvedor.py --dhost $directorio --host $directorio &
-python AgenteMonetario.py --dhost $directorio --host $directorio &
-python AgenteOpinador.py --dhost $directorio --host $directorio &
-python AgenteReceptor.py --dhost $directorio --host $directorio &
+python AgenteAdmisor.py --dhost $directorio --open &
+python AgenteBuscador.py --dhost $directorio --open &
+python AgenteDevolvedor.py --dhost $directorio --open &
+python AgenteMonetario.py --dhost $directorio --open &
+python AgenteOpinador.py --dhost $directorio --open &
+python AgenteReceptor.py --dhost $directorio --open &
 
 wait

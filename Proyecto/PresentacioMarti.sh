@@ -12,8 +12,8 @@ python juegosPrueba.py
 
 sleep 1.5
 
-./Tienda.sh &
 ./VendedorA.sh &
+./Tienda.sh &
 ./Pago.sh &
 
 wait
