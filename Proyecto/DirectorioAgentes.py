@@ -358,4 +358,4 @@ def agentbehavior1(cola):
 if __name__ == '__main__':
 	# Ponemos en marcha el servidor Flask
 	app.run(host=hostname, port=port, debug=True)
-	logger.info('The End')
+	#logger.info('The End')
