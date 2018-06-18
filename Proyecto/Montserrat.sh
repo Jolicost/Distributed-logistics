@@ -7,7 +7,7 @@ trap "kill 0" EXIT
 ./removeTurtle.sh
 
 python juegosPrueba.py
-python AgenteEmpaquetador.py --name Montserrat --open --dhost $directorio &
-python AgenteEnviador.py --name Montserrat --open --dhost $directorio &
+python AgenteEmpaquetador.py --name Montserrat --open --dhost $directorio --port 7012 &
+python AgenteEnviador.py --name Montserrat --open --dhost $directorio --port 7002 &
 
 wait
