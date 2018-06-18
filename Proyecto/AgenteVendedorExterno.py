@@ -15,6 +15,8 @@ nombre = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 #Carga el grafo rdf del fichero graphFile
 def cargarGrafo(graph):
 	g = Graph()
@@ -35,7 +37,7 @@ vendedor = getNamespace('AgenteVendedorExterno')
 admisor = getNamespace('AgenteAdmisor')
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(host,port) + '/comm',None)
+AgenteVendedorExterno = Agent('AgenteVendedorExterno',vendedor[nombre],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'AgenteVendedorExterno/' + nombre + '.turtle'

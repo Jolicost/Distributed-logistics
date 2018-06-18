@@ -14,10 +14,12 @@ name = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 agn = getAgentNamespace()
 
 #Objetos agente
-AgenteAdmisor = Agent('AgenteAdmisor',agenteAdmisor_ns[name],formatDir(host,port) + '/comm',None)
+AgenteAdmisor = Agent('AgenteAdmisor',agenteAdmisor_ns[name],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 productos_db = 'Datos/productos.turtle'

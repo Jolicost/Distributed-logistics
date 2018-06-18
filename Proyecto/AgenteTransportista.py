@@ -12,6 +12,8 @@ nombre = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 
 enviador = getNamespace('AgenteEnviador')
 productos = getNamespace('Productos')
@@ -25,7 +27,7 @@ agn = getAgentNamespace()
 g = Graph()
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
+AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 

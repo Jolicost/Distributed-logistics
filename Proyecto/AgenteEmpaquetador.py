@@ -15,6 +15,8 @@ centroLogistico = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 agn = getAgentNamespace()
 
 envios = Graph()
@@ -26,7 +28,7 @@ lotes_db = 'Datos/Lotes/%s.turtle'
 pesos_db = 'Datos/Pesos/%s.turtle'
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteEmpaquetador = Agent('AgenteEmpaquetador',getNamespace('AgenteEmpaquetador')[centroLogistico],formatDir(host,port) + '/comm',None)
+AgenteEmpaquetador = Agent('AgenteEmpaquetador',getNamespace('AgenteEmpaquetador')[centroLogistico],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 

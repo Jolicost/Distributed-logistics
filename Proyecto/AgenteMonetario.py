@@ -14,13 +14,15 @@ name = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 #Cambiamos la ruta por defecto de los templates para que sea dentro de los ficheros del agente
 app = Flask(__name__,template_folder="AgenteVendedorExterno/templates")
 
 #Espacio de nombres para los productos y los agentes
 agn = getAgentNamespace()
 
-AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns[name],formatDir(host,port) + '/comm',None)
+AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns[name],formatDir(addr,port) + '/comm',None)
 
 actions = {}
 

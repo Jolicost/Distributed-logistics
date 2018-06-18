@@ -13,6 +13,8 @@ centroLogistico = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 ont = Namespace('Ontologias/root-ontology.owl')
 agn = getAgentNamespace()
 
@@ -20,7 +22,7 @@ devolvedor = getNamespace('AgenteDevolvedor')
 monetario = getNamespace('AgenteMonetario')
 usuario = getNamespace('AgenteUsuario')
 #Objetos agente
-AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(host,port) + '/comm',None)
+AgenteDevolvedor = Agent('AgenteDevolvedor',devolvedor['generic'],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 devoluciones_ns = getNamespace('Devoluciones')

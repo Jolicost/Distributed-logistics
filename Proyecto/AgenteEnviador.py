@@ -16,6 +16,8 @@ nombre = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 enviador = getNamespace('AgenteEnviador')
 transportista_ns = getNamespace('AgenteTransportista')
 productos = getNamespace('Productos')
@@ -32,8 +34,7 @@ g = Graph()
 envios = Graph()
 
 #Objetos agente, no son necesarios en toda regla pero sirven para agilizar comunicaciones
-AgenteEnviador = Agent('AgenteEnviador',enviador[nombre],formatDir(host,port) + '/comm',None)
-AgenteTransportista = Agent('AgenteTransportista',transportista_ns[nombre],formatDir(host,port) + '/comm',None)
+AgenteEnviador = Agent('AgenteEnviador',enviador[nombre],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 #Cargar el grafo de datos
 graphFile = 'Datos/Lotes/' + nombre + '.turtle'
