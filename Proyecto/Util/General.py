@@ -38,7 +38,7 @@ def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default')
 		ret['port'] = my_port
 	else:
 		ret['port'] = args.port
-	if args.open is not None:
+	if args.open is None:
 		ret['host'] = socket.gethostname()
 	else:
 		ret['host'] = '0.0.0.0'
@@ -54,5 +54,8 @@ def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default')
 		ret['name'] = name
 	else:
 		ret['name'] = args.name
-
+	if args.host is None:
+		ret['addr'] = 'localhost'
+	else:
+		ret['addr'] = args.host
 	return ret

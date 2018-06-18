@@ -13,13 +13,15 @@ name = argumentos['name']
 directorio_host = argumentos['dir_host']
 directorio_port = argumentos['dir_port']
 
+addr = argumentos['addr']
+
 
 agn = getAgentNamespace()
 
 ont = Namespace('Ontologias/root-ontology.owl')
 
 #Objetos agente
-AgenteUsuario = Agent('AgenteUsuario',agenteUsuario_ns[name],formatDir(host,port) + '/comm',None)
+AgenteUsuario = Agent('AgenteUsuario',agenteUsuario_ns[name],formatDir(addr,port) + '/comm',None)
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 
