@@ -24,9 +24,6 @@ AgenteMonetario = Agent('AgenteMonetario',agenteMonetario_ns[name],formatDir(hos
 
 actions = {}
 
-#Direccion del directorio que utilizaremos para obtener las direcciones de otros agentes
-directorio_host = 'localhost'
-directorio_port = 9000
 DirectorioAgentes = Agent('DirectorioAgentes',agn.Directory,formatDir(directorio_host,directorio_port) + '/comm',None)
 
 personas = Graph()
