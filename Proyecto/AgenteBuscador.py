@@ -32,7 +32,7 @@ peticiones = Graph()
 cola1 = Queue()
 
 # Flask stuff
-app = Flask(__name__)
+app = Flask(__name__,template_folder="SharedTemplates")
 
 #Acciones. Este diccionario sera cargado con todos los procedimientos que hay que llamar dinamicamente 
 # cuando llega un mensaje
@@ -88,6 +88,14 @@ def nuevaPeticion(graph):
     peticiones+=save
     guardarGrafoPeticiones()
 
+
+@app.route('/Info')
+def info():
+	"""
+	Entrada que da informacion sobre el agente a traves de una pagina web
+	"""
+
+	return render_template('info.html', nmess=0, graph=productos.serialize(format='turtle'))
 
 @app.route("/comm")
 def comunicacion():
