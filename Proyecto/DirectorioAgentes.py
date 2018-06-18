@@ -28,14 +28,13 @@ from Util.OntoNamespaces import ACL, DSO
 from Util.FlaskServer import shutdown_server
 from Util.Agente import Agent
 from Util.ACLMessages import build_message, get_message_properties
-from Util.Logging import config_logger
 from Util.Namespaces import createAction
 from Util.Namespaces import getNamespace,getAgentNamespace
 from Util.General import * 
 import random
 
 # Logging
-logger = config_logger(level=1)
+
 
 
 argumentos = getArguments(my_port=9000)
@@ -89,7 +88,7 @@ def register():
 		# Si la hay extraemos el nombre del agente (FOAF.Name), el URI del agente
 		# su direccion y su tipo
 
-		logger.info('Peticion de registro')
+		#logger.info('Peticion de registro')
 
 		agn_add = gm.value(subject=content, predicate=DSO.Address)
 		agn_name = gm.value(subject=content, predicate=FOAF.Name)
@@ -122,7 +121,7 @@ def register():
 		# Buscamos una coincidencia exacta
 		# Retornamos el primero de la lista de posibilidades
 
-		logger.info('Peticion de busqueda')
+		#logger.info('Peticion de busqueda')
 
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 		rsearch = dsgraph.triples((None, DSO.AgentType, agn_type))
@@ -164,7 +163,7 @@ def register():
 		# Buscamos una coincidencia exacta
 		# Retornamos el primero de la lista de posibilidades
 
-		logger.info('Peticion de busqueda especifica')
+		#logger.info('Peticion de busqueda especifica')
 
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 		agn_uri = gm.value(subject=content,predicate=DSO.AgentUri)
@@ -202,7 +201,7 @@ def register():
 		# Esta funcion busca todos los agentes de cierto tipo
 		# Retornamos todos los agentes que estaban registrados en nuestro grafo
 
-		logger.info('Peticion de busqueda global')
+		#logger.info('Peticion de busqueda global')
 
 		# Parseamos la peticion del tipo y buscamos en el grafo
 		agn_type = gm.value(subject=content, predicate=DSO.AgentType)
