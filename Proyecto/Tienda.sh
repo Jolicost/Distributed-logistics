@@ -1,13 +1,17 @@
+#! /bin/bash
+
 trap "kill 0" EXIT
+
+. directorio.config
 
 ./removeTurtle.sh
 
 python juegosPrueba.py
-python AgenteAdmisor.py --open --dhost 10.10.73.42 &
-python AgenteBuscador.py --open --dhost 10.10.73.42 &
-python AgenteDevolvedor.py --open --dhost 10.10.73.42 &
-python AgenteMonetario.py --open --dhost 10.10.73.42 &
-python AgenteOpinador.py --open --dhost 10.10.73.42 &
-python AgenteReceptor.py --open --dhost 10.10.73.42 &
+python AgenteAdmisor.py --open --dhost $directorio &
+python AgenteBuscador.py --open --dhost $directorio &
+python AgenteDevolvedor.py --open --dhost $directorio &
+python AgenteMonetario.py --open --dhost $directorio &
+python AgenteOpinador.py --open --dhost $directorio &
+python AgenteReceptor.py --open --dhost $directorio &
 
 wait
