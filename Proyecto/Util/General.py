@@ -26,6 +26,7 @@ def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default')
 	parser.add_argument('--dhost', default='localhost', help="Host del agente de directorio")
 	parser.add_argument('--dport', type=int, help="Puerto de comunicacion del agente de directorio")
 	parser.add_argument('--name', type=str, help="Nombre del agente (Sin URI)")
+	parser.add_argument('--host', type=str, help="Direccion del agente")
 
 
 	# parsing de los parametros de la linea de comandos
@@ -34,25 +35,23 @@ def getArguments(dir_host='localhost',dir_port=9000,my_port=8000,name='default')
 	ret = {}
 	# Configuration stuff
 	if args.port is None:
-	    ret['port'] = my_port
+		ret['port'] = my_port
 	else:
-	    ret['port'] = args.port
-
+		ret['port'] = args.port
 	if args.open:
-	    ret['host'] = '0.0.0.0'
+		ret['host'] = '0.0.0.0'
+	elif args.host is None:
+		ret['host'] = 'localhost'
 	else:
-	    ret['host'] = 'localhost'
-
+		ret['host'] = args.host
 	if args.dport is None:
-	    ret['dir_port'] = dir_port
+		ret['dir_port'] = dir_port
 	else:
-	    ret['dir_port'] = args.dport
-
+		ret['dir_port'] = args.dport
 	if args.dhost is None:
-	    ret['dir_host'] = dir_host
+		ret['dir_host'] = dir_host
 	else:
-	    ret['dir_host'] = args.dhost
-
+		ret['dir_host'] = args.dhost
 	if args.name is None:
 		ret['name'] = name
 	else:

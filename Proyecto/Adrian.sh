@@ -4,9 +4,6 @@ trap "kill 0" EXIT
 
 . directorio.config
 
-./removeTurtle.sh
-
-python juegosPrueba.py
-python AgenteUsuario.py --name Adrian --open --dhost $directorio --port 8001 &
+python AgenteUsuario.py --name Adrian --open --dhost $directorio --port 8001 --host $usuarios &
 
 wait
