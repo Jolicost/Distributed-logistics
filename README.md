@@ -1,14 +1,17 @@
-# ECSDI
-[Index ECSDI](http://www.lsi.upc.edu/~bejar/ecsdi/laboratorio.html)
+# Distributed logistics
+A distribued system created using an ontology derived from a store system which consists in various agents that interact between them.
 
-[Enunciat Pràctica](http://www.lsi.upc.edu/~bejar/ecsdi/Laboratorio/ECSDI17182q.pdf)
+The agents compete and interact between them to run a complex store system, which ends up selling items to the public.
 
-[Trello](https://trello.com/b/PQLjjf5n)
+## Technology
 
-[Drive](https://drive.google.com/drive/folders/1TFYXwsIp8p5CXpwjwodbQk8JtoQIjTUy?usp=sharing)
+* Webservers implemeted using Flask.
+* Database system using triplestores via RDFLIB.
+* HTTP Sockets as a canal to send and recieve messages.
 
-[Ontologias](https://webprotege.stanford.edu/#projects/0d367979-a068-4736-8a01-63b36ab78094/edit/Classes)
+## Usage
+To execute the distributed system, you will need:
 
-[Tutorial Web Semantica](https://semantizandolaweb.wordpress.com/2011/11/07/que-es-rdf-y-para-que-es-bueno/)
-
-Instalar requerimientos: pip install -r requirements.txt
+* An environment for each agent. Otherwise you can run various agents on the same computer.
+* Python >3.
+* Install pip requirements from requierements.txt
